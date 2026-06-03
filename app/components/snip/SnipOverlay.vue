@@ -49,9 +49,20 @@
     <!-- Active draw selection box -->
     <div
       v-if="drawRect"
-      class="absolute border-2 border-dashed border-indigo-400 bg-indigo-500/20"
+      class="absolute"
+      :class="snapFrame ? 'border-2 border-emerald-400 bg-emerald-400/15 shadow-[0_0_0_1px_rgba(52,211,153,0.4)]' : 'border-2 border-dashed border-indigo-400 bg-indigo-500/20'"
       :style="drawRectStyle"
     >
+      <!-- Snap frame label -->
+      <div
+        v-if="snapFrame"
+        class="absolute inset-0 flex items-center justify-center"
+      >
+        <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-semibold tracking-wide text-white">
+          {{ snapFrame === 'laptop' ? '💻 Laptop' : '📱 Phone' }}
+        </span>
+      </div>
+
       <div
         class="absolute -bottom-6 left-0 whitespace-nowrap rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white"
       >
@@ -68,6 +79,7 @@ import type { Snip } from '~/types'
 const props = defineProps<{
   zoom: number
   drawRect: { x: number; y: number; w: number; h: number } | null
+  snapFrame: 'laptop' | 'phone' | null
 }>()
 
 const store = useSnipsStore()

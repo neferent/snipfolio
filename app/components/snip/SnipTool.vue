@@ -62,7 +62,7 @@
             class="block max-w-none select-none"
             draggable="false"
           />
-          <SnipOverlay :zoom="zoom" :draw-rect="drawRect" />
+          <SnipOverlay :zoom="zoom" :draw-rect="drawRect" :snap-frame="snapFrame" />
         </div>
       </div>
 
@@ -95,8 +95,22 @@ const isDrawing = ref(false)
 
 interface DrawRect { x: number; y: number; w: number; h: number }
 const drawRect = ref<DrawRect | null>(null)
+const snapFrame = ref<'laptop' | 'phone' | null>(null)
 let drawStart: { x: number; y: number } | null = null
 let isMouseDown = false
+
+const SNAP_THRESHOLD = 0.20
+const MIN_SNAP_PX = 60
+const LAPTOP_RATIO = 16 / 9
+const PHONE_RATIO = 9 / 16
+
+function detectSnap(w: number, h: number): 'laptop' | 'phone' | null {
+  if (w < MIN_SNAP_PX || h < MIN_SNAP_PX) return null
+  const ratio = w / h
+  if (ratio >= LAPTOP_RATIO * (1 - SNAP_THRESHOLD) && ratio <= LAPTOP_RATIO * (1 + SNAP_THRESHOLD)) return 'laptop'
+  if (ratio >= PHONE_RATIO * (1 - SNAP_THRESHOLD) && ratio <= PHONE_RATIO * (1 + SNAP_THRESHOLD)) return 'phone'
+  return null
+}
 
 function toImageCoords(e: MouseEvent): { x: number; y: number } {
   const rect = imageContainer.value!.getBoundingClientRect()
@@ -117,11 +131,25 @@ function onMouseDown(e: MouseEvent) {
 function onMouseMove(e: MouseEvent) {
   if (!isMouseDown || !drawStart) return
   const cur = toImageCoords(e)
+
+  const rawW = Math.abs(cur.x - drawStart.x)
+  const rawH = Math.abs(cur.y - drawStart.y)
+  const anchorRight = cur.x < drawStart.x
+  const anchorBottom = cur.y < drawStart.y
+
+  const detected = detectSnap(rawW, rawH)
+  snapFrame.value = detected
+
+  let snappedW = rawW
+  let snappedH = rawH
+  if (detected === 'laptop') snappedH = rawW * (9 / 16)
+  else if (detected === 'phone') snappedW = rawH * (9 / 16)
+
   drawRect.value = {
-    x: Math.min(drawStart.x, cur.x),
-    y: Math.min(drawStart.y, cur.y),
-    w: Math.abs(cur.x - drawStart.x),
-    h: Math.abs(cur.y - drawStart.y),
+    x: anchorRight ? drawStart.x - snappedW : drawStart.x,
+    y: anchorBottom ? drawStart.y - snappedH : drawStart.y,
+    w: snappedW,
+    h: snappedH,
   }
 }
 
@@ -136,6 +164,7 @@ function onMouseUp() {
   const { x, y, w, h } = drawRect.value
   drawRect.value = null
   drawStart = null
+  snapFrame.value = null
 
   if (w < 10 || h < 10) return
   createSnip(x, y, w, h)
