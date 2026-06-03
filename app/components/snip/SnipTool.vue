@@ -43,8 +43,6 @@
         class="relative flex-1 overflow-auto"
         :class="isDrawing ? 'cursor-crosshair' : 'cursor-crosshair'"
         @mousedown="onMouseDown"
-        @mousemove="onMouseMove"
-        @mouseup="onMouseUp"
       >
         <div
           ref="imageContainer"
@@ -62,7 +60,13 @@
             class="block max-w-none select-none"
             draggable="false"
           />
-          <SnipOverlay :zoom="zoom" :draw-rect="drawRect" :snap-frame="snapFrame" />
+          <SnipOverlay
+            :zoom="zoom"
+            :draw-rect="drawRect"
+            :snap-frame="snapFrame"
+            :image-width="sourceImage.naturalWidth"
+            :image-height="sourceImage.naturalHeight"
+          />
         </div>
       </div>
 
@@ -97,7 +101,6 @@ interface DrawRect { x: number; y: number; w: number; h: number }
 const drawRect = ref<DrawRect | null>(null)
 const snapFrame = ref<'laptop' | 'phone' | null>(null)
 let drawStart: { x: number; y: number } | null = null
-let isMouseDown = false
 
 const SNAP_THRESHOLD = 0.20
 const MIN_SNAP_PX = 60
@@ -120,54 +123,93 @@ function toImageCoords(e: MouseEvent): { x: number; y: number } {
   }
 }
 
+const SCROLL_ZONE = 60
+const SCROLL_SPEED = 12
+
+function edgeVelocity(mouse: number, start: number, end: number): number {
+  if (mouse < start + SCROLL_ZONE) return -Math.ceil(Math.min(1, (start + SCROLL_ZONE - mouse) / SCROLL_ZONE) * SCROLL_SPEED)
+  if (mouse > end - SCROLL_ZONE) return Math.ceil(Math.min(1, (mouse - (end - SCROLL_ZONE)) / SCROLL_ZONE) * SCROLL_SPEED)
+  return 0
+}
+
 function onMouseDown(e: MouseEvent) {
   if (!sourceImage.value || e.button !== 0) return
-  isMouseDown = true
-  drawStart = toImageCoords(e)
+  e.preventDefault()
+  const raw = toImageCoords(e)
+  drawStart = {
+    x: Math.max(0, Math.min(raw.x, sourceImage.value!.naturalWidth)),
+    y: Math.max(0, Math.min(raw.y, sourceImage.value!.naturalHeight)),
+  }
   drawRect.value = { x: drawStart.x, y: drawStart.y, w: 0, h: 0 }
   isDrawing.value = true
-}
 
-function onMouseMove(e: MouseEvent) {
-  if (!isMouseDown || !drawStart) return
-  const cur = toImageCoords(e)
+  let lastEv = e
 
-  const rawW = Math.abs(cur.x - drawStart.x)
-  const rawH = Math.abs(cur.y - drawStart.y)
-  const anchorRight = cur.x < drawStart.x
-  const anchorBottom = cur.y < drawStart.y
+  function applyMove(ev: MouseEvent) {
+    if (!drawStart) return
+    const img = sourceImage.value!
+    const cur = toImageCoords(ev)
+    cur.x = Math.max(0, Math.min(cur.x, img.naturalWidth))
+    cur.y = Math.max(0, Math.min(cur.y, img.naturalHeight))
 
-  const detected = detectSnap(rawW, rawH)
-  snapFrame.value = detected
+    const rawW = Math.abs(cur.x - drawStart.x)
+    const rawH = Math.abs(cur.y - drawStart.y)
+    const anchorRight = cur.x < drawStart.x
+    const anchorBottom = cur.y < drawStart.y
 
-  let snappedW = rawW
-  let snappedH = rawH
-  if (detected === 'laptop') snappedH = rawW * (9 / 16)
-  else if (detected === 'phone') snappedW = rawH * (9 / 16)
+    const detected = detectSnap(rawW, rawH)
+    snapFrame.value = detected
 
-  drawRect.value = {
-    x: anchorRight ? drawStart.x - snappedW : drawStart.x,
-    y: anchorBottom ? drawStart.y - snappedH : drawStart.y,
-    w: snappedW,
-    h: snappedH,
+    let snappedW = rawW
+    let snappedH = rawH
+    if (detected === 'laptop') snappedH = rawW * (9 / 16)
+    else if (detected === 'phone') snappedW = rawH * (9 / 16)
+
+    drawRect.value = {
+      x: anchorRight ? drawStart.x - snappedW : drawStart.x,
+      y: anchorBottom ? drawStart.y - snappedH : drawStart.y,
+      w: snappedW,
+      h: snappedH,
+    }
   }
-}
 
-function onMouseUp() {
-  if (!isMouseDown || !drawStart || !drawRect.value) {
-    isMouseDown = false
-    return
+  let rafId = 0
+  function scrollLoop() {
+    if (viewport.value) {
+      const vp = viewport.value.getBoundingClientRect()
+      const vx = edgeVelocity(lastEv.clientX, vp.left, vp.right)
+      const vy = edgeVelocity(lastEv.clientY, vp.top, vp.bottom)
+      if (vx !== 0 || vy !== 0) {
+        viewport.value.scrollBy(vx, vy)
+        applyMove(lastEv)
+      }
+    }
+    rafId = requestAnimationFrame(scrollLoop)
   }
-  isMouseDown = false
-  isDrawing.value = false
+  rafId = requestAnimationFrame(scrollLoop)
 
-  const { x, y, w, h } = drawRect.value
-  drawRect.value = null
-  drawStart = null
-  snapFrame.value = null
+  function onMove(ev: MouseEvent) {
+    lastEv = ev
+    applyMove(ev)
+  }
 
-  if (w < 10 || h < 10) return
-  createSnip(x, y, w, h)
+  function onUp() {
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+    cancelAnimationFrame(rafId)
+    isDrawing.value = false
+
+    const rect = drawRect.value
+    drawRect.value = null
+    drawStart = null
+    snapFrame.value = null
+
+    if (!rect || rect.w < 10 || rect.h < 10) return
+    createSnip(rect.x, rect.y, rect.w, rect.h)
+  }
+
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
 }
 
 function onImageLoaded(img: HTMLImageElement, src: string) {

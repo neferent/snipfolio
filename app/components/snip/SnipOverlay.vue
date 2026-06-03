@@ -13,17 +13,35 @@
       <div
         class="absolute inset-0 transition-colors"
         :class="
-          snip.id === selectedId
-            ? 'bg-indigo-500/20'
-            : 'bg-indigo-500/10 hover:bg-indigo-500/15'
+          resizingSnipId === snip.id && resizeSnapFrame
+            ? 'bg-emerald-400/15'
+            : snip.id === selectedId
+              ? 'bg-indigo-500/20'
+              : 'bg-indigo-500/10 hover:bg-indigo-500/15'
         "
       />
 
       <!-- Border -->
       <div
         class="absolute inset-0 border-2 transition-colors"
-        :class="snip.id === selectedId ? 'border-indigo-400' : 'border-indigo-400/50'"
+        :class="
+          resizingSnipId === snip.id && resizeSnapFrame
+            ? 'border-emerald-400 shadow-[0_0_0_1px_rgba(52,211,153,0.4)]'
+            : snip.id === selectedId
+              ? 'border-indigo-400'
+              : 'border-indigo-400/50'
+        "
       />
+
+      <!-- Snap label during resize -->
+      <div
+        v-if="resizingSnipId === snip.id && resizeSnapFrame"
+        class="absolute inset-0 flex items-center justify-center"
+      >
+        <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-semibold tracking-wide text-white">
+          {{ resizeSnapFrame === 'laptop' ? '💻 Laptop' : '📱 Phone' }}
+        </span>
+      </div>
 
       <!-- Label badge -->
       <div
@@ -80,6 +98,8 @@ const props = defineProps<{
   zoom: number
   drawRect: { x: number; y: number; w: number; h: number } | null
   snapFrame: 'laptop' | 'phone' | null
+  imageWidth: number
+  imageHeight: number
 }>()
 
 const store = useSnipsStore()
@@ -115,8 +135,8 @@ function startMove(e: MouseEvent, snip: Snip) {
     if (!moved && Math.abs(dx) < 2 && Math.abs(dy) < 2) return
     moved = true
     store.updateSnip(snip.id, {
-      x: Math.round(origX + dx),
-      y: Math.round(origY + dy),
+      x: Math.round(Math.max(0, Math.min(origX + dx, props.imageWidth - snip.width))),
+      y: Math.round(Math.max(0, Math.min(origY + dy, props.imageHeight - snip.height))),
     })
   }
 
@@ -142,6 +162,22 @@ const drawRectStyle = computed(() => {
   }
 })
 
+const SNAP_THRESHOLD = 0.20
+const MIN_SNAP_PX = 60
+const LAPTOP_RATIO = 16 / 9
+const PHONE_RATIO = 9 / 16
+
+function detectSnap(w: number, h: number): 'laptop' | 'phone' | null {
+  if (w < MIN_SNAP_PX || h < MIN_SNAP_PX) return null
+  const ratio = w / h
+  if (ratio >= LAPTOP_RATIO * (1 - SNAP_THRESHOLD) && ratio <= LAPTOP_RATIO * (1 + SNAP_THRESHOLD)) return 'laptop'
+  if (ratio >= PHONE_RATIO * (1 - SNAP_THRESHOLD) && ratio <= PHONE_RATIO * (1 + SNAP_THRESHOLD)) return 'phone'
+  return null
+}
+
+const resizingSnipId = ref<string | null>(null)
+const resizeSnapFrame = ref<'laptop' | 'phone' | null>(null)
+
 // Resize handle positions
 const handles = [
   { dir: 'nw', cursor: 'nw-resize', style: { top: '-5px', left: '-5px' } },
@@ -160,6 +196,8 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
   const startY = e.clientY
   const orig = { x: snip.x, y: snip.y, w: snip.width, h: snip.height }
   const z = props.zoom
+  const isCorner = dir.length === 2
+  resizingSnipId.value = snip.id
 
   function onMove(ev: MouseEvent) {
     const dx = (ev.clientX - startX) / z
@@ -169,12 +207,44 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
     if (dir.includes('s')) h = Math.max(20, orig.h + dy)
     if (dir.includes('w')) { x = orig.x + dx; w = Math.max(20, orig.w - dx) }
     if (dir.includes('n')) { y = orig.y + dy; h = Math.max(20, orig.h - dy) }
+
+    const detected = isCorner ? detectSnap(w, h) : null
+    resizeSnapFrame.value = detected
+    if (detected === 'laptop') {
+      const newH = w * (9 / 16)
+      if (dir.includes('n')) y = orig.y + orig.h - newH
+      h = newH
+    } else if (detected === 'phone') {
+      const newW = h * (9 / 16)
+      if (dir.includes('w')) x = orig.x + orig.w - newW
+      w = newW
+    }
+
+    // Clamp to image bounds — keep fixed edges anchored correctly
+    if (dir.includes('w')) {
+      x = Math.max(0, x)
+      w = (orig.x + orig.w) - x
+    } else {
+      w = Math.min(w, props.imageWidth - orig.x)
+    }
+    if (dir.includes('n')) {
+      y = Math.max(0, y)
+      h = (orig.y + orig.h) - y
+    } else {
+      h = Math.min(h, props.imageHeight - orig.y)
+    }
+    w = Math.max(20, w)
+    h = Math.max(20, h)
+
     store.updateSnip(snip.id, { x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h) })
   }
 
   function onUp() {
     window.removeEventListener('mousemove', onMove)
     window.removeEventListener('mouseup', onUp)
+    resizingSnipId.value = null
+    resizeSnapFrame.value = null
+    scheduleSave()
   }
 
   window.addEventListener('mousemove', onMove)
