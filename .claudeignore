@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+.nuxt/
+.output/
+dist/
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
