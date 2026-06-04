@@ -11,13 +11,14 @@ export interface Project {
   updatedAt: string
 }
 
-export interface ProjectSnapshot {
+export interface SourceImage {
   id: string
   projectId: string
+  label: string
   filename: string
   width: number
   height: number
-  storagePath: string
+  sortOrder: number
 }
 
 export type DeviceFrame = 'none' | 'phone' | 'browser' | 'laptop'
@@ -25,6 +26,7 @@ export type DeviceFrame = 'none' | 'phone' | 'browser' | 'laptop'
 export interface Snip {
   id: string
   projectId: string
+  sourceImageId: string
   label: string
   x: number
   y: number

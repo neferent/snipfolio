@@ -5,121 +5,127 @@ export interface FrameDrawResult {
   screenHeight: number
 }
 
+// SVG coordinate space (browser.svg)
+const SVG_W = 1757.49
+const TOOLBAR_SVG_H = 45.3    // top bar height in SVG coords
+const CORNER_SVG_R = 12.23    // outer body corner radius in SVG coords
+
+// Traffic light dots in SVG coords
+const TRAFFIC_Y = 22.04
+const DOT_R = 6.96
+const RED_X = 32.48
+const YEL_X = 55.68
+const GRN_X = 78.88
+
+export function browserToolbarHeight(contentW: number): number {
+  return Math.max(32, TOOLBAR_SVG_H * (contentW / SVG_W))
+}
+
 export function drawBrowserFrame(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  width: number,
-  height: number,
+  w: number,
+  h: number,
   imageSource: CanvasImageSource,
-  urlLabel = 'example.com',
 ): FrameDrawResult {
-  const toolbarH = Math.max(36, Math.round(height * 0.048))
-  const radius = 10
+  const sx = w / SVG_W
+  const toolbarH = Math.max(32, TOOLBAR_SVG_H * sx)
+  const r = Math.max(4, CORNER_SVG_R * sx)
+
+  // Scale dots proportionally to actual toolbar height so they stay round when clamped
+  const dotSx = toolbarH / TOOLBAR_SVG_H
+  const dotR = DOT_R * dotSx
+  const dotCy = y + toolbarH / 2
+
+  const contentY = y + toolbarH
+  const contentH = h - toolbarH
+
   const screenX = x
-  const screenY = y + toolbarH
-  const screenW = width
-  const screenH = height - toolbarH
+  const screenY = contentY
+  const screenWidth = w
+  const screenHeight = contentH
 
-  // Outer shadow
+  // Drop shadow
   ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.35)'
-  ctx.shadowBlur = 20
-  ctx.shadowOffsetY = 6
-
-  // Window chrome
-  ctx.fillStyle = '#e8e8e8'
-  ctx.beginPath()
-  ctx.roundRect(x, y, width, height, [radius, radius, 0, 0])
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'
+  ctx.shadowBlur = 30
+  ctx.shadowOffsetY = 12
+  ctx.fillStyle = '#262c44'
+  roundedRect(ctx, x, y, w, h, r)
   ctx.fill()
   ctx.restore()
 
-  // Toolbar separator
-  ctx.fillStyle = '#d0d0d0'
-  ctx.fillRect(x, y + toolbarH - 1, width, 1)
+  // Body
+  ctx.save()
+  ctx.strokeStyle = 'rgba(0,0,0,0)'
+  ctx.fillStyle = '#262c44'
+  roundedRect(ctx, x, y, w, h, r)
+  ctx.fill()
+  ctx.restore()
 
   // Traffic lights
-  const dotY = y + toolbarH / 2
-  const dotR = Math.max(5, toolbarH * 0.18)
-  const dotSpacing = dotR * 2.4
-  const dotStartX = x + toolbarH * 0.6
+  ctx.save()
+  ctx.strokeStyle = 'rgba(0,0,0,0)'
+  ctx.fillStyle = '#fe5e56'
+  ctx.beginPath()
+  ctx.arc(x + RED_X * dotSx, dotCy, dotR, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#febc2c'
+  ctx.beginPath()
+  ctx.arc(x + YEL_X * dotSx, dotCy, dotR, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#28c840'
+  ctx.beginPath()
+  ctx.arc(x + GRN_X * dotSx, dotCy, dotR, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
 
-  const dots = [
-    { color: '#ff5f57', border: '#e0443e' },
-    { color: '#febc2e', border: '#d4a017' },
-    { color: '#28c840', border: '#1aaa2f' },
-  ]
-  dots.forEach(({ color, border }, i) => {
-    const cx = dotStartX + i * dotSpacing
-    ctx.beginPath()
-    ctx.arc(cx, dotY, dotR, 0, Math.PI * 2)
-    ctx.fillStyle = color
+  // Address bar — right of traffic lights, centered in toolbar
+  const barLeft = x + (GRN_X + DOT_R + 16) * dotSx
+  const barRight = x + w - 12 * dotSx
+  const barW = barRight - barLeft
+  if (barW > 40) {
+    const barH = Math.round(toolbarH * 0.52)
+    const barY = y + (toolbarH - barH) / 2
+    const barR = barH / 2
+
+    ctx.save()
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'
+    roundedRect(ctx, barLeft, barY, barW, barH, barR)
     ctx.fill()
-    ctx.strokeStyle = border
-    ctx.lineWidth = 0.5
-    ctx.stroke()
-  })
 
-  // URL bar
-  const urlBarPadding = dotStartX + dots.length * dotSpacing + toolbarH * 0.5
-  const urlBarRight = x + width - toolbarH * 0.6
-  const urlBarW = urlBarRight - urlBarPadding
-  const urlBarH = toolbarH * 0.56
-  const urlBarY = y + toolbarH / 2 - urlBarH / 2
+    ctx.restore()
+  }
 
-  ctx.fillStyle = '#ffffff'
-  ctx.beginPath()
-  ctx.roundRect(urlBarPadding, urlBarY, urlBarW, urlBarH, urlBarH / 2)
-  ctx.fill()
-  ctx.strokeStyle = '#c8c8c8'
-  ctx.lineWidth = 0.5
-  ctx.beginPath()
-  ctx.roundRect(urlBarPadding, urlBarY, urlBarW, urlBarH, urlBarH / 2)
-  ctx.stroke()
-
-  // Lock icon (simple)
-  const lockSize = urlBarH * 0.45
-  const lockX = urlBarPadding + urlBarH * 0.6
-  const lockY = y + toolbarH / 2
-  ctx.fillStyle = '#888'
-  ctx.beginPath()
-  ctx.arc(lockX, lockY - lockSize * 0.15, lockSize * 0.38, Math.PI, 0, false)
-  ctx.stroke()
-  ctx.fillStyle = '#888'
-  ctx.beginPath()
-  ctx.roundRect(lockX - lockSize * 0.3, lockY - lockSize * 0.1, lockSize * 0.6, lockSize * 0.55, 2)
-  ctx.fill()
-
-  // URL text
-  ctx.save()
-  ctx.fillStyle = '#444'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  const fontSize = Math.max(10, urlBarH * 0.54)
-  ctx.font = `${fontSize}px system-ui, sans-serif`
-  ctx.beginPath()
-  ctx.rect(urlBarPadding + urlBarH * 1.2, urlBarY, urlBarW - urlBarH * 1.8, urlBarH)
-  ctx.clip()
-  ctx.fillText(urlLabel, urlBarPadding + urlBarW / 2, y + toolbarH / 2)
-  ctx.restore()
-
-  // Screen area — white background then content
-  ctx.fillStyle = '#fff'
-  ctx.fillRect(screenX, screenY, screenW, screenH)
-
+  // Content area — clipped to bottom rounded corners of outer body
   ctx.save()
   ctx.beginPath()
-  ctx.rect(screenX, screenY, screenW, screenH)
+  ctx.moveTo(x, contentY)
+  ctx.lineTo(x + w, contentY)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, contentY)
+  ctx.closePath()
   ctx.clip()
-  ctx.drawImage(imageSource, screenX, screenY, screenW, screenH)
+  ctx.drawImage(imageSource, x, contentY, w, contentH)
   ctx.restore()
 
-  // Window border
-  ctx.strokeStyle = '#c0c0c0'
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.roundRect(x + 0.5, y + 0.5, width - 1, height - 1, [radius, radius, 0, 0])
-  ctx.stroke()
+  return { screenX, screenY, screenWidth, screenHeight }
+}
 
-  return { screenX, screenY, screenWidth: screenW, screenHeight: screenH }
+function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
 }

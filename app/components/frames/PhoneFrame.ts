@@ -5,6 +5,31 @@ export interface FrameDrawResult {
   screenHeight: number
 }
 
+// SVG coordinate space (mobile.svg)
+const SVG_W = 772.5
+const SVG_H = 1600
+
+// Screen content area in SVG coords
+const SCR_X = 34.05
+const SCR_Y = 30.12
+const SCR_W = 743.7 - SCR_X   // 709.65
+const SCR_H = 1569.89 - SCR_Y // 1539.77
+
+function screenPath(ctx: CanvasRenderingContext2D) {
+  ctx.beginPath()
+  ctx.moveTo(743.7, 141.2)
+  ctx.lineTo(743.7, 1458.79)
+  ctx.bezierCurveTo(743.7, 1520.15, 693.96, 1569.89, 632.6, 1569.89)
+  ctx.lineTo(145.13, 1569.89)
+  ctx.bezierCurveTo(83.77, 1569.89, 34.05, 1520.15, 34.05, 1458.79)
+  ctx.lineTo(34.05, 141.2)
+  ctx.bezierCurveTo(34.05, 79.85, 83.78, 30.12, 145.13, 30.12)
+  ctx.lineTo(632.61, 30.12)
+  ctx.bezierCurveTo(653.23, 30.12, 672.53, 35.74, 689.08, 45.53)
+  ctx.bezierCurveTo(721.77, 64.86, 743.71, 100.47, 743.71, 141.2)
+  ctx.closePath()
+}
+
 export function drawPhoneFrame(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -13,99 +38,84 @@ export function drawPhoneFrame(
   height: number,
   imageSource: CanvasImageSource,
 ): FrameDrawResult {
-  const radius = Math.min(44, width * 0.1)
-  const bezel = Math.max(10, width * 0.06)
-  const screenX = x + bezel
-  const screenY = y + bezel
-  const screenW = width - bezel * 2
-  const screenH = height - bezel * 2
-  const screenR = Math.max(2, radius - bezel * 0.5)
+  const sx = width / SVG_W
+  const sy = height / SVG_H
 
-  // Outer shadow
+  const screenX = x + SCR_X * sx
+  const screenY = y + SCR_Y * sy
+  const screenWidth = SCR_W * sx
+  const screenHeight = SCR_H * sy
+
   ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.45)'
-  ctx.shadowBlur = 24
-  ctx.shadowOffsetY = 8
+  ctx.translate(x, y)
+  ctx.scale(sx, sy)
+  ctx.strokeStyle = 'rgba(0,0,0,0)'
+  ctx.miterLimit = 4
 
-  // Bezel body
-  ctx.fillStyle = '#1c1c1e'
-  roundRect(ctx, x, y, width, height, radius)
+  // Drop shadow on the body
+  ctx.save()
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'
+  ctx.shadowBlur = 30 / Math.min(sx, sy)
+  ctx.shadowOffsetY = 12 / Math.min(sx, sy)
+  ctx.fillStyle = '#262c44'
+  ctx.beginPath()
+  ctx.moveTo(777.74, 497.55)
+  ctx.lineTo(777.74, 687.4)
+  ctx.lineTo(772.5, 687.4)
+  ctx.lineTo(772.5, 1461.25)
+  ctx.bezierCurveTo(772.5, 1537.89, 710.37, 1600, 633.75, 1600)
+  ctx.lineTo(143.97, 1600)
+  ctx.bezierCurveTo(67.35, 1600, 5.23, 1537.89, 5.23, 1461.25)
+  ctx.lineTo(5.23, 726.68)
+  ctx.lineTo(0, 726.68)
+  ctx.lineTo(0, 608.84)
+  ctx.lineTo(5.24, 608.84)
+  ctx.lineTo(5.24, 574.8)
+  ctx.lineTo(0, 574.8)
+  ctx.lineTo(0, 456.96)
+  ctx.lineTo(5.24, 456.96)
+  ctx.lineTo(5.24, 401.97)
+  ctx.lineTo(0, 401.97)
+  ctx.lineTo(0, 328.65)
+  ctx.lineTo(5.24, 328.65)
+  ctx.lineTo(5.24, 138.74)
+  ctx.bezierCurveTo(5.24, 62.11, 67.35, 0, 143.97, 0)
+  ctx.lineTo(633.75, 0)
+  ctx.bezierCurveTo(710.37, 0, 772.5, 62.11, 772.5, 138.74)
+  ctx.lineTo(772.5, 497.55)
+  ctx.lineTo(777.74, 497.55)
+  ctx.closePath()
   ctx.fill()
-
   ctx.restore()
 
-  // Subtle highlight on bezel edge
+  // Metal frame ring — black, creates the visible bezel around the screen
   ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)'
-  ctx.lineWidth = 1
-  roundRect(ctx, x + 0.5, y + 0.5, width - 1, height - 1, radius)
-  ctx.stroke()
+  ctx.fillStyle = '#000000'
+  ctx.beginPath()
+  ctx.moveTo(143.78, 10.47)
+  ctx.lineTo(633.96, 10.47)
+  ctx.bezierCurveTo(705.41, 10.47, 763.34, 68.40, 763.34, 139.85)
+  ctx.lineTo(763.34, 1458.83)
+  ctx.bezierCurveTo(763.34, 1530.28, 705.41, 1588.21, 633.96, 1588.21)
+  ctx.lineTo(143.78, 1588.21)
+  ctx.bezierCurveTo(72.33, 1588.21, 14.4, 1530.28, 14.4, 1458.83)
+  ctx.lineTo(14.4, 139.85)
+  ctx.bezierCurveTo(14.4, 68.40, 72.33, 10.47, 143.78, 10.47)
+  ctx.closePath()
+  ctx.fill()
   ctx.restore()
 
-  // Screen background
+  // Screen content clipped to screen shape
+  // No white fill — any sub-pixel anti-aliasing at the edge reads against the black ring (correct)
   ctx.save()
-  ctx.fillStyle = '#000'
-  roundRect(ctx, screenX, screenY, screenW, screenH, screenR)
-  ctx.fill()
-
-  // Clip and draw content
-  roundRect(ctx, screenX, screenY, screenW, screenH, screenR)
+  screenPath(ctx)
   ctx.clip()
-  ctx.drawImage(imageSource, screenX, screenY, screenW, screenH)
+  ctx.drawImage(imageSource, SCR_X - 1, SCR_Y - 1, SCR_W + 2, SCR_H + 2)
   ctx.restore()
 
-  // Dynamic Island / pill notch
-  const pillW = Math.round(width * 0.28)
-  const pillH = Math.round(height * 0.028)
-  const pillX = x + width / 2 - pillW / 2
-  const pillY = screenY + Math.round(screenH * 0.012)
-  ctx.fillStyle = '#000'
-  ctx.beginPath()
-  ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2)
-  ctx.fill()
 
-  // Home indicator bar
-  const indW = Math.round(width * 0.3)
-  const indH = Math.max(3, Math.round(height * 0.006))
-  const indX = x + width / 2 - indW / 2
-  const indY = y + height - bezel - indH - Math.round(height * 0.008)
-  ctx.fillStyle = 'rgba(255,255,255,0.3)'
-  ctx.beginPath()
-  ctx.roundRect(indX, indY, indW, indH, indH / 2)
-  ctx.fill()
 
-  // Side buttons (volume, power) — decorative lines
-  const btnW = Math.max(2, bezel * 0.35)
-  const btnH = Math.round(height * 0.08)
-  ctx.fillStyle = '#2a2a2e'
+  ctx.restore()
 
-  // Left volume buttons
-  ctx.beginPath()
-  ctx.roundRect(x - btnW + 1, y + height * 0.22, btnW, btnH * 0.7, 1)
-  ctx.fill()
-  ctx.beginPath()
-  ctx.roundRect(x - btnW + 1, y + height * 0.32, btnW, btnH, 1)
-  ctx.fill()
-  ctx.beginPath()
-  ctx.roundRect(x - btnW + 1, y + height * 0.44, btnW, btnH, 1)
-  ctx.fill()
-
-  // Right power button
-  ctx.beginPath()
-  ctx.roundRect(x + width - 1, y + height * 0.3, btnW, btnH * 1.2, 1)
-  ctx.fill()
-
-  return { screenX, screenY, screenWidth: screenW, screenHeight: screenH }
-}
-
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) {
-  ctx.beginPath()
-  ctx.roundRect(x, y, w, h, r)
+  return { screenX, screenY, screenWidth, screenHeight }
 }

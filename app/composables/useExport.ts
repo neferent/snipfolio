@@ -1,7 +1,7 @@
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
-import { useProjectStore } from '~/stores/project'
+import { useSourcesStore } from '~/stores/sources'
 import type { Composition, Snip } from '~/types'
 
 function sanitizeFilename(name: string) {
@@ -24,14 +24,22 @@ export function useExport() {
   const { render } = useCanvasRenderer()
   const snipsStore = useSnipsStore()
   const compositionsStore = useCompositionsStore()
-  const projectStore = useProjectStore()
+  const sourcesStore = useSourcesStore()
+
+  function buildSourceImagesMap(): Map<string, HTMLImageElement> {
+    const map = new Map<string, HTMLImageElement>()
+    for (const [id, { img }] of sourcesStore.loadedImages) {
+      map.set(id, img)
+    }
+    return map
+  }
 
   function renderComposition(composition: Composition): HTMLCanvasElement {
     const canvas = document.createElement('canvas')
     render(canvas, {
       composition,
       snips: snipsStore.snips,
-      sourceImage: projectStore.sourceImage!,
+      sourceImages: buildSourceImagesMap(),
     })
     return canvas
   }
@@ -49,12 +57,13 @@ export function useExport() {
   }
 
   function exportSnipRaw(snip: Snip) {
-    const source = projectStore.sourceImage!
+    const loaded = sourcesStore.getImage(snip.sourceImageId)
+    if (!loaded) return
     const canvas = document.createElement('canvas')
     canvas.width = snip.width
     canvas.height = snip.height
     const ctx = canvas.getContext('2d')!
-    ctx.drawImage(source, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)
+    ctx.drawImage(loaded.img, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)
     const name = `snipfolio_snip_${sanitizeFilename(snip.label)}.png`
     downloadCanvas(canvas, name)
   }

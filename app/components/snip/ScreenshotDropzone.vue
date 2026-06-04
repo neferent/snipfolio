@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 const emit = defineEmits<{
-  loaded: [img: HTMLImageElement, src: string]
+  loaded: [img: HTMLImageElement, src: string, filename: string]
 }>()
 
 const isDragOver = ref(false)
@@ -41,7 +41,7 @@ function loadFile(file: File) {
   reader.onload = (e) => {
     const src = e.target?.result as string
     const img = new Image()
-    img.onload = () => emit('loaded', img, src)
+    img.onload = () => emit('loaded', img, src, file.name)
     img.src = src
   }
   reader.readAsDataURL(file)

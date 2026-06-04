@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { useSnipsStore } from '~/stores/snips'
+import { useSourcesStore } from '~/stores/sources'
 import type { Snip } from '~/types'
 
 const props = defineProps<{
@@ -103,9 +104,12 @@ const props = defineProps<{
 }>()
 
 const store = useSnipsStore()
+const sourcesStore = useSourcesStore()
 const { scheduleSave } = useProject()
 
-const snips = computed(() => store.orderedSnips)
+const snips = computed(() =>
+  store.orderedSnips.filter((s) => s.sourceImageId === sourcesStore.activeSourceId),
+)
 const selectedId = computed(() => store.selectedSnipId)
 
 function overlayStyle(snip: Snip) {
@@ -164,7 +168,7 @@ const drawRectStyle = computed(() => {
 
 const SNAP_THRESHOLD = 0.20
 const MIN_SNAP_PX = 60
-const LAPTOP_RATIO = 16 / 9
+const LAPTOP_RATIO = 3034.7 / 1964.07 // matches laptop3.svg screen dimensions
 const PHONE_RATIO = 9 / 16
 
 function detectSnap(w: number, h: number): 'laptop' | 'phone' | null {
@@ -211,7 +215,7 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
     const detected = isCorner ? detectSnap(w, h) : null
     resizeSnapFrame.value = detected
     if (detected === 'laptop') {
-      const newH = w * (9 / 16)
+      const newH = w / LAPTOP_RATIO
       if (dir.includes('n')) y = orig.y + orig.h - newH
       h = newH
     } else if (detected === 'phone') {

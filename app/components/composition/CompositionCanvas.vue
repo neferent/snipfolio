@@ -13,7 +13,7 @@
 import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
-import { useProjectStore } from '~/stores/project'
+import { useSourcesStore } from '~/stores/sources'
 import type { Composition } from '~/types'
 
 const props = defineProps<{
@@ -24,12 +24,11 @@ const canvas = ref<HTMLCanvasElement>()
 const container = ref<HTMLElement>()
 const { render } = useCanvasRenderer()
 const snipsStore = useSnipsStore()
-const projectStore = useProjectStore()
+const sourcesStore = useSourcesStore()
 
 const outputW = computed(() => props.composition.config.outputWidth)
 const outputH = computed(() => props.composition.config.outputHeight)
 
-// Scale to fit container maintaining aspect
 const { width: containerW, height: containerH } = useElementSize(container)
 
 const scale = computed(() => {
@@ -45,19 +44,26 @@ const scale = computed(() => {
 const previewW = computed(() => Math.round(outputW.value * scale.value))
 const previewH = computed(() => Math.round(outputH.value * scale.value))
 
+function buildSourceImagesMap(): Map<string, HTMLImageElement> {
+  const map = new Map<string, HTMLImageElement>()
+  for (const [id, { img }] of sourcesStore.loadedImages) {
+    map.set(id, img)
+  }
+  return map
+}
+
 function renderCanvas() {
   const c = canvas.value
-  const src = projectStore.sourceImage
-  if (!c || !src) return
+  if (!c || sourcesStore.loadedImages.size === 0) return
   render(c, {
     composition: props.composition,
     snips: snipsStore.snips,
-    sourceImage: src,
+    sourceImages: buildSourceImagesMap(),
   })
 }
 
 watch(
-  [() => props.composition, () => snipsStore.snips, () => projectStore.sourceImage],
+  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages],
   () => nextTick(renderCanvas),
   { deep: true, immediate: true },
 )

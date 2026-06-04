@@ -1,8 +1,9 @@
 import { useProjectStore } from '~/stores/project'
 import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
+import { useSourcesStore } from '~/stores/sources'
 import { useAuthStore } from '~/stores/auth'
-import type { Project, ProjectSnapshot, Snip, Composition } from '~/types'
+import type { Project, SourceImage, Snip, Composition } from '~/types'
 
 function generateId() {
   return crypto.randomUUID()
@@ -12,6 +13,7 @@ export function useProject() {
   const projectStore = useProjectStore()
   const snipsStore = useSnipsStore()
   const compositionsStore = useCompositionsStore()
+  const sourcesStore = useSourcesStore()
   const authStore = useAuthStore()
   const config = useRuntimeConfig()
 
@@ -98,21 +100,50 @@ export function useProject() {
       const project = projects.find((p) => p.id === id)
       if (!project) throw new Error('Project not found')
       projectStore.setProject(project)
-      const snips = loadLocalData<Snip[]>(`snipfolio_snips_${id}`, [])
+
+      let snips = loadLocalData<Snip[]>(`snipfolio_snips_${id}`, [])
       const compositions = loadLocalData<Composition[]>(`snipfolio_comps_${id}`, [])
+      let sources = loadLocalData<SourceImage[]>(`snipfolio_sources_${id}`, [])
+
+      // Migration: if no sources but old single-image snips exist, synthesize a default source
+      if (sources.length === 0) {
+        const oldSrc = import.meta.client ? localStorage.getItem(`snipfolio_img_${id}`) : null
+        if (oldSrc) {
+          const defaultSource: SourceImage = {
+            id: 'default',
+            projectId: id,
+            label: 'Screenshot',
+            filename: 'screenshot',
+            width: 0,
+            height: 0,
+            sortOrder: 0,
+          }
+          sources = [defaultSource]
+          snips = snips.map((s) => ({ ...s, sourceImageId: s.sourceImageId ?? 'default' }))
+        }
+      }
+
+      sourcesStore.setSources(sources)
+      sourcesStore.setActiveSource(sources[0]?.id ?? null)
       snipsStore.setSnips(snips)
       compositionsStore.setCompositions(compositions)
-      restoreImage(id)
+      restoreImages(id, sources)
       return project
     }
     const sb = useSupabaseClient()
-    const [{ data: proj }, { data: snipsData }, { data: compsData }] = await Promise.all([
-      sb.from('projects').select('*').eq('id', id).single(),
-      sb.from('snips').select('*').eq('project_id', id).order('sort_order'),
-      sb.from('compositions').select('*').eq('project_id', id).order('sort_order'),
-    ])
+    const [{ data: proj }, { data: snipsData }, { data: compsData }, { data: sourcesData }] =
+      await Promise.all([
+        sb.from('projects').select('*').eq('id', id).single(),
+        sb.from('snips').select('*').eq('project_id', id).order('sort_order'),
+        sb.from('compositions').select('*').eq('project_id', id).order('sort_order'),
+        sb.from('source_images').select('*').eq('project_id', id).order('sort_order'),
+      ])
     if (!proj) throw new Error('Project not found')
     projectStore.setProject(rowToProject(proj))
+
+    const sources = (sourcesData ?? []).map(rowToSourceImage)
+    sourcesStore.setSources(sources)
+    sourcesStore.setActiveSource(sources[0]?.id ?? null)
     snipsStore.setSnips((snipsData ?? []).map(rowToSnip))
     compositionsStore.setCompositions((compsData ?? []).map(rowToComposition))
     return proj
@@ -141,6 +172,7 @@ export function useProject() {
         saveLocalProjects(projects)
         saveLocalData(`snipfolio_snips_${project.id}`, snipsStore.snips)
         saveLocalData(`snipfolio_comps_${project.id}`, compositionsStore.compositions)
+        saveLocalData(`snipfolio_sources_${project.id}`, sourcesStore.sources)
       } else {
         const sb = useSupabaseClient()
         await Promise.all([
@@ -150,6 +182,7 @@ export function useProject() {
             .eq('id', project.id),
           sb.from('snips').upsert(snipsStore.snips.map(snipToRow)),
           sb.from('compositions').upsert(compositionsStore.compositions.map(compositionToRow)),
+          sb.from('source_images').upsert(sourcesStore.sources.map(sourceImageToRow)),
         ])
       }
       projectStore.setSaveStatus('saved')
@@ -158,22 +191,33 @@ export function useProject() {
     }
   }
 
-  function saveImage(projectId: string, src: string) {
+  function saveImage(projectId: string, sourceId: string, src: string) {
     if (!import.meta.client) return
     try {
-      localStorage.setItem(`snipfolio_img_${projectId}`, src)
+      localStorage.setItem(`snipfolio_img_${projectId}_${sourceId}`, src)
     } catch {
       // Quota exceeded — image too large for localStorage; user will need to re-upload on refresh
     }
   }
 
-  function restoreImage(projectId: string) {
+  function restoreImages(projectId: string, sources: SourceImage[]) {
     if (!import.meta.client) return
-    const src = localStorage.getItem(`snipfolio_img_${projectId}`)
-    if (!src) return
-    const img = new Image()
-    img.onload = () => projectStore.setSourceImage(img, src)
-    img.src = src
+    for (const source of sources) {
+      // Check per-source key first, then fall back to the old single-image key for migration
+      const src =
+        localStorage.getItem(`snipfolio_img_${projectId}_${source.id}`) ??
+        (source.id === 'default' ? localStorage.getItem(`snipfolio_img_${projectId}`) : null)
+      if (!src) continue
+      const img = new Image()
+      img.onload = () => {
+        sourcesStore.setLoadedImage(source.id, img, src)
+        // Update stored dimensions if they were 0 (migration case)
+        if (source.width === 0 || source.height === 0) {
+          sourcesStore.updateSource(source.id, { width: img.naturalWidth, height: img.naturalHeight })
+        }
+      }
+      img.src = src
+    }
   }
 
   return { fetchProjects, createProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage }
@@ -190,10 +234,35 @@ function rowToProject(row: Record<string, unknown>): Project {
   }
 }
 
+function rowToSourceImage(row: Record<string, unknown>): SourceImage {
+  return {
+    id: row.id as string,
+    projectId: (row.project_id ?? row.projectId) as string,
+    label: row.label as string,
+    filename: row.filename as string,
+    width: (row.width ?? 0) as number,
+    height: (row.height ?? 0) as number,
+    sortOrder: (row.sort_order ?? row.sortOrder ?? 0) as number,
+  }
+}
+
+function sourceImageToRow(s: SourceImage) {
+  return {
+    id: s.id,
+    project_id: s.projectId,
+    label: s.label,
+    filename: s.filename,
+    width: s.width,
+    height: s.height,
+    sort_order: s.sortOrder,
+  }
+}
+
 function rowToSnip(row: Record<string, unknown>): Snip {
   return {
     id: row.id as string,
     projectId: (row.project_id ?? row.projectId) as string,
+    sourceImageId: (row.source_image_id ?? row.sourceImageId ?? 'default') as string,
     label: row.label as string,
     x: row.x as number,
     y: row.y as number,
@@ -208,6 +277,7 @@ function snipToRow(snip: Snip) {
   return {
     id: snip.id,
     project_id: snip.projectId,
+    source_image_id: snip.sourceImageId,
     label: snip.label,
     x: snip.x,
     y: snip.y,

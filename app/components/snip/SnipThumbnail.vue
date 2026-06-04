@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { useProjectStore } from '~/stores/project'
+import { useSourcesStore } from '~/stores/sources'
 import type { Snip } from '~/types'
 
 const props = defineProps<{
@@ -12,15 +12,15 @@ const props = defineProps<{
 }>()
 
 const canvas = ref<HTMLCanvasElement>()
-const projectStore = useProjectStore()
+const sourcesStore = useSourcesStore()
 
 function draw() {
   const c = canvas.value
-  const src = projectStore.sourceImage
-  if (!c || !src) return
+  const loaded = sourcesStore.getImage(props.snip.sourceImageId)
+  if (!c || !loaded) return
+  const src = loaded.img
 
   if (props.preview) {
-    // Draw the full snip maintaining aspect ratio, capped at 512px on the longest side
     const maxPx = 512
     const scale = Math.min(maxPx / props.snip.width, maxPx / props.snip.height, 1)
     c.width = Math.round(props.snip.width * scale)
@@ -28,7 +28,6 @@ function draw() {
     const ctx = c.getContext('2d')!
     ctx.drawImage(src, props.snip.x, props.snip.y, props.snip.width, props.snip.height, 0, 0, c.width, c.height)
   } else {
-    // Square thumbnail with center-crop
     c.width = 36
     c.height = 36
     const ctx = c.getContext('2d')!
@@ -44,5 +43,5 @@ function draw() {
 }
 
 onMounted(draw)
-watch(() => [props.snip, props.preview, projectStore.sourceImage], draw)
+watch(() => [props.snip, props.preview, sourcesStore.loadedImages], draw, { deep: true })
 </script>

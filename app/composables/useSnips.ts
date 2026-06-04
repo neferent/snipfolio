@@ -1,16 +1,19 @@
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
+import { useSourcesStore } from '~/stores/sources'
 import type { Snip, DeviceFrame } from '~/types'
 
 export function useSnips() {
   const store = useSnipsStore()
   const projectStore = useProjectStore()
+  const sourcesStore = useSourcesStore()
   const { scheduleSave } = useProject()
 
   function createSnip(x: number, y: number, width: number, height: number): Snip {
     const snip: Snip = {
       id: crypto.randomUUID(),
       projectId: projectStore.current!.id,
+      sourceImageId: sourcesStore.activeSourceId ?? 'default',
       label: store.nextLabel(),
       x: Math.round(x),
       y: Math.round(y),

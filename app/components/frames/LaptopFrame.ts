@@ -5,6 +5,14 @@ export interface FrameDrawResult {
   screenHeight: number
 }
 
+// SVG coordinate space (laptop3.svg)
+const SVG_W = 3809.99
+const SVG_H = 2300
+
+// White screen area in SVG coords
+const SCR_X = 387.63, SCR_Y = 59.07
+const SCR_W = 3034.7,  SCR_H = 1964.07
+
 export function drawLaptopFrame(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -13,126 +21,191 @@ export function drawLaptopFrame(
   height: number,
   imageSource: CanvasImageSource,
 ): FrameDrawResult {
-  const baseH = Math.round(height * 0.072)
-  const bezel = Math.max(14, width * 0.03)
-  const screenAreaH = height - baseH
-  const screenR = 6
+  const sx = width / SVG_W
+  const sy = height / SVG_H
 
-  const screenX = x + bezel
-  const screenY = y + bezel
-  const screenW = width - bezel * 2
-  const screenH = screenAreaH - bezel * 1.8
+  const screenX = x + SCR_X * sx
+  const screenY = y + SCR_Y * sy
+  const screenWidth = SCR_W * sx
+  const screenHeight = SCR_H * sy
 
-  // Drop shadow
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.scale(sx, sy)
+  ctx.strokeStyle = 'rgba(0,0,0,0)'
+  ctx.miterLimit = 4
+
+  // Shadow pass — full laptop silhouette (lid + base) as one fill so shadow wraps the whole device
   ctx.save()
   ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = 30
-  ctx.shadowOffsetY = 12
-
-  // Screen lid outer
-  ctx.fillStyle = '#2a2a2a'
+  ctx.shadowBlur = 30 / Math.min(sx, sy)
+  ctx.shadowOffsetY = 12 / Math.min(sx, sy)
+  ctx.fillStyle = '#262c44'
   ctx.beginPath()
-  ctx.roundRect(x, y, width, screenAreaH, [screenR, screenR, 0, 0])
+  // lid sub-path
+  ctx.moveTo(439.37, 0)
+  ctx.lineTo(3370.58, 0)
+  ctx.bezierCurveTo(3427.66, 0, 3474.01, 46.34, 3474.01, 103.43)
+  ctx.lineTo(3474.01, 2144.96)
+  ctx.lineTo(335.94, 2144.96)
+  ctx.lineTo(335.94, 103.43)
+  ctx.bezierCurveTo(335.94, 46.35, 382.28, 0, 439.37, 0)
+  ctx.closePath()
+  // base sub-path
+  ctx.moveTo(3809.98, 2144.94)
+  ctx.lineTo(3809.98, 2207.37)
+  ctx.bezierCurveTo(3809.98, 2212.58, 3809.43, 2217.6, 3808.36, 2222.47)
+  ctx.bezierCurveTo(3801.46, 2254.15, 3773.25, 2277.85, 3739.51, 2277.85)
+  ctx.lineTo(3605.98, 2277.85)
+  ctx.lineTo(3588.48, 2300)
+  ctx.lineTo(3363.28, 2300)
+  ctx.lineTo(3345.78, 2277.85)
+  ctx.lineTo(464.21, 2277.85)
+  ctx.lineTo(446.71, 2300)
+  ctx.lineTo(221.51, 2300)
+  ctx.lineTo(204.01, 2277.85)
+  ctx.lineTo(70.48, 2277.85)
+  ctx.bezierCurveTo(36.7, 2277.85, 8.53, 2254.15, 1.63, 2222.47)
+  ctx.bezierCurveTo(0.56, 2217.6, 0.01, 2212.58, 0.01, 2207.37)
+  ctx.lineTo(0.01, 2144.94)
+  ctx.lineTo(3809.99, 2144.94)
+  ctx.closePath()
   ctx.fill()
   ctx.restore()
 
-  // Screen inner black frame
-  ctx.fillStyle = '#111'
+  // Base / stand
+  ctx.save()
+  ctx.fillStyle = '#262c44'
   ctx.beginPath()
-  ctx.roundRect(x + 3, y + 3, width - 6, screenAreaH - 3, [screenR - 1, screenR - 1, 0, 0])
+  ctx.moveTo(3809.98, 2144.94)
+  ctx.lineTo(3809.98, 2207.37)
+  ctx.bezierCurveTo(3809.98, 2212.58, 3809.43, 2217.6, 3808.36, 2222.47)
+  ctx.bezierCurveTo(3801.46, 2254.15, 3773.25, 2277.85, 3739.51, 2277.85)
+  ctx.lineTo(3605.98, 2277.85)
+  ctx.lineTo(3588.48, 2300)
+  ctx.lineTo(3363.28, 2300)
+  ctx.lineTo(3345.78, 2277.85)
+  ctx.lineTo(464.21, 2277.85)
+  ctx.lineTo(446.71, 2300)
+  ctx.lineTo(221.51, 2300)
+  ctx.lineTo(204.01, 2277.85)
+  ctx.lineTo(70.48, 2277.85)
+  ctx.bezierCurveTo(36.7, 2277.85, 8.53, 2254.15, 1.63, 2222.47)
+  ctx.bezierCurveTo(0.56, 2217.6, 0.01, 2212.58, 0.01, 2207.37)
+  ctx.lineTo(0.01, 2144.94)
+  ctx.lineTo(3809.99, 2144.94)
+  ctx.closePath()
   ctx.fill()
+  ctx.stroke()
+  ctx.restore()
 
-  // Screen content background
-  ctx.fillStyle = '#000'
-  ctx.fillRect(screenX, screenY, screenW, screenH)
+  // Lid outer body
+  ctx.save()
+  ctx.fillStyle = '#262c44'
+  ctx.beginPath()
+  ctx.moveTo(439.37, 0)
+  ctx.lineTo(3370.58, 0)
+  ctx.bezierCurveTo(3427.66, 0, 3474.01, 46.34, 3474.01, 103.43)
+  ctx.lineTo(3474.01, 2144.96)
+  ctx.lineTo(335.94, 2144.96)
+  ctx.lineTo(335.94, 103.43)
+  ctx.bezierCurveTo(335.94, 46.35, 382.28, 0, 439.37, 0)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
 
-  // Draw content
+  // Inner bezel
   ctx.save()
   ctx.beginPath()
-  ctx.rect(screenX, screenY, screenW, screenH)
+  ctx.moveTo(434.17, 18.46)
+  ctx.lineTo(3375.79, 18.46)
+  ctx.bezierCurveTo(3419.81, 18.46, 3455.55, 54.2, 3455.55, 98.22)
+  ctx.lineTo(3455.55, 2137.57)
+  ctx.lineTo(354.4, 2137.57)
+  ctx.lineTo(354.4, 98.22)
+  ctx.bezierCurveTo(354.4, 54.2, 390.14, 18.46, 434.16, 18.46)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
+
+  // Image clipped to screen area
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(3422.33, 91.48)
+  ctx.lineTo(3422.33, 2023.14)
+  ctx.lineTo(387.63, 2023.14)
+  ctx.lineTo(387.63, 91.48)
+  ctx.bezierCurveTo(387.63, 73.58, 402.14, 59.07, 420.04, 59.07)
+  ctx.lineTo(3389.92, 59.07)
+  ctx.bezierCurveTo(3407.82, 59.07, 3422.33, 73.58, 3422.33, 91.48)
+  ctx.closePath()
   ctx.clip()
-  ctx.drawImage(imageSource, screenX, screenY, screenW, screenH)
+  ctx.drawImage(imageSource, SCR_X, SCR_Y, SCR_W, SCR_H)
   ctx.restore()
 
-  // Camera dot at top center
-  const camR = Math.max(3, bezel * 0.2)
-  const camX = x + width / 2
-  const camY = y + bezel * 0.5
-  ctx.fillStyle = '#333'
-  ctx.beginPath()
-  ctx.arc(camX, camY, camR, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = 'rgba(80,160,255,0.25)'
-  ctx.beginPath()
-  ctx.arc(camX, camY, camR * 0.5, 0, Math.PI * 2)
-  ctx.fill()
-
-  // Hinge bar
-  const hingeY = y + screenAreaH
-  ctx.fillStyle = '#1a1a1a'
-  ctx.fillRect(x, hingeY, width, 3)
-
-  // Base / keyboard deck
-  const baseW = width * 1.06
-  const baseX = x - (baseW - width) / 2
-  const baseY = hingeY + 3
-  const baseRadius = [0, 0, 5, 5] as [number, number, number, number]
-
+  // Top notch bar
   ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.4)'
-  ctx.shadowBlur = 16
-  ctx.shadowOffsetY = 6
-
-  // Base gradient (dark aluminum look)
-  const baseGrad = ctx.createLinearGradient(baseX, baseY, baseX, baseY + baseH)
-  baseGrad.addColorStop(0, '#3a3a3a')
-  baseGrad.addColorStop(0.4, '#2e2e2e')
-  baseGrad.addColorStop(1, '#1e1e1e')
-  ctx.fillStyle = baseGrad
   ctx.beginPath()
-  ctx.roundRect(baseX, baseY, baseW, baseH, baseRadius)
+  ctx.moveTo(1720.38, 55.38)
+  ctx.lineTo(2089.56, 55.38)
+  ctx.lineTo(2089.56, 100.64)
+  ctx.bezierCurveTo(2089.56, 110.3, 2081.72, 118.14, 2072.06, 118.14)
+  ctx.lineTo(1737.88, 118.14)
+  ctx.bezierCurveTo(1728.22, 118.14, 1720.38, 110.3, 1720.38, 100.64)
+  ctx.lineTo(1720.38, 55.38)
+  ctx.closePath()
   ctx.fill()
+  ctx.stroke()
   ctx.restore()
 
-  // Keyboard suggestion — subtle grid of tiny key shapes
-  const keyAreaX = baseX + baseW * 0.12
-  const keyAreaY = baseY + baseH * 0.18
-  const keyAreaW = baseW * 0.76
-  const keyAreaH = baseH * 0.52
-  const cols = 14
-  const rows = 4
-  const keyW = (keyAreaW / cols) * 0.82
-  const keyH = (keyAreaH / rows) * 0.7
-  const kGapX = (keyAreaW - keyW * cols) / (cols - 1)
-  const kGapY = (keyAreaH - keyH * rows) / (rows - 1)
-  ctx.fillStyle = 'rgba(255,255,255,0.06)'
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const kx = keyAreaX + c * (keyW + kGapX)
-      const ky = keyAreaY + r * (keyH + kGapY)
-      ctx.beginPath()
-      ctx.roundRect(kx, ky, keyW, keyH, 1)
-      ctx.fill()
-    }
-  }
-
-  // Touchpad
-  const padW = baseW * 0.22
-  const padH = baseH * 0.38
-  const padX = baseX + (baseW - padW) / 2
-  const padY = baseY + baseH * 0.54
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)'
-  ctx.lineWidth = 0.5
+  // Camera dot
+  ctx.save()
+  ctx.fillStyle = '#262c44'
   ctx.beginPath()
-  ctx.roundRect(padX, padY, padW, padH, 3)
+  ctx.arc(1904.98, 73.84, 7.38, 0, Math.PI * 2)
+  ctx.closePath()
+  ctx.fill()
   ctx.stroke()
+  ctx.restore()
 
-  // Base edge highlight
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'
-  ctx.lineWidth = 1
+  // Hinge cover
+  ctx.save()
   ctx.beginPath()
-  ctx.roundRect(baseX + 0.5, baseY + 0.5, baseW - 1, baseH - 1, baseRadius)
+  ctx.moveTo(2230.34, 2137.57)
+  ctx.bezierCurveTo(2224.43, 2165, 2200.07, 2185.56, 2170.86, 2185.56)
+  ctx.lineTo(1624.32, 2185.56)
+  ctx.bezierCurveTo(1595.12, 2185.56, 1570.75, 2165, 1564.84, 2137.57)
+  ctx.lineTo(2230.33, 2137.57)
+  ctx.closePath()
+  ctx.fill()
   ctx.stroke()
+  ctx.restore()
 
-  return { screenX, screenY, screenWidth: screenW, screenHeight: screenH }
+  // Bottom shadow overlay
+  ctx.save()
+  ctx.globalAlpha = 0.14
+  ctx.beginPath()
+  ctx.moveTo(3808.35, 2222.47)
+  ctx.bezierCurveTo(3801.45, 2254.15, 3773.24, 2277.85, 3739.5, 2277.85)
+  ctx.lineTo(3605.97, 2277.85)
+  ctx.lineTo(3588.47, 2300)
+  ctx.lineTo(3363.27, 2300)
+  ctx.lineTo(3345.77, 2277.85)
+  ctx.lineTo(464.21, 2277.85)
+  ctx.lineTo(446.71, 2300)
+  ctx.lineTo(221.51, 2300)
+  ctx.lineTo(204.01, 2277.85)
+  ctx.lineTo(70.48, 2277.85)
+  ctx.bezierCurveTo(36.7, 2277.85, 8.53, 2254.15, 1.63, 2222.47)
+  ctx.lineTo(3808.36, 2222.47)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
+
+  ctx.restore()
+
+  return { screenX, screenY, screenWidth, screenHeight }
 }

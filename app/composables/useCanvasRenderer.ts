@@ -1,5 +1,5 @@
 import { drawPhoneFrame } from '~/components/frames/PhoneFrame'
-import { drawBrowserFrame } from '~/components/frames/BrowserFrame'
+import { drawBrowserFrame, browserToolbarHeight } from '~/components/frames/BrowserFrame'
 import { drawLaptopFrame } from '~/components/frames/LaptopFrame'
 import type {
   Snip,
@@ -17,12 +17,12 @@ import { isSingleConfig, isCollageConfig } from '~/types'
 export interface RenderInput {
   composition: Composition
   snips: Snip[]
-  sourceImage: HTMLImageElement
+  sourceImages: Map<string, HTMLImageElement>
 }
 
 export function useCanvasRenderer() {
   function render(canvas: HTMLCanvasElement, input: RenderInput) {
-    const { composition, snips, sourceImage } = input
+    const { composition, snips, sourceImages } = input
     const cfg = composition.config
     const ctx = canvas.getContext('2d')!
     canvas.width = cfg.outputWidth
@@ -30,9 +30,9 @@ export function useCanvasRenderer() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (isSingleConfig(cfg)) {
-      renderSingle(ctx, cfg, snips, sourceImage)
+      renderSingle(ctx, cfg, snips, sourceImages)
     } else if (isCollageConfig(cfg)) {
-      renderCollage(ctx, cfg, snips, sourceImage)
+      renderCollage(ctx, cfg, snips, sourceImages)
     }
   }
 
@@ -44,18 +44,22 @@ function renderSingle(
   ctx: CanvasRenderingContext2D,
   cfg: SingleCompositionConfig,
   snips: Snip[],
-  source: HTMLImageElement,
+  sourceImages: Map<string, HTMLImageElement>,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
-  drawBackground(ctx, W, H, cfg.background, source)
-
   const snip = snips.find((s) => s.id === cfg.snipId)
-  if (!snip) return
+  const fallbackSource = sourceImages.values().next().value as HTMLImageElement | undefined
+  const bgSource = (snip ? sourceImages.get(snip.sourceImageId) : undefined) ?? fallbackSource
+  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
 
-  const contentCanvas = extractSnip(snip, source)
+  if (!snip) return
+  const snipSource = sourceImages.get(snip.sourceImageId)
+  if (!snipSource) return
+
+  const contentCanvas = extractSnip(snip, snipSource)
   const aspect = snip.width / snip.height
 
-  // Compute framed size preserving aspect
+  // Compute content size fitting within scale limit
   const maxW = W * cfg.scale
   const maxH = H * cfg.scale
   let fw = maxW
@@ -65,10 +69,18 @@ function renderSingle(
     fw = fh * aspect
   }
 
-  // Add frame padding
-  const framePad = computeFramePadding(cfg.deviceFrame, fw, fh)
-  const totalW = fw + framePad.left + framePad.right
-  const totalH = fh + framePad.top + framePad.bottom
+  // Add frame padding — scale content down if total frame overflows available space
+  let framePad = computeFramePadding(cfg.deviceFrame, fw, fh)
+  let totalW = fw + framePad.left + framePad.right
+  let totalH = fh + framePad.top + framePad.bottom
+  if (totalW > maxW || totalH > maxH) {
+    const shrink = Math.min(maxW / totalW, maxH / totalH)
+    fw *= shrink
+    fh *= shrink
+    framePad = computeFramePadding(cfg.deviceFrame, fw, fh)
+    totalW = fw + framePad.left + framePad.right
+    totalH = fh + framePad.top + framePad.bottom
+  }
 
   const cx = W / 2 + cfg.offsetX
   const cy = H / 2 + cfg.offsetY
@@ -87,10 +99,11 @@ function renderCollage(
   ctx: CanvasRenderingContext2D,
   cfg: CollageCompositionConfig,
   snips: Snip[],
-  source: HTMLImageElement,
+  sourceImages: Map<string, HTMLImageElement>,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
-  drawBackground(ctx, W, H, cfg.background, source)
+  const fallbackSource = sourceImages.values().next().value as HTMLImageElement | undefined
+  if (fallbackSource) drawBackground(ctx, W, H, cfg.background, fallbackSource)
 
   const slots = cfg.slots
   const layout = computeCollageLayout(cfg.template, W, H, slots.length, cfg.gap)
@@ -100,7 +113,9 @@ function renderCollage(
     if (!rect) return
     const snip = snips.find((s) => s.id === slot.snipId)
     if (!snip) return
-    const content = extractSnip(snip, source)
+    const snipSource = sourceImages.get(snip.sourceImageId) ?? fallbackSource
+    if (!snipSource) return
+    const content = extractSnip(snip, snipSource)
 
     // Subtract frame padding from available slot area to get max content area
     const estPad = computeFramePadding(slot.deviceFrame, rect.w, rect.h)
@@ -195,17 +210,24 @@ interface Padding {
 
 function computeFramePadding(frame: DeviceFrame, contentW: number, contentH: number): Padding {
   if (frame === 'phone') {
-    const bezel = Math.max(10, contentW * 0.06)
-    return { left: bezel, right: bezel, top: bezel, bottom: bezel }
+    // Ratios derived from mobile.svg coordinate space (screen 709.65×1539.77 inside 772.5×1600 body)
+    return {
+      left: contentW * 0.048,
+      right: contentW * 0.041,
+      top: contentH * 0.0196,
+      bottom: contentH * 0.0196,
+    }
   }
   if (frame === 'browser') {
-    const toolbarH = Math.max(36, contentH * 0.048)
-    return { left: 0, right: 0, top: toolbarH, bottom: 0 }
+    return { left: 0, right: 0, top: browserToolbarHeight(contentW), bottom: 0 }
   }
   if (frame === 'laptop') {
-    const bezel = Math.max(14, contentW * 0.03)
-    const baseH = Math.max(20, contentH * 0.08)
-    return { left: bezel, right: bezel, top: bezel, bottom: bezel + baseH }
+    return {
+      left: contentW * 0.2333,
+      right: contentW * 0.2380,
+      top: contentH * 0.096,
+      bottom: contentH * 0.2079,
+    }
   }
   return { left: 0, right: 0, top: 0, bottom: 0 }
 }
