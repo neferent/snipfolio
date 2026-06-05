@@ -4,13 +4,13 @@ import { drawLaptopFrame } from '~/components/frames/LaptopFrame'
 import type {
   Snip,
   Composition,
-  SingleCompositionConfig,
+  FreeformCompositionConfig,
   CollageCompositionConfig,
   BackgroundConfig,
   CaptionConfig,
   DeviceFrame,
 } from '~/types'
-import { isSingleConfig, isCollageConfig } from '~/types'
+import { isFreeformConfig, isCollageConfig } from '~/types'
 
 export interface RenderInput {
   composition: Composition
@@ -29,8 +29,8 @@ export function useCanvasRenderer() {
     ctx.imageSmoothingQuality = 'high'
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    if (isSingleConfig(cfg)) {
-      renderSingle(ctx, cfg, snips, sourceImages)
+    if (isFreeformConfig(cfg)) {
+      renderFreeform(ctx, cfg, snips, sourceImages)
     } else if (isCollageConfig(cfg)) {
       renderCollage(ctx, cfg, snips, sourceImages)
     }
@@ -39,58 +39,25 @@ export function useCanvasRenderer() {
   return { render }
 }
 
-// --- Single composition ---
-function renderSingle(
+// --- Freeform composition ---
+function renderFreeform(
   ctx: CanvasRenderingContext2D,
-  cfg: SingleCompositionConfig,
+  cfg: FreeformCompositionConfig,
   snips: Snip[],
   sourceImages: Map<string, HTMLImageElement>,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
-  const snip = snips.find((s) => s.id === cfg.snipId)
   const fallbackSource = sourceImages.values().next().value as HTMLImageElement | undefined
-  const bgSource = (snip ? sourceImages.get(snip.sourceImageId) : undefined) ?? fallbackSource
-  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
+  if (fallbackSource) drawBackground(ctx, W, H, cfg.background, fallbackSource)
 
-  if (!snip) return
-  const snipSource = sourceImages.get(snip.sourceImageId)
-  if (!snipSource) return
-
-  const contentCanvas = extractSnip(snip, snipSource)
-  const aspect = snip.width / snip.height
-
-  // Compute content size — fit within scale limit but never upscale past natural size
-  const maxW = Math.min(W * cfg.scale, snip.width)
-  const maxH = Math.min(H * cfg.scale, snip.height)
-  let fw = maxW
-  let fh = fw / aspect
-  if (fh > maxH) {
-    fh = maxH
-    fw = fh * aspect
-  }
-
-  // Add frame padding — scale content down if total frame overflows available space
-  let framePad = computeFramePadding(cfg.deviceFrame, fw, fh)
-  let totalW = fw + framePad.left + framePad.right
-  let totalH = fh + framePad.top + framePad.bottom
-  if (totalW > maxW || totalH > maxH) {
-    const shrink = Math.min(maxW / totalW, maxH / totalH)
-    fw *= shrink
-    fh *= shrink
-    framePad = computeFramePadding(cfg.deviceFrame, fw, fh)
-    totalW = fw + framePad.left + framePad.right
-    totalH = fh + framePad.top + framePad.bottom
-  }
-
-  const cx = W / 2 + cfg.offsetX
-  const cy = H / 2 + cfg.offsetY
-  const drawX = cx - totalW / 2
-  const drawY = cy - totalH / 2
-
-  drawFramedContent(ctx, cfg.deviceFrame, contentCanvas, drawX, drawY, totalW, totalH)
-
-  if (cfg.caption) {
-    drawCaption(ctx, cfg.caption, drawX, drawY, totalW, totalH)
+  // Render back to front (index 0 = back)
+  for (const slot of cfg.slots) {
+    const snip = snips.find((s) => s.id === slot.snipId)
+    if (!snip) continue
+    const snipSource = sourceImages.get(snip.sourceImageId) ?? fallbackSource
+    if (!snipSource) continue
+    const content = extractSnip(snip, snipSource)
+    drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor)
   }
 }
 
@@ -174,7 +141,6 @@ function drawBackground(
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, W, H)
   } else if (bg.type === 'blur') {
-    // Draw a scaled-up blurred region from the source image
     const region = bg.blurRegion ?? { x: 0, y: 0, width: source.naturalWidth, height: source.naturalHeight }
     const tmpCanvas = document.createElement('canvas')
     tmpCanvas.width = W
@@ -183,18 +149,7 @@ function drawBackground(
     tmpCtx.imageSmoothingEnabled = true
     tmpCtx.imageSmoothingQuality = 'high'
     tmpCtx.filter = 'blur(24px)'
-    tmpCtx.drawImage(
-      source,
-      region.x,
-      region.y,
-      region.width,
-      region.height,
-      -20,
-      -20,
-      W + 40,
-      H + 40,
-    )
-    // Darken overlay
+    tmpCtx.drawImage(source, region.x, region.y, region.width, region.height, -20, -20, W + 40, H + 40)
     tmpCtx.fillStyle = 'rgba(0,0,0,0.4)'
     tmpCtx.fillRect(0, 0, W, H)
     ctx.drawImage(tmpCanvas, 0, 0)
@@ -212,7 +167,6 @@ interface Padding {
 
 function computeFramePadding(frame: DeviceFrame, contentW: number, contentH: number): Padding {
   if (frame === 'phone') {
-    // Ratios derived from mobile.svg coordinate space (screen 709.65×1539.77 inside 772.5×1600 body)
     return {
       left: contentW * 0.048,
       right: contentW * 0.041,
@@ -242,16 +196,17 @@ function drawFramedContent(
   y: number,
   w: number,
   h: number,
+  frameColor?: string,
 ) {
   switch (frame) {
     case 'phone':
-      drawPhoneFrame(ctx, x, y, w, h, content)
+      drawPhoneFrame(ctx, x, y, w, h, content, frameColor)
       break
     case 'browser':
-      drawBrowserFrame(ctx, x, y, w, h, content)
+      drawBrowserFrame(ctx, x, y, w, h, content, frameColor)
       break
     case 'laptop':
-      drawLaptopFrame(ctx, x, y, w, h, content)
+      drawLaptopFrame(ctx, x, y, w, h, content, frameColor)
       break
     default:
       ctx.drawImage(content, x, y, w, h)
@@ -285,9 +240,6 @@ function drawCaption(
 }
 
 // --- Justified grid layout ---
-// Snips are sorted by area, assigned to rows so the layout fills the canvas as
-// naturally as possible, then justified in both axes so all 4 sides are flush.
-// Cover rendering fills each cell — content may be slightly clipped.
 function computeJustifiedLayout(
   W: number,
   H: number,
@@ -303,12 +255,9 @@ function computeJustifiedLayout(
   if (n === 0) return []
   if (n === 1) return [{ x: pad, y: pad, w: iW, h: iH }]
 
-  // Sort slots by natural area descending for visual hierarchy
   const order = [...Array(n).keys()].sort((a, b) => areas[b]! - areas[a]!)
   const sortedAspects = order.map((i) => aspects[i]!)
 
-  // Try each row count; pick the one whose natural total height is closest to iH,
-  // minimising the distortion that cover rendering needs to correct.
   let bestRows: number[][] = []
   let bestScore = Infinity
 
@@ -321,8 +270,6 @@ function computeJustifiedLayout(
       }, 0) +
       gap * (rows.length - 1)
 
-    // Score = aspect ratio distortion from vertical scaling.
-    // vScale stretches/shrinks every cell uniformly; minimise max(vScale, 1/vScale).
     const score = totalH > iH ? totalH / iH : iH / totalH
     if (score < bestScore) {
       bestScore = score
@@ -330,19 +277,16 @@ function computeJustifiedLayout(
     }
   }
 
-  // Natural row heights (each row fills canvas width exactly)
   const naturalH = bestRows.map((row) => {
     const sumA = row.reduce((s, j) => s + sortedAspects[j]!, 0)
     return (iW - gap * (row.length - 1)) / sumA
   })
 
-  // Vertical scale: stretch/compress rows so total height = iH
   const totalNatH = naturalH.reduce((s, h) => s + h, 0) + gap * (bestRows.length - 1)
   const vScale = iH / totalNatH
 
   const rects: Array<{ x: number; y: number; w: number; h: number }> = new Array(n)
 
-  // Accumulate y using integers to avoid sub-pixel gaps between rows
   let yAcc = pad
   for (let r = 0; r < bestRows.length; r++) {
     const row = bestRows[r]!
@@ -366,7 +310,6 @@ function computeJustifiedLayout(
   return rects
 }
 
-// Greedy partition of n items into R rows, balancing total aspect sum per row.
 function partitionIntoRows(aspects: number[], R: number): number[][] {
   const n = aspects.length
   if (R >= n) return aspects.map((_, i) => [i])

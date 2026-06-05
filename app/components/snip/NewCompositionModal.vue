@@ -1,8 +1,8 @@
 <template>
-  <AppModal :open="open" title="New Composition" max-width="760px" @close="$emit('close')">
+  <AppModal :open="open" title="New Composition" max-width="820px" @close="$emit('close')">
     <div class="flex gap-5">
       <!-- Left: form controls -->
-      <div class="w-60 shrink-0 space-y-4">
+      <div class="w-64 shrink-0 space-y-4">
         <div class="space-y-1.5">
           <label class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
           <input
@@ -24,70 +24,114 @@
           </div>
         </div>
 
+        <!-- Type picker -->
         <div class="space-y-2">
           <label class="text-xs font-medium text-[var(--color-text-muted)]">Type</label>
           <div class="grid grid-cols-2 gap-2">
             <button
-              class="rounded-lg border p-3 text-sm transition"
+              v-for="t in types"
+              :key="t.value"
+              class="rounded-lg border p-3 text-sm transition text-left"
               :class="
-                type === 'single'
+                type === t.value
                   ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
                   : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-white/20'
               "
-              @click="type = 'single'"
+              @click="type = t.value"
             >
-              <div class="text-lg">🖼</div>
-              <div class="mt-1 font-medium">Single</div>
-              <div class="text-[10px] opacity-70">One snip, styled</div>
-            </button>
-            <button
-              class="rounded-lg border p-3 text-sm transition"
-              :class="
-                type === 'collage'
-                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                  : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-white/20'
-              "
-              @click="type = 'collage'"
-            >
-              <div class="text-lg">⊞</div>
-              <div class="mt-1 font-medium">Auto-Collage</div>
-              <div class="text-[10px] opacity-70">No frames · may clip</div>
+              <div class="text-lg">{{ t.icon }}</div>
+              <div class="mt-1 font-medium text-xs">{{ t.label }}</div>
+              <div class="text-[10px] opacity-70 leading-tight mt-0.5">{{ t.hint }}</div>
             </button>
           </div>
         </div>
 
-        <!-- Snip selector -->
+        <!-- Snip selector — adapts per type -->
         <div class="space-y-2">
-          <label class="text-xs font-medium text-[var(--color-text-muted)]">
-            {{ type === 'single' ? 'Select snip' : `Select snips${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}` }}
-          </label>
-          <div class="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
-            <label
-              v-for="snip in snips"
-              :key="snip.id"
-              class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
-            >
-              <input
-                v-if="type === 'collage'"
-                type="checkbox"
-                :value="snip.id"
-                v-model="selectedIds"
-                class="accent-[var(--color-accent)]"
-              />
-              <input
-                v-else
-                type="radio"
-                :value="snip.id"
-                v-model="singleId"
-                class="accent-[var(--color-accent)]"
-              />
-              <SnipThumbnail :snip="snip" class="size-7 rounded" />
-              <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
+          <!-- Laptop: single radio -->
+          <template v-if="type === 'laptop'">
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Laptop snip</label>
+            <div class="max-h-40 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
+              <label
+                v-for="snip in snips"
+                :key="snip.id"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+              >
+                <input type="radio" :value="snip.id" v-model="laptopSnipId" class="accent-[var(--color-accent)]" />
+                <SnipThumbnail :snip="snip" class="size-7 rounded" />
+                <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
+              </label>
+              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+            </div>
+          </template>
+
+          <!-- Laptop + Phone: two separate pickers -->
+          <template v-else-if="type === 'laptop+phone'">
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Laptop snip</label>
+            <div class="max-h-32 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
+              <label
+                v-for="snip in snips"
+                :key="snip.id"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+              >
+                <input type="radio" :value="snip.id" v-model="laptopSnipId" class="accent-[var(--color-accent)]" />
+                <SnipThumbnail :snip="snip" class="size-7 rounded" />
+                <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
+              </label>
+              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+            </div>
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Phone snip</label>
+            <div class="max-h-32 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
+              <label
+                v-for="snip in snips"
+                :key="snip.id"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+              >
+                <input type="radio" :value="snip.id" v-model="phoneSnipId" class="accent-[var(--color-accent)]" />
+                <SnipThumbnail :snip="snip" class="size-7 rounded" />
+                <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
+              </label>
+              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+            </div>
+          </template>
+
+          <!-- Auto: 2+ checkboxes -->
+          <template v-else-if="type === 'auto'">
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">
+              Snips <span v-if="selectedIds.length > 0" class="text-[var(--color-accent)]">({{ selectedIds.length }})</span>
             </label>
-            <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">
-              No snips yet — draw some first
-            </p>
-          </div>
+            <div class="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
+              <label
+                v-for="snip in snips"
+                :key="snip.id"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+              >
+                <input type="checkbox" :value="snip.id" v-model="selectedIds" class="accent-[var(--color-accent)]" />
+                <SnipThumbnail :snip="snip" class="size-7 rounded" />
+                <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
+              </label>
+              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+            </div>
+          </template>
+
+          <!-- Freeform: optional checkboxes (can add more later in editor) -->
+          <template v-else>
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">
+              Initial snips <span class="text-[var(--color-text-muted)] font-normal">(optional)</span>
+            </label>
+            <div class="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
+              <label
+                v-for="snip in snips"
+                :key="snip.id"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+              >
+                <input type="checkbox" :value="snip.id" v-model="selectedIds" class="accent-[var(--color-accent)]" />
+                <SnipThumbnail :snip="snip" class="size-7 rounded" />
+                <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
+              </label>
+              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -97,7 +141,7 @@
         <div class="flex-1 overflow-hidden rounded-lg border border-[var(--color-border)]" style="min-height: 260px">
           <CompositionCanvas v-if="previewComposition" :composition="previewComposition" />
           <div v-else class="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
-            {{ type === 'single' ? 'Select a snip to preview' : 'Select 2+ snips to preview auto-collage' }}
+            {{ previewHint }}
           </div>
         </div>
       </div>
@@ -124,43 +168,49 @@
 <script setup lang="ts">
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
-import { useCompositionsStore } from '~/stores/compositions'
 import { useCompositions } from '~/composables/useCompositions'
-import type { Composition, SingleCompositionConfig, CollageCompositionConfig } from '~/types'
+import type { Composition, FreeformCompositionConfig, CollageCompositionConfig } from '~/types'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const snipsStore = useSnipsStore()
 const projectStore = useProjectStore()
-const { createSingleComposition, createCollageComposition } = useCompositions()
-const compositionsStore = useCompositionsStore()
+const { createLaptopComposition, createLaptopPhoneComposition, createAutoComposition, createFreeformComposition } = useCompositions()
 const router = useRouter()
 const route = useRoute()
 
 const name = ref('')
-const type = ref<'single' | 'collage'>('single')
-const singleId = ref<string>('')
+const type = ref<'laptop' | 'laptop+phone' | 'auto' | 'freeform'>('laptop')
+const laptopSnipId = ref<string>('')
+const phoneSnipId = ref<string>('')
 const selectedIds = ref<string[]>([])
 const backgroundColor = ref('#1a1a2e')
 const snips = computed(() => snipsStore.orderedSnips)
+
+const types = [
+  { value: 'laptop' as const, icon: '💻', label: 'Laptop', hint: 'One snip in a laptop frame' },
+  { value: 'laptop+phone' as const, icon: '💻📱', label: 'Laptop + Phone', hint: 'Two snips side by side' },
+  { value: 'auto' as const, icon: '⊞', label: 'Auto-Collage', hint: 'Justified grid · no frames' },
+  { value: 'freeform' as const, icon: '✦', label: 'Free-form', hint: 'Place and frame freely' },
+]
 
 watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
       const projectName = projectStore.current?.name ?? 'Project'
-      const n = compositionsStore.compositions.length + 1
-      name.value = `${projectName} - Composition ${n}`
+      name.value = `${projectName} - Composition ${snips.value.length + 1}`
       backgroundColor.value = '#1a1a2e'
-      type.value = 'single'
-      singleId.value = ''
+      type.value = 'laptop'
+      laptopSnipId.value = ''
+      phoneSnipId.value = ''
       selectedIds.value = []
     }
   },
 )
 
-const DEFAULT_BACKGROUND = computed(() => ({
+const bg = computed(() => ({
   type: 'solid' as const,
   color: backgroundColor.value,
   gradientStart: backgroundColor.value,
@@ -168,52 +218,138 @@ const DEFAULT_BACKGROUND = computed(() => ({
   gradientAngle: 135,
 }))
 
+const previewHint = computed(() => {
+  if (type.value === 'laptop') return 'Select a laptop snip to preview'
+  if (type.value === 'laptop+phone') return 'Select both snips to preview'
+  if (type.value === 'auto') return 'Select 2+ snips to preview'
+  return 'Select snips to preview (optional)'
+})
+
 const previewComposition = computed<Composition | null>(() => {
   const projectId = projectStore.current?.id ?? ''
-  if (type.value === 'single') {
-    if (!singleId.value) return null
-    const snip = snipsStore.snips.find((s) => s.id === singleId.value)
-    const config: SingleCompositionConfig = {
-      snipId: singleId.value,
-      deviceFrame: snip?.deviceFrame ?? 'none',
-      background: { ...DEFAULT_BACKGROUND.value },
-      scale: 0.8,
-      offsetX: 0,
-      offsetY: 0,
-      outputWidth: 1920,
-      outputHeight: 1080,
+  const outputWidth = 1920
+  const outputHeight = 1080
+
+  if (type.value === 'laptop') {
+    if (!laptopSnipId.value) return null
+    const snip = snipsStore.snips.find((s) => s.id === laptopSnipId.value)
+    // Laptop frame SVG aspect ≈ 1.657
+    const slotH = outputHeight * 0.68
+    const slotW = slotH * (3809.99 / 2300)
+    const config: FreeformCompositionConfig = {
+      slots: [{
+        id: '__preview_slot__',
+        snipId: laptopSnipId.value,
+        deviceFrame: 'laptop',
+        x: Math.round(outputWidth / 2 - slotW / 2),
+        y: Math.round(outputHeight / 2 - slotH / 2),
+        width: Math.round(slotW),
+        height: Math.round(slotH),
+      }],
+      background: bg.value,
+      outputWidth,
+      outputHeight,
     }
-    return { id: '__preview__', projectId, name: 'Preview', type: 'single', sortOrder: 0, config }
-  } else {
+    return { id: '__preview__', projectId, name: 'Preview', type: 'laptop', sortOrder: 0, config }
+  }
+
+  if (type.value === 'laptop+phone') {
+    if (!laptopSnipId.value || !phoneSnipId.value) return null
+    const lapH = outputHeight * 0.68
+    const lapW = lapH * (3809.99 / 2300)
+    const phoneH = outputHeight * 0.78
+    const phoneW = phoneH * (772.5 / 1600)
+    const config: FreeformCompositionConfig = {
+      slots: [
+        {
+          id: '__preview_slot_laptop__',
+          snipId: laptopSnipId.value,
+          deviceFrame: 'laptop',
+          x: Math.round(outputWidth * 0.38 - lapW / 2),
+          y: Math.round(outputHeight / 2 - lapH / 2),
+          width: Math.round(lapW),
+          height: Math.round(lapH),
+        },
+        {
+          id: '__preview_slot_phone__',
+          snipId: phoneSnipId.value,
+          deviceFrame: 'phone',
+          x: Math.round(outputWidth * 0.72 - phoneW / 2),
+          y: Math.round(outputHeight / 2 - phoneH / 2),
+          width: Math.round(phoneW),
+          height: Math.round(phoneH),
+        },
+      ],
+      background: bg.value,
+      outputWidth,
+      outputHeight,
+    }
+    return { id: '__preview__', projectId, name: 'Preview', type: 'laptop+phone', sortOrder: 0, config }
+  }
+
+  if (type.value === 'auto') {
     if (selectedIds.value.length < 2) return null
     const config: CollageCompositionConfig = {
-      slots: selectedIds.value.map((snipId) => {
-        const snip = snipsStore.snips.find((s) => s.id === snipId)
-        return { snipId, deviceFrame: snip?.deviceFrame ?? 'none' }
-      }),
+      slots: selectedIds.value.map((snipId) => ({ snipId })),
       template: 'auto',
       gap: 24,
-      background: { ...DEFAULT_BACKGROUND.value },
-      outputWidth: 1920,
-      outputHeight: 1080,
+      background: bg.value,
+      outputWidth,
+      outputHeight,
     }
-    return { id: '__preview__', projectId, name: 'Preview', type: 'collage', sortOrder: 0, config }
+    return { id: '__preview__', projectId, name: 'Preview', type: 'auto', sortOrder: 0, config }
   }
+
+  // freeform — preview if any snips selected
+  if (selectedIds.value.length === 0) return null
+  const cols = Math.ceil(Math.sqrt(selectedIds.value.length))
+  const slots = selectedIds.value.map((snipId, i) => {
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    const cx = (outputWidth / (cols + 1)) * (col + 1)
+    const cy = (outputHeight / (Math.ceil(selectedIds.value.length / cols) + 1)) * (row + 1)
+    const snip = snipsStore.snips.find((s) => s.id === snipId)
+    const aspect = snip ? snip.width / snip.height : 1
+    const h = outputHeight * 0.5
+    const w = h * aspect
+    return {
+      id: `__preview_slot_${i}__`,
+      snipId,
+      deviceFrame: 'none' as const,
+      x: Math.round(cx - w / 2),
+      y: Math.round(cy - h / 2),
+      width: Math.round(w),
+      height: Math.round(h),
+    }
+  })
+  const config: FreeformCompositionConfig = {
+    slots,
+    background: bg.value,
+    outputWidth,
+    outputHeight,
+  }
+  return { id: '__preview__', projectId, name: 'Preview', type: 'freeform', sortOrder: 0, config }
 })
 
 const canCreate = computed(() => {
-  if (type.value === 'single') return !!singleId.value
-  return selectedIds.value.length >= 2
+  if (type.value === 'laptop') return !!laptopSnipId.value
+  if (type.value === 'laptop+phone') return !!laptopSnipId.value && !!phoneSnipId.value
+  if (type.value === 'auto') return selectedIds.value.length >= 2
+  return true // freeform: always valid
 })
 
 function create() {
   if (!canCreate.value) return
-  const bg = { ...DEFAULT_BACKGROUND.value }
+  const bgVal = bg.value
   let comp
-  if (type.value === 'single') {
-    comp = createSingleComposition(singleId.value, name.value || undefined, bg)
+  if (type.value === 'laptop') {
+    comp = createLaptopComposition(laptopSnipId.value, name.value || undefined, bgVal)
+  } else if (type.value === 'laptop+phone') {
+    comp = createLaptopPhoneComposition(laptopSnipId.value, phoneSnipId.value, name.value || undefined, bgVal)
+  } else if (type.value === 'auto') {
+    comp = createAutoComposition(selectedIds.value, name.value || undefined, bgVal)
   } else {
-    comp = createCollageComposition(selectedIds.value, name.value || undefined, bg)
+    comp = createFreeformComposition(selectedIds.value, name.value || undefined, bgVal)
   }
   emit('close')
   router.push(`/project/${route.params.id}/compose/${comp.id}`)

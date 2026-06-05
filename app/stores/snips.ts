@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Snip, DeviceFrame } from '~/types'
+import type { Snip } from '~/types'
 
 export const useSnipsStore = defineStore('snips', () => {
   const snips = ref<Snip[]>([])

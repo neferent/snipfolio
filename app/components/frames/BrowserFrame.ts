@@ -28,6 +28,7 @@ export function drawBrowserFrame(
   w: number,
   h: number,
   imageSource: CanvasImageSource,
+  color = '#262c44',
 ): FrameDrawResult {
   const sx = w / SVG_W
   const toolbarH = Math.max(32, TOOLBAR_SVG_H * sx)
@@ -51,7 +52,7 @@ export function drawBrowserFrame(
   ctx.shadowColor = 'rgba(0,0,0,0.5)'
   ctx.shadowBlur = 30
   ctx.shadowOffsetY = 12
-  ctx.fillStyle = '#262c44'
+  ctx.fillStyle = color
   roundedRect(ctx, x, y, w, h, r)
   ctx.fill()
   ctx.restore()
@@ -59,7 +60,7 @@ export function drawBrowserFrame(
   // Body
   ctx.save()
   ctx.strokeStyle = 'rgba(0,0,0,0)'
-  ctx.fillStyle = '#262c44'
+  ctx.fillStyle = color
   roundedRect(ctx, x, y, w, h, r)
   ctx.fill()
   ctx.restore()

@@ -4,7 +4,7 @@ import { useCompositionsStore } from '~/stores/compositions'
 import { useSourcesStore } from '~/stores/sources'
 import { useAuthStore } from '~/stores/auth'
 import { saveImageToDb, getImageFromDb, deleteImageFromDb, generateThumbnail } from '~/utils/imageDb'
-import type { Project, SourceImage, Snip, Composition } from '~/types'
+import type { Project, SourceImage, Snip, Composition, FreeformCompositionConfig, BackgroundConfig, DeviceFrame } from '~/types'
 
 function generateId() {
   return crypto.randomUUID()
@@ -296,7 +296,6 @@ function rowToSnip(row: Record<string, unknown>): Snip {
     y: row.y as number,
     width: row.width as number,
     height: row.height as number,
-    deviceFrame: (row.device_frame ?? row.deviceFrame ?? 'none') as Snip['deviceFrame'],
     sortOrder: (row.sort_order ?? row.sortOrder ?? 0) as number,
   }
 }
@@ -311,18 +310,57 @@ function snipToRow(snip: Snip) {
     y: snip.y,
     width: snip.width,
     height: snip.height,
-    device_frame: snip.deviceFrame,
     sort_order: snip.sortOrder,
   }
 }
 
 function rowToComposition(row: Record<string, unknown>): Composition {
+  const rawType = (row.type ?? 'single') as string
+  const rawConfig = (row.config ?? {}) as Record<string, unknown>
+
+  // Migrate legacy 'single' compositions → 'laptop' freeform
+  if (rawType === 'single') {
+    const oW = (rawConfig.outputWidth as number) ?? 1920
+    const oH = (rawConfig.outputHeight as number) ?? 1080
+    const slotW = Math.round(oW * 0.65)
+    const slotH = Math.round(oH * 0.65)
+    const config: FreeformCompositionConfig = {
+      slots: [
+        {
+          id: crypto.randomUUID(),
+          snipId: (rawConfig.snipId as string) ?? '',
+          deviceFrame: (rawConfig.deviceFrame as DeviceFrame) ?? 'none',
+          x: Math.round((oW - slotW) / 2),
+          y: Math.round((oH - slotH) / 2),
+          width: slotW,
+          height: slotH,
+        },
+      ],
+      background: (rawConfig.background as BackgroundConfig) ?? {
+        type: 'solid', color: '#1a1a2e', gradientStart: '#1a1a2e', gradientEnd: '#16213e', gradientAngle: 135,
+      },
+      outputWidth: oW,
+      outputHeight: oH,
+    }
+    return {
+      id: row.id as string,
+      projectId: (row.project_id ?? row.projectId) as string,
+      name: row.name as string,
+      type: 'laptop',
+      config,
+      sortOrder: (row.sort_order ?? row.sortOrder ?? 0) as number,
+    }
+  }
+
+  // Migrate legacy 'collage' type → 'auto'
+  const type = rawType === 'collage' ? 'auto' : rawType as Composition['type']
+
   return {
     id: row.id as string,
     projectId: (row.project_id ?? row.projectId) as string,
     name: row.name as string,
-    type: (row.type ?? 'single') as Composition['type'],
-    config: (row.config ?? {}) as Composition['config'],
+    type,
+    config: rawConfig as unknown as Composition['config'],
     sortOrder: (row.sort_order ?? row.sortOrder ?? 0) as number,
   }
 }

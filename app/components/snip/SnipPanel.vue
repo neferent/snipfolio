@@ -52,27 +52,6 @@
         </div>
       </div>
 
-      <!-- Device frame -->
-      <div class="space-y-2">
-        <label class="text-xs font-medium text-[var(--color-text-muted)]">Device Frame</label>
-        <div class="grid grid-cols-2 gap-2">
-          <button
-            v-for="frame in frames"
-            :key="frame.value"
-            class="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs transition"
-            :class="
-              snip.deviceFrame === frame.value
-                ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-white/20 hover:text-[var(--color-text)]'
-            "
-            @click="updateFrame(frame.value)"
-          >
-            <span>{{ frame.icon }}</span>
-            {{ frame.label }}
-          </button>
-        </div>
-      </div>
-
       <!-- Actions -->
       <div class="pt-2 space-y-2">
         <button
@@ -103,7 +82,6 @@ import { useSnipsStore } from '~/stores/snips'
 import { useSnips } from '~/composables/useSnips'
 import { useCompositions } from '~/composables/useCompositions'
 import { useExport } from '~/composables/useExport'
-import type { DeviceFrame } from '~/types'
 
 const store = useSnipsStore()
 const snipsActions = useSnips()
@@ -114,24 +92,13 @@ const route = useRoute()
 
 const snip = computed(() => store.selectedSnip)
 
-const frames = [
-  { value: 'none' as DeviceFrame, label: 'None', icon: '⬜' },
-  { value: 'phone' as DeviceFrame, label: 'Phone', icon: '📱' },
-  { value: 'browser' as DeviceFrame, label: 'Browser', icon: '🖥' },
-  { value: 'laptop' as DeviceFrame, label: 'Laptop', icon: '💻' },
-]
-
 function updateLabel(label: string) {
   if (snip.value) snipsActions.updateLabel(snip.value.id, label)
 }
 
-function updateFrame(frame: DeviceFrame) {
-  if (snip.value) snipsActions.updateFrame(snip.value.id, frame)
-}
-
 function createCompositionFromSnip() {
   if (!snip.value) return
-  const comp = compositionsActions.createSingleComposition(snip.value.id)
+  const comp = compositionsActions.createLaptopComposition(snip.value.id)
   router.push(`/project/${route.params.id}/compose/${comp.id}`)
 }
 

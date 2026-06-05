@@ -32,11 +32,10 @@ export interface Snip {
   y: number
   width: number
   height: number
-  deviceFrame: DeviceFrame
   sortOrder: number
 }
 
-export type CompositionType = 'single' | 'collage'
+export type CompositionType = 'laptop' | 'laptop+phone' | 'auto' | 'freeform'
 export type BackgroundType = 'solid' | 'gradient' | 'blur'
 
 export interface BackgroundConfig {
@@ -56,29 +55,34 @@ export interface CaptionConfig {
   bgOpacity: number
 }
 
-export interface SnipSlotConfig {
+// Per-slot config in free-form compositions
+export interface FreeformSlotConfig {
+  id: string
   snipId: string
   deviceFrame: DeviceFrame
-  caption?: CaptionConfig
-  x?: number
-  y?: number
-  width?: number
-  height?: number
+  frameColor?: string
+  // All in output canvas pixels. (x,y) = top-left corner of the total slot bounding box.
+  x: number
+  y: number
+  width: number
+  height: number
 }
 
-export type CollageLayoutTemplate = 'auto'
-
-export interface SingleCompositionConfig {
-  snipId: string
-  deviceFrame: DeviceFrame
+// Free-form composition: slots are z-ordered by array index (0 = back, last = front)
+export interface FreeformCompositionConfig {
+  slots: FreeformSlotConfig[]
   background: BackgroundConfig
-  scale: number
-  offsetX: number
-  offsetY: number
-  caption?: CaptionConfig
   outputWidth: number
   outputHeight: number
 }
+
+// Auto-collage slot (no frame — frames distort justified layout)
+export interface SnipSlotConfig {
+  snipId: string
+  caption?: CaptionConfig
+}
+
+export type CollageLayoutTemplate = 'auto'
 
 export interface CollageCompositionConfig {
   slots: SnipSlotConfig[]
@@ -90,7 +94,7 @@ export interface CollageCompositionConfig {
   outputHeight: number
 }
 
-export type CompositionConfig = SingleCompositionConfig | CollageCompositionConfig
+export type CompositionConfig = FreeformCompositionConfig | CollageCompositionConfig
 
 export interface Composition {
   id: string
@@ -101,10 +105,14 @@ export interface Composition {
   sortOrder: number
 }
 
-export function isSingleConfig(c: CompositionConfig): c is SingleCompositionConfig {
-  return 'snipId' in c && 'scale' in c
+export function isFreeformConfig(c: CompositionConfig): c is FreeformCompositionConfig {
+  return !('template' in c)
 }
 
 export function isCollageConfig(c: CompositionConfig): c is CollageCompositionConfig {
-  return 'slots' in c
+  return 'template' in c
+}
+
+export function isFreeformType(type: CompositionType): boolean {
+  return type === 'freeform' || type === 'laptop' || type === 'laptop+phone'
 }

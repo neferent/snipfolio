@@ -1,7 +1,7 @@
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
-import type { Snip, DeviceFrame } from '~/types'
+import type { Snip } from '~/types'
 
 export function useSnips() {
   const store = useSnipsStore()
@@ -19,7 +19,6 @@ export function useSnips() {
       y: Math.round(y),
       width: Math.round(width),
       height: Math.round(height),
-      deviceFrame: 'none',
       sortOrder: store.snips.length,
     }
     store.addSnip(snip)
@@ -30,11 +29,6 @@ export function useSnips() {
 
   function updateLabel(id: string, label: string) {
     store.updateSnip(id, { label })
-    scheduleSave()
-  }
-
-  function updateFrame(id: string, deviceFrame: DeviceFrame) {
-    store.updateSnip(id, { deviceFrame })
     scheduleSave()
   }
 
@@ -52,5 +46,5 @@ export function useSnips() {
     return canvas
   }
 
-  return { createSnip, updateLabel, updateFrame, deleteSnip, extractSnipCanvas }
+  return { createSnip, updateLabel, deleteSnip, extractSnipCanvas }
 }

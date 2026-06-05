@@ -37,6 +37,7 @@ export function drawPhoneFrame(
   width: number,
   height: number,
   imageSource: CanvasImageSource,
+  color = '#262c44',
 ): FrameDrawResult {
   const sx = width / SVG_W
   const sy = height / SVG_H
@@ -57,7 +58,7 @@ export function drawPhoneFrame(
   ctx.shadowColor = 'rgba(0,0,0,0.5)'
   ctx.shadowBlur = 30 / Math.min(sx, sy)
   ctx.shadowOffsetY = 12 / Math.min(sx, sy)
-  ctx.fillStyle = '#262c44'
+  ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(777.74, 497.55)
   ctx.lineTo(777.74, 687.4)

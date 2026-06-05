@@ -20,6 +20,7 @@ export function drawLaptopFrame(
   width: number,
   height: number,
   imageSource: CanvasImageSource,
+  color = '#262c44',
 ): FrameDrawResult {
   const sx = width / SVG_W
   const sy = height / SVG_H
@@ -40,7 +41,7 @@ export function drawLaptopFrame(
   ctx.shadowColor = 'rgba(0,0,0,0.5)'
   ctx.shadowBlur = 30 / Math.min(sx, sy)
   ctx.shadowOffsetY = 12 / Math.min(sx, sy)
-  ctx.fillStyle = '#262c44'
+  ctx.fillStyle = color
   ctx.beginPath()
   // lid sub-path
   ctx.moveTo(439.37, 0)
@@ -75,7 +76,7 @@ export function drawLaptopFrame(
 
   // Base / stand
   ctx.save()
-  ctx.fillStyle = '#262c44'
+  ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(3809.98, 2144.94)
   ctx.lineTo(3809.98, 2207.37)
@@ -101,7 +102,7 @@ export function drawLaptopFrame(
 
   // Lid outer body
   ctx.save()
-  ctx.fillStyle = '#262c44'
+  ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(439.37, 0)
   ctx.lineTo(3370.58, 0)
@@ -117,6 +118,7 @@ export function drawLaptopFrame(
 
   // Inner bezel
   ctx.save()
+  ctx.fillStyle = '#000000'
   ctx.beginPath()
   ctx.moveTo(434.17, 18.46)
   ctx.lineTo(3375.79, 18.46)
@@ -162,7 +164,7 @@ export function drawLaptopFrame(
 
   // Camera dot
   ctx.save()
-  ctx.fillStyle = '#262c44'
+  ctx.fillStyle = color
   ctx.beginPath()
   ctx.arc(1904.98, 73.84, 7.38, 0, Math.PI * 2)
   ctx.closePath()
