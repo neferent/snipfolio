@@ -15,37 +15,34 @@
           <div
             v-for="(slot, idx) in displaySlots"
             :key="slot.id"
+            draggable="true"
             class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
-            :class="
+            :class="[
               selectedSlotId === slot.id
                 ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                : 'cursor-pointer text-[var(--color-text)] hover:bg-white/5'
-            "
+                : 'cursor-pointer text-[var(--color-text)] hover:bg-white/5',
+              dragOverIdx === idx && dragSlotId !== slot.id ? 'border-t-2 border-[var(--color-accent)]' : 'border-t-2 border-transparent',
+            ]"
             @click="selectedSlotId = slot.id"
+            @dragstart.stop="onDragStart(slot.id)"
+            @dragover.prevent.stop="dragOverIdx = idx"
+            @dragleave.stop="dragOverIdx = null"
+            @drop.stop="onDrop(idx)"
+            @dragend.stop="dragSlotId = null; dragOverIdx = null"
           >
-            <!-- z-order controls -->
-            <div class="flex shrink-0 flex-col gap-px">
-              <button
-                class="flex h-3 w-3 items-center justify-center rounded text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] disabled:opacity-30"
-                :disabled="idx === 0"
-                @click.stop="moveSlotUp(slot.id)"
-                title="Move forward"
-              >
-                <svg class="size-2.5" viewBox="0 0 10 10" fill="currentColor"><path d="M5 2L9 7H1L5 2Z"/></svg>
-              </button>
-              <button
-                class="flex h-3 w-3 items-center justify-center rounded text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] disabled:opacity-30"
-                :disabled="idx === displaySlots.length - 1"
-                @click.stop="moveSlotDown(slot.id)"
-                title="Move backward"
-              >
-                <svg class="size-2.5" viewBox="0 0 10 10" fill="currentColor"><path d="M5 8L1 3H9L5 8Z"/></svg>
-              </button>
-            </div>
+            <!-- drag handle -->
+            <svg class="size-3 shrink-0 cursor-grab text-[var(--color-text-muted)] opacity-40 group-hover:opacity-100" viewBox="0 0 10 14" fill="currentColor">
+              <circle cx="3" cy="2.5" r="1"/><circle cx="7" cy="2.5" r="1"/>
+              <circle cx="3" cy="6" r="1"/><circle cx="7" cy="6" r="1"/>
+              <circle cx="3" cy="9.5" r="1"/><circle cx="7" cy="9.5" r="1"/>
+            </svg>
 
             <SnipThumbnail :snip="snipFor(slot.snipId)" class="size-7 shrink-0 rounded" />
 
-            <span class="flex-1 truncate">{{ snipLabel(slot.snipId) }}</span>
+            <span class="truncate">{{ snipLabel(slot.snipId) }}</span>
+            <span v-if="snipFor(slot.snipId).snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
+            <span v-else-if="snipFor(slot.snipId).snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
+            <span class="flex-1" />
 
             <button
               class="ml-auto shrink-0 rounded p-0.5 text-[var(--color-text-muted)] opacity-0 transition hover:text-red-400 group-hover:opacity-100"
@@ -70,7 +67,9 @@
             @click="addSnip(snip)"
           >
             <SnipThumbnail :snip="snip" class="size-7 shrink-0 rounded" />
-            <span class="flex-1 truncate">{{ snip.label }}</span>
+            <span class="truncate">{{ snip.label }}</span>
+            <span v-if="snip.snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
+            <span v-else-if="snip.snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
             <svg class="size-3 shrink-0 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" d="M5 1v8M1 5h8"/>
             </svg>
@@ -82,12 +81,32 @@
       </div>
     </aside>
 
-    <!-- Center: interactive artboard -->
-    <div
-      ref="canvasContainer"
-      class="relative flex-1 overflow-auto bg-[var(--color-surface)]"
-      @mousedown.self="selectedSlotId = null"
-    >
+    <!-- Center: toolbar + artboard -->
+    <div class="flex min-w-0 flex-1 flex-col">
+      <ComposerToolbar
+        :selected-slot="selectedSlot"
+        :zoom="canvasScale"
+        @align-left="alignSlot('left')"
+        @align-center-h="alignSlot('center-h')"
+        @align-right="alignSlot('right')"
+        @align-top="alignSlot('top')"
+        @align-center-v="alignSlot('center-v')"
+        @align-bottom="alignSlot('bottom')"
+        @z-forward="selectedSlotId && moveForward(selectedSlotId)"
+        @z-back="selectedSlotId && moveBackward(selectedSlotId)"
+        @z-front="selectedSlotId && moveToFront(selectedSlotId)"
+        @z-bottom="selectedSlotId && moveToBack(selectedSlotId)"
+        @delete-slot="selectedSlotId && removeSlot(selectedSlotId)"
+        @zoom-change="userZoom = $event"
+        @zoom-fit="userZoom = null"
+      />
+
+      <div
+        ref="canvasContainer"
+        class="relative flex-1 overflow-auto bg-[var(--color-surface)]"
+        :class="spacePressed ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : ''"
+        @mousedown.self="onContainerSelfMouseDown"
+      >
       <div class="flex min-h-full items-center justify-center p-8">
         <!-- Artboard -->
         <div
@@ -101,6 +120,13 @@
             ref="canvas"
             class="pointer-events-none absolute inset-0"
             :style="{ width: previewW + 'px', height: previewH + 'px' }"
+          />
+
+          <!-- Pan capture overlay (shown when Space is held) -->
+          <div
+            v-if="spacePressed"
+            class="absolute inset-0 z-50"
+            @mousedown.stop="onPanMouseDown"
           />
 
           <!-- Slot interaction overlays (back to front matches z-order) -->
@@ -123,6 +149,7 @@
         </div>
       </div>
     </div>
+    </div><!-- end center column -->
 
     <!-- Right sidebar: slot properties + background + output + export -->
     <aside class="flex w-64 shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
@@ -270,6 +297,7 @@ const displaySlots = computed(() => [...slots.value].reverse())
 const { width: containerW, height: containerH } = useElementSize(canvasContainer)
 
 const canvasScale = computed(() => {
+  if (userZoom.value !== null) return userZoom.value
   if (!containerW.value || !containerH.value) return 1
   const pad = 64
   return Math.min(
@@ -281,6 +309,9 @@ const canvasScale = computed(() => {
 
 const previewW = computed(() => Math.round(config.value.outputWidth * canvasScale.value))
 const previewH = computed(() => Math.round(config.value.outputHeight * canvasScale.value))
+
+// --- User zoom override (Cmd+scroll; null = auto-fit) ---
+const userZoom = ref<number | null>(null)
 
 const selectedSlotId = ref<string | null>(null)
 const selectedSlot = computed(() => slots.value.find((s) => s.id === selectedSlotId.value) ?? null)
@@ -351,24 +382,25 @@ function removeSlot(slotId: string) {
   patchConfig({ slots: slots.value.filter((s) => s.id !== slotId) })
 }
 
-// displaySlots is reversed (front first), so index in displaySlots is inverse of slots array index
-function moveSlotUp(slotId: string) {
-  // "Up" in display = higher z-index = later in array
-  const arr = [...slots.value]
-  const idx = arr.findIndex((s) => s.id === slotId)
-  if (idx < arr.length - 1) {
-    ;[arr[idx], arr[idx + 1]] = [arr[idx + 1]!, arr[idx]!]
-    patchConfig({ slots: arr })
-  }
+// --- Drag-to-reorder (displaySlots is front-first; slots array is back-first) ---
+const dragSlotId = ref<string | null>(null)
+const dragOverIdx = ref<number | null>(null)
+
+function onDragStart(slotId: string) {
+  dragSlotId.value = slotId
 }
 
-function moveSlotDown(slotId: string) {
-  const arr = [...slots.value]
-  const idx = arr.findIndex((s) => s.id === slotId)
-  if (idx > 0) {
-    ;[arr[idx], arr[idx - 1]] = [arr[idx - 1]!, arr[idx]!]
-    patchConfig({ slots: arr })
-  }
+function onDrop(toDisplayIdx: number) {
+  if (!dragSlotId.value) return
+  const display = [...displaySlots.value]
+  const fromIdx = display.findIndex((s) => s.id === dragSlotId.value)
+  if (fromIdx === -1 || fromIdx === toDisplayIdx) return
+  const [item] = display.splice(fromIdx, 1)
+  display.splice(toDisplayIdx, 0, item!)
+  // displaySlots is front-first; slots array is back-first — reverse to restore storage order
+  patchConfig({ slots: [...display].reverse() })
+  dragSlotId.value = null
+  dragOverIdx.value = null
 }
 
 function addSnip(snip: Snip) {
@@ -398,7 +430,12 @@ type DragState =
 
 let drag: DragState | null = null
 
+function onContainerSelfMouseDown() {
+  selectedSlotId.value = null
+}
+
 function onSlotMouseDown(e: MouseEvent, slot: FreeformSlotConfig) {
+  if (spacePressed.value) return
   selectedSlotId.value = slot.id
   drag = {
     type: 'move',
@@ -414,6 +451,7 @@ function onSlotMouseDown(e: MouseEvent, slot: FreeformSlotConfig) {
 }
 
 function onHandleMouseDown(e: MouseEvent, slot: FreeformSlotConfig, corner: 'tl' | 'tr' | 'bl' | 'br') {
+  if (spacePressed.value) return
   drag = {
     type: 'resize',
     slotId: slot.id,
@@ -438,35 +476,65 @@ function onMouseMove(e: MouseEvent) {
   const MIN = 40
 
   if (drag.type === 'move') {
+    let mdx = dx, mdy = dy
+    if (e.shiftKey) {
+      if (Math.abs(dx) >= Math.abs(dy)) mdy = 0
+      else mdx = 0
+    }
     patchSlot(drag.slotId, {
-      x: Math.round(drag.startX + dx),
-      y: Math.round(drag.startY + dy),
+      x: Math.round(drag.startX + mdx),
+      y: Math.round(drag.startY + mdy),
     })
   } else {
     const { corner, startX, startY, startW, startH } = drag
+    const fromCenter = e.altKey
+    const lockAspect = e.shiftKey
+    const ratio = startW / startH
     let x = startX, y = startY, w = startW, h = startH
-    if (corner === 'br') {
-      w = Math.max(MIN, startW + dx)
-      h = Math.max(MIN, startH + dy)
-    } else if (corner === 'bl') {
-      const newW = Math.max(MIN, startW - dx)
-      x = startX + (startW - newW)
-      w = newW
-      h = Math.max(MIN, startH + dy)
-    } else if (corner === 'tr') {
-      w = Math.max(MIN, startW + dx)
-      const newH = Math.max(MIN, startH - dy)
-      y = startY + (startH - newH)
-      h = newH
+
+    if (fromCenter) {
+      const cx = startX + startW / 2
+      const cy = startY + startH / 2
+      if (corner === 'br') { w = Math.max(MIN, startW + 2 * dx); h = Math.max(MIN, startH + 2 * dy) }
+      else if (corner === 'bl') { w = Math.max(MIN, startW - 2 * dx); h = Math.max(MIN, startH + 2 * dy) }
+      else if (corner === 'tr') { w = Math.max(MIN, startW + 2 * dx); h = Math.max(MIN, startH - 2 * dy) }
+      else { w = Math.max(MIN, startW - 2 * dx); h = Math.max(MIN, startH - 2 * dy) }
+      if (lockAspect) {
+        const s = Math.max(w / startW, h / startH)
+        w = Math.max(MIN, startW * s)
+        h = Math.max(MIN, startH * s)
+      }
+      x = cx - w / 2
+      y = cy - h / 2
     } else {
-      // tl
-      const newW = Math.max(MIN, startW - dx)
-      x = startX + (startW - newW)
-      w = newW
-      const newH = Math.max(MIN, startH - dy)
-      y = startY + (startH - newH)
-      h = newH
+      if (corner === 'br') {
+        w = Math.max(MIN, startW + dx)
+        h = Math.max(MIN, startH + dy)
+      } else if (corner === 'bl') {
+        const nw = Math.max(MIN, startW - dx)
+        x = startX + (startW - nw); w = nw
+        h = Math.max(MIN, startH + dy)
+      } else if (corner === 'tr') {
+        w = Math.max(MIN, startW + dx)
+        const nh = Math.max(MIN, startH - dy)
+        y = startY + (startH - nh); h = nh
+      } else {
+        const nw = Math.max(MIN, startW - dx)
+        x = startX + (startW - nw); w = nw
+        const nh = Math.max(MIN, startH - dy)
+        y = startY + (startH - nh); h = nh
+      }
+      if (lockAspect) {
+        if (Math.abs(dx / startW) >= Math.abs(dy / startH)) {
+          h = Math.max(MIN, w / ratio)
+          if (corner === 'tr' || corner === 'tl') y = startY + startH - h
+        } else {
+          w = Math.max(MIN, h * ratio)
+          if (corner === 'bl' || corner === 'tl') x = startX + startW - w
+        }
+      }
     }
+
     patchSlot(drag.slotId, {
       x: Math.round(x), y: Math.round(y),
       width: Math.round(w), height: Math.round(h),
@@ -480,9 +548,246 @@ function onMouseUp() {
   window.removeEventListener('mouseup', onMouseUp)
 }
 
+// --- Alignment ---
+function alignSlot(action: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom') {
+  const id = selectedSlotId.value
+  const slot = selectedSlot.value
+  if (!id || !slot) return
+  const oW = config.value.outputWidth
+  const oH = config.value.outputHeight
+  const map = {
+    'left':     { x: 0 },
+    'center-h': { x: Math.round((oW - slot.width) / 2) },
+    'right':    { x: oW - slot.width },
+    'top':      { y: 0 },
+    'center-v': { y: Math.round((oH - slot.height) / 2) },
+    'bottom':   { y: oH - slot.height },
+  }
+  patchSlot(id, map[action])
+}
+
+// --- Space + pan ---
+const spacePressed = ref(false)
+const isPanning = ref(false)
+let pan: { startX: number; startY: number; scrollLeft: number; scrollTop: number } | null = null
+
+function onPanMouseDown(e: MouseEvent) {
+  if (e.button !== 0) return
+  e.preventDefault()
+  const container = canvasContainer.value
+  if (!container) return
+  isPanning.value = true
+  pan = { startX: e.clientX, startY: e.clientY, scrollLeft: container.scrollLeft, scrollTop: container.scrollTop }
+  window.addEventListener('mousemove', onPanMove)
+  window.addEventListener('mouseup', onPanUp)
+}
+
+function onPanMove(e: MouseEvent) {
+  if (!pan) return
+  const container = canvasContainer.value
+  if (!container) return
+  container.scrollLeft = pan.scrollLeft - (e.clientX - pan.startX)
+  container.scrollTop = pan.scrollTop - (e.clientY - pan.startY)
+}
+
+function onPanUp() {
+  pan = null
+  isPanning.value = false
+  window.removeEventListener('mousemove', onPanMove)
+  window.removeEventListener('mouseup', onPanUp)
+}
+
+// --- Zoom (Cmd/Ctrl+scroll, toward cursor) ---
+function onWheel(e: WheelEvent) {
+  if (!e.metaKey && !e.ctrlKey) return
+  e.preventDefault()
+  const container = canvasContainer.value
+  if (!container) return
+
+  const oldScale = canvasScale.value
+  const newScale = Math.max(0.1, Math.min(4, oldScale * Math.exp(-e.deltaY / 300)))
+  if (newScale === oldScale) return
+
+  const board = artboard.value
+  if (!board) { userZoom.value = newScale; return }
+
+  const boardRect = board.getBoundingClientRect()
+  const fracX = (e.clientX - boardRect.left) / boardRect.width
+  const fracY = (e.clientY - boardRect.top) / boardRect.height
+
+  userZoom.value = newScale
+
+  nextTick(() => {
+    const nW = Math.round(config.value.outputWidth * newScale)
+    const nH = Math.round(config.value.outputHeight * newScale)
+    const cW = container.clientWidth
+    const cH = container.clientHeight
+    const boardX = (Math.max(cW, nW + 64) - nW) / 2
+    const boardY = (Math.max(cH, nH + 64) - nH) / 2
+    const cr = container.getBoundingClientRect()
+    container.scrollLeft = boardX + fracX * nW - (e.clientX - cr.left)
+    container.scrollTop = boardY + fracY * nH - (e.clientY - cr.top)
+  })
+}
+
+// --- Z-order helpers ---
+function moveToFront(slotId: string) {
+  const slot = slots.value.find((s) => s.id === slotId)
+  if (!slot) return
+  patchConfig({ slots: [...slots.value.filter((s) => s.id !== slotId), slot] })
+}
+
+function moveToBack(slotId: string) {
+  const slot = slots.value.find((s) => s.id === slotId)
+  if (!slot) return
+  patchConfig({ slots: [slot, ...slots.value.filter((s) => s.id !== slotId)] })
+}
+
+function moveForward(slotId: string) {
+  const idx = slots.value.findIndex((s) => s.id === slotId)
+  if (idx >= slots.value.length - 1) return
+  const arr = [...slots.value]
+  ;[arr[idx], arr[idx + 1]] = [arr[idx + 1]!, arr[idx]!]
+  patchConfig({ slots: arr })
+}
+
+function moveBackward(slotId: string) {
+  const idx = slots.value.findIndex((s) => s.id === slotId)
+  if (idx <= 0) return
+  const arr = [...slots.value]
+  ;[arr[idx - 1], arr[idx]] = [arr[idx]!, arr[idx - 1]!]
+  patchConfig({ slots: arr })
+}
+
+function duplicateSlot(slotId: string) {
+  const slot = slots.value.find((s) => s.id === slotId)
+  if (!slot) return
+  const dup: FreeformSlotConfig = { ...slot, id: crypto.randomUUID(), x: slot.x + 40, y: slot.y + 40 }
+  patchConfig({ slots: [...slots.value, dup] })
+  selectedSlotId.value = dup.id
+}
+
+// --- Keyboard shortcuts ---
+function onKeyDown(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+  if (e.key === ' ') {
+    e.preventDefault()
+    spacePressed.value = true
+    return
+  }
+
+  const meta = e.metaKey || e.ctrlKey
+
+  if (e.key === 'Escape') {
+    if (drag) {
+      drag = null
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+    selectedSlotId.value = null
+    return
+  }
+
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    const ids = slots.value.map((s) => s.id)
+    if (!ids.length) return
+    const idx = selectedSlotId.value ? ids.indexOf(selectedSlotId.value) : -1
+    selectedSlotId.value = e.shiftKey
+      ? ids[(idx - 1 + ids.length) % ids.length]!
+      : ids[(idx + 1) % ids.length]!
+    return
+  }
+
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedSlotId.value) {
+    e.preventDefault()
+    removeSlot(selectedSlotId.value)
+    return
+  }
+
+  if (meta && e.key === 'd' && selectedSlotId.value) {
+    e.preventDefault()
+    duplicateSlot(selectedSlotId.value)
+    return
+  }
+
+  if (meta && e.key === '0') {
+    e.preventDefault()
+    userZoom.value = null
+    return
+  }
+
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && selectedSlotId.value) {
+    e.preventDefault()
+    const slot = selectedSlot.value
+    if (!slot) return
+    const oW = config.value.outputWidth
+    const oH = config.value.outputHeight
+    if (meta && e.shiftKey) {
+      // Align to canvas edges
+      if (e.key === 'ArrowLeft') alignSlot('left')
+      if (e.key === 'ArrowRight') alignSlot('right')
+      if (e.key === 'ArrowUp') alignSlot('top')
+      if (e.key === 'ArrowDown') alignSlot('bottom')
+    } else {
+      // Nudge
+      const step = e.shiftKey ? 10 : 1
+      const patch: Partial<FreeformSlotConfig> = {}
+      if (e.key === 'ArrowLeft') patch.x = slot.x - step
+      if (e.key === 'ArrowRight') patch.x = slot.x + step
+      if (e.key === 'ArrowUp') patch.y = slot.y - step
+      if (e.key === 'ArrowDown') patch.y = slot.y + step
+      patchSlot(selectedSlotId.value, patch)
+    }
+    return
+  }
+
+  // Center on canvas
+  if (meta && e.shiftKey && selectedSlotId.value) {
+    const k = e.key.toLowerCase()
+    if (k === 'h') { e.preventDefault(); alignSlot('center-h'); return }
+    if (k === 'v') { e.preventDefault(); alignSlot('center-v'); return }
+    if (k === 'c') {
+      e.preventDefault()
+      alignSlot('center-h')
+      alignSlot('center-v')
+      return
+    }
+  }
+
+  if (meta && (e.key === ']' || e.key === '[') && selectedSlotId.value) {
+    e.preventDefault()
+    if (e.shiftKey) {
+      e.key === ']' ? moveToFront(selectedSlotId.value) : moveToBack(selectedSlotId.value)
+    } else {
+      e.key === ']' ? moveForward(selectedSlotId.value) : moveBackward(selectedSlotId.value)
+    }
+    return
+  }
+}
+
+function onKeyUp(e: KeyboardEvent) {
+  if (e.key === ' ') spacePressed.value = false
+}
+
+let _containerEl: HTMLElement | null = null
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keyup', onKeyUp)
+  _containerEl = canvasContainer.value ?? null
+  _containerEl?.addEventListener('wheel', onWheel, { passive: false })
+})
+
 onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('keyup', onKeyUp)
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('mouseup', onMouseUp)
+  window.removeEventListener('mousemove', onPanMove)
+  window.removeEventListener('mouseup', onPanUp)
+  _containerEl?.removeEventListener('wheel', onWheel)
 })
 
 // --- Canvas rendering ---

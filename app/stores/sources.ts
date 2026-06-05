@@ -21,6 +21,7 @@ export const useSourcesStore = defineStore('sources', () => {
 
   function setSources(list: SourceImage[]) {
     sources.value = list
+    loadedImages.value = new Map()
   }
 
   function addSource(source: SourceImage) {

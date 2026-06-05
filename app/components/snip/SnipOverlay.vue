@@ -134,10 +134,14 @@ function startMove(e: MouseEvent, snip: Snip) {
   let moved = false
 
   function onMove(ev: MouseEvent) {
-    const dx = (ev.clientX - startX) / props.zoom
-    const dy = (ev.clientY - startY) / props.zoom
+    let dx = (ev.clientX - startX) / props.zoom
+    let dy = (ev.clientY - startY) / props.zoom
     if (!moved && Math.abs(dx) < 2 && Math.abs(dy) < 2) return
     moved = true
+    if (ev.shiftKey) {
+      if (Math.abs(dx) >= Math.abs(dy)) dy = 0
+      else dx = 0
+    }
     store.updateSnip(snip.id, {
       x: Math.round(Math.max(0, Math.min(origX + dx, props.imageWidth - snip.width))),
       y: Math.round(Math.max(0, Math.min(origY + dy, props.imageHeight - snip.height))),
@@ -207,35 +211,68 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
     const dx = (ev.clientX - startX) / z
     const dy = (ev.clientY - startY) / z
     let { x, y, w, h } = orig
-    if (dir.includes('e')) w = Math.max(20, orig.w + dx)
-    if (dir.includes('s')) h = Math.max(20, orig.h + dy)
-    if (dir.includes('w')) { x = orig.x + dx; w = Math.max(20, orig.w - dx) }
-    if (dir.includes('n')) { y = orig.y + dy; h = Math.max(20, orig.h - dy) }
+    const fromCenter = ev.altKey
+    const lockAspect = ev.shiftKey && isCorner
+    const cx = orig.x + orig.w / 2
+    const cy = orig.y + orig.h / 2
 
-    const detected = isCorner ? detectSnap(w, h) : null
+    if (fromCenter) {
+      if (dir.includes('e')) w = Math.max(20, orig.w + 2 * dx)
+      if (dir.includes('s')) h = Math.max(20, orig.h + 2 * dy)
+      if (dir.includes('w')) w = Math.max(20, orig.w - 2 * dx)
+      if (dir.includes('n')) h = Math.max(20, orig.h - 2 * dy)
+      if (dir.includes('e') || dir.includes('w')) x = cx - w / 2
+      if (dir.includes('n') || dir.includes('s')) y = cy - h / 2
+    } else {
+      if (dir.includes('e')) w = Math.max(20, orig.w + dx)
+      if (dir.includes('s')) h = Math.max(20, orig.h + dy)
+      if (dir.includes('w')) { x = orig.x + dx; w = Math.max(20, orig.w - dx) }
+      if (dir.includes('n')) { y = orig.y + dy; h = Math.max(20, orig.h - dy) }
+    }
+
+    const detected = (isCorner && !lockAspect) ? detectSnap(w, h) : null
     resizeSnapFrame.value = detected
     if (detected === 'laptop') {
       const newH = w / LAPTOP_RATIO
-      if (dir.includes('n')) y = orig.y + orig.h - newH
+      if (dir.includes('n')) y = fromCenter ? cy - newH / 2 : orig.y + orig.h - newH
       h = newH
     } else if (detected === 'phone') {
       const newW = h * (9 / 16)
-      if (dir.includes('w')) x = orig.x + orig.w - newW
+      if (dir.includes('w')) x = fromCenter ? cx - newW / 2 : orig.x + orig.w - newW
       w = newW
     }
 
-    // Clamp to image bounds — keep fixed edges anchored correctly
-    if (dir.includes('w')) {
-      x = Math.max(0, x)
-      w = (orig.x + orig.w) - x
-    } else {
-      w = Math.min(w, props.imageWidth - orig.x)
+    if (lockAspect) {
+      const ratio = orig.w / orig.h
+      if (Math.abs(dx / orig.w) >= Math.abs(dy / orig.h)) {
+        h = Math.max(20, w / ratio)
+        if (dir.includes('n')) y = fromCenter ? cy - h / 2 : orig.y + orig.h - h
+      } else {
+        w = Math.max(20, h * ratio)
+        if (dir.includes('w')) x = fromCenter ? cx - w / 2 : orig.x + orig.w - w
+      }
     }
-    if (dir.includes('n')) {
-      y = Math.max(0, y)
-      h = (orig.y + orig.h) - y
+
+    if (fromCenter) {
+      // Simple clamp for center-scale mode
+      if (x < 0) { w += x; x = 0 }
+      if (y < 0) { h += y; y = 0 }
+      if (x + w > props.imageWidth) w = props.imageWidth - x
+      if (y + h > props.imageHeight) h = props.imageHeight - y
     } else {
-      h = Math.min(h, props.imageHeight - orig.y)
+      // Clamp to image bounds — keep fixed edges anchored correctly
+      if (dir.includes('w')) {
+        x = Math.max(0, x)
+        w = (orig.x + orig.w) - x
+      } else {
+        w = Math.min(w, props.imageWidth - orig.x)
+      }
+      if (dir.includes('n')) {
+        y = Math.max(0, y)
+        h = (orig.y + orig.h) - y
+      } else {
+        h = Math.min(h, props.imageHeight - orig.y)
+      }
     }
     w = Math.max(20, w)
     h = Math.max(20, h)

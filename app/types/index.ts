@@ -33,6 +33,7 @@ export interface Snip {
   width: number
   height: number
   sortOrder: number
+  snapFrame?: 'laptop' | 'phone' | null
 }
 
 export type CompositionType = 'laptop' | 'laptop+phone' | 'auto' | 'freeform'

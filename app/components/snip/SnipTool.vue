@@ -5,11 +5,6 @@
       v-if="sources.length > 0"
       class="flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] px-4 py-2"
     >
-      <ZoomControls
-        v-model="zoom"
-        @fit-width="fitToWidth"
-        @fit-height="fitToHeight"
-      />
       <div class="flex-1" />
       <AppDropdown align="right">
         <template #trigger>
@@ -90,11 +85,43 @@
           </button>
         </div>
 
+        <!-- Viewport toolbar -->
+        <div class="flex h-9 shrink-0 items-center gap-px border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-2">
+          <!-- Active tool: Draw -->
+          <button
+            class="flex size-7 items-center justify-center rounded bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
+            title="Draw snip (click and drag)"
+          >
+            <Crop class="size-3.5" />
+          </button>
+
+          <div class="flex-1" />
+
+          <!-- Zoom controls -->
+          <button v-bind="tbBtn()" title="Zoom out" @click="zoom = Math.max(0.05, zoom - 0.1)">
+            <ZoomOut class="size-3.5" />
+          </button>
+          <input
+            class="w-14 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
+            :value="zoomLabel"
+            @focus="($event.target as HTMLInputElement).select()"
+            @keydown.enter.prevent="onSnipZoomCommit($event)"
+            @keydown.escape="($event.target as HTMLInputElement).blur()"
+            @blur="($event.target as HTMLInputElement).value = zoomLabel"
+          />
+          <button v-bind="tbBtn()" title="Zoom in" @click="zoom = Math.min(8, zoom + 0.1)">
+            <ZoomIn class="size-3.5" />
+          </button>
+          <button v-bind="tbBtn()" title="Fit to width (Cmd+0)" @click="fitToWidth">
+            <Maximize2 class="size-3.5" />
+          </button>
+        </div>
+
         <!-- Scrollable source image viewport -->
         <div
           ref="viewport"
           class="relative flex-1 overflow-auto"
-          :class="activeImage ? 'cursor-crosshair' : ''"
+          :class="spacePressed ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : activeImage ? 'cursor-crosshair' : ''"
           @mousedown="onMouseDown"
         >
           <!-- Source not yet loaded -->
@@ -128,6 +155,12 @@
               :snap-frame="snapFrame"
               :image-width="activeImage.img.naturalWidth"
               :image-height="activeImage.img.naturalHeight"
+            />
+            <!-- Pan capture overlay (shown when Space is held) -->
+            <div
+              v-if="spacePressed"
+              class="absolute inset-0 z-50"
+              @mousedown.stop="onPanMouseDown"
             />
           </div>
         </div>
@@ -180,6 +213,7 @@
 </template>
 
 <script setup lang="ts">
+import { Crop, ZoomIn, ZoomOut, Maximize2 } from 'lucide-vue-next'
 import { useProjectStore } from '~/stores/project'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
@@ -190,7 +224,7 @@ import type { SourceImage } from '~/types'
 const projectStore = useProjectStore()
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
-const { createSnip } = useSnips()
+const { createSnip, deleteSnip } = useSnips()
 const { exportAllSnipsRaw } = useExport()
 const showExportPicker = ref(false)
 const { saveImage, deleteImage, savePreview, scheduleSave } = useProject()
@@ -199,6 +233,17 @@ const viewport = ref<HTMLElement>()
 const imageContainer = ref<HTMLElement>()
 const imgEl = ref<HTMLImageElement>()
 const zoom = ref(1)
+const zoomLabel = computed(() => Math.round(zoom.value * 100) + '%')
+
+const TB_BASE = 'size-7 flex items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:bg-white/10 hover:text-[var(--color-text)]'
+function tbBtn() { return { class: TB_BASE } }
+
+function onSnipZoomCommit(e: KeyboardEvent) {
+  const raw = (e.target as HTMLInputElement).value.replace('%', '').trim()
+  const pct = parseFloat(raw)
+  if (!isNaN(pct) && pct > 0) zoom.value = pct / 100
+  ;(e.target as HTMLInputElement).blur()
+}
 
 const sources = computed(() => sourcesStore.orderedSources)
 const activeSourceId = computed(() => sourcesStore.activeSourceId)
@@ -310,6 +355,139 @@ function removeSource(id: string) {
   scheduleSave()
 }
 
+// --- Space + pan ---
+const spacePressed = ref(false)
+const isPanning = ref(false)
+let pan: { startX: number; startY: number; scrollLeft: number; scrollTop: number } | null = null
+
+function onPanMouseDown(e: MouseEvent) {
+  if (e.button !== 0) return
+  e.preventDefault()
+  const vp = viewport.value
+  if (!vp) return
+  isPanning.value = true
+  pan = { startX: e.clientX, startY: e.clientY, scrollLeft: vp.scrollLeft, scrollTop: vp.scrollTop }
+  window.addEventListener('mousemove', onPanMove)
+  window.addEventListener('mouseup', onPanUp)
+}
+
+function onPanMove(e: MouseEvent) {
+  if (!pan) return
+  const vp = viewport.value
+  if (!vp) return
+  vp.scrollLeft = pan.scrollLeft - (e.clientX - pan.startX)
+  vp.scrollTop = pan.scrollTop - (e.clientY - pan.startY)
+}
+
+function onPanUp() {
+  pan = null
+  isPanning.value = false
+  window.removeEventListener('mousemove', onPanMove)
+  window.removeEventListener('mouseup', onPanUp)
+}
+
+// --- Zoom (Cmd/Ctrl+scroll, toward cursor) ---
+function onViewportWheel(e: WheelEvent) {
+  if (!e.metaKey && !e.ctrlKey) return
+  e.preventDefault()
+  const vp = viewport.value
+  if (!vp) return
+
+  const oldZoom = zoom.value
+  const newZoom = Math.max(0.05, Math.min(8, oldZoom * Math.exp(-e.deltaY / 300)))
+  if (newZoom === oldZoom) return
+
+  const vpRect = vp.getBoundingClientRect()
+  const cursorInViewX = e.clientX - vpRect.left
+  const cursorInViewY = e.clientY - vpRect.top
+  const imgX = (vp.scrollLeft + cursorInViewX) / oldZoom
+  const imgY = (vp.scrollTop + cursorInViewY) / oldZoom
+
+  zoom.value = newZoom
+
+  nextTick(() => {
+    vp.scrollLeft = imgX * newZoom - cursorInViewX
+    vp.scrollTop = imgY * newZoom - cursorInViewY
+  })
+}
+
+// --- Keyboard shortcuts ---
+function onKeyDown(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+  if (e.key === ' ') {
+    e.preventDefault()
+    spacePressed.value = true
+    return
+  }
+
+  const meta = e.metaKey || e.ctrlKey
+
+  if (e.key === 'Escape') {
+    snipsStore.selectSnip(null)
+    return
+  }
+
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    const snips = snipsStore.orderedSnips
+    if (!snips.length) return
+    const idx = snipsStore.selectedSnipId ? snips.findIndex((s) => s.id === snipsStore.selectedSnipId) : -1
+    const next = e.shiftKey
+      ? snips[(idx - 1 + snips.length) % snips.length]!
+      : snips[(idx + 1) % snips.length]!
+    snipsStore.selectSnip(next.id)
+    return
+  }
+
+  if ((e.key === 'Delete' || e.key === 'Backspace') && snipsStore.selectedSnipId) {
+    e.preventDefault()
+    deleteSnip(snipsStore.selectedSnipId)
+    return
+  }
+
+  if (meta && e.key === '0') {
+    e.preventDefault()
+    fitToWidth()
+    return
+  }
+
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && snipsStore.selectedSnipId) {
+    e.preventDefault()
+    const step = e.shiftKey ? 10 : 1
+    const snip = snipsStore.selectedSnip
+    if (!snip) return
+    const patch: Partial<typeof snip> = {}
+    if (e.key === 'ArrowLeft') patch.x = snip.x - step
+    if (e.key === 'ArrowRight') patch.x = snip.x + step
+    if (e.key === 'ArrowUp') patch.y = snip.y - step
+    if (e.key === 'ArrowDown') patch.y = snip.y + step
+    snipsStore.updateSnip(snipsStore.selectedSnipId, patch)
+    return
+  }
+}
+
+function onKeyUp(e: KeyboardEvent) {
+  if (e.key === ' ') spacePressed.value = false
+}
+
+let _viewportEl: HTMLElement | null = null
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keyup', onKeyUp)
+  _viewportEl = viewport.value ?? null
+  _viewportEl?.addEventListener('wheel', onViewportWheel, { passive: false })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('keyup', onKeyUp)
+  window.removeEventListener('mousemove', onPanMove)
+  window.removeEventListener('mouseup', onPanUp)
+  _viewportEl?.removeEventListener('wheel', onViewportWheel)
+})
+
 // --- Draw logic ---
 const isDrawing = ref(false)
 
@@ -349,7 +527,7 @@ function edgeVelocity(mouse: number, start: number, end: number): number {
 }
 
 function onMouseDown(e: MouseEvent) {
-  if (!activeImage.value || e.button !== 0) return
+  if (!activeImage.value || e.button !== 0 || spacePressed.value) return
   e.preventDefault()
   const img = activeImage.value.img
   const raw = toImageCoords(e)
@@ -416,12 +594,13 @@ function onMouseDown(e: MouseEvent) {
     isDrawing.value = false
 
     const rect = drawRect.value
+    const snap = snapFrame.value
     drawRect.value = null
     drawStart = null
     snapFrame.value = null
 
     if (!rect || rect.w < 10 || rect.h < 10) return
-    createSnip(rect.x, rect.y, rect.w, rect.h)
+    createSnip(rect.x, rect.y, rect.w, rect.h, snap)
   }
 
   window.addEventListener('mousemove', onMove)

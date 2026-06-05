@@ -39,6 +39,22 @@ export function useCanvasRenderer() {
   return { render }
 }
 
+// Pick the source image that belongs to this composition's snips, not an arbitrary map entry.
+function pickBackgroundSource(
+  slotSnipIds: string[],
+  snips: Snip[],
+  sourceImages: Map<string, HTMLImageElement>,
+): HTMLImageElement | undefined {
+  for (const snipId of slotSnipIds) {
+    const snip = snips.find((s) => s.id === snipId)
+    if (snip) {
+      const img = sourceImages.get(snip.sourceImageId)
+      if (img) return img
+    }
+  }
+  return undefined
+}
+
 // --- Freeform composition ---
 function renderFreeform(
   ctx: CanvasRenderingContext2D,
@@ -47,14 +63,14 @@ function renderFreeform(
   sourceImages: Map<string, HTMLImageElement>,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
-  const fallbackSource = sourceImages.values().next().value as HTMLImageElement | undefined
-  if (fallbackSource) drawBackground(ctx, W, H, cfg.background, fallbackSource)
+  const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
+  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
 
   // Render back to front (index 0 = back)
   for (const slot of cfg.slots) {
     const snip = snips.find((s) => s.id === slot.snipId)
     if (!snip) continue
-    const snipSource = sourceImages.get(snip.sourceImageId) ?? fallbackSource
+    const snipSource = sourceImages.get(snip.sourceImageId) ?? bgSource
     if (!snipSource) continue
     const content = extractSnip(snip, snipSource)
     drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor)
@@ -69,8 +85,8 @@ function renderCollage(
   sourceImages: Map<string, HTMLImageElement>,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
-  const fallbackSource = sourceImages.values().next().value as HTMLImageElement | undefined
-  if (fallbackSource) drawBackground(ctx, W, H, cfg.background, fallbackSource)
+  const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
+  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
 
   const slots = cfg.slots
   const aspects = slots.map((slot) => {
@@ -88,7 +104,7 @@ function renderCollage(
     if (!rect) return
     const snip = snips.find((s) => s.id === slot.snipId)
     if (!snip) return
-    const snipSource = sourceImages.get(snip.sourceImageId) ?? fallbackSource
+    const snipSource = sourceImages.get(snip.sourceImageId) ?? bgSource
     if (!snipSource) return
 
     // Cover-fill: frames not used in auto-collage, content may be clipped.

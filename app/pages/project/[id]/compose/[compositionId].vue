@@ -6,7 +6,7 @@
         :to="`/project/${projectId}`"
         class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
       >
-        ← Editor
+        ← Snipper
       </NuxtLink>
       <div class="mx-2 h-4 w-px bg-[var(--color-border)]" />
       <span class="text-sm font-medium text-[var(--color-text)]">

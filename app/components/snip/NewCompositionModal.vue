@@ -53,7 +53,7 @@
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Laptop snip</label>
             <div class="max-h-40 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
               <label
-                v-for="snip in snips"
+                v-for="snip in laptopSnips"
                 :key="snip.id"
                 class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
               >
@@ -61,7 +61,7 @@
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
                 <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
               </label>
-              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+              <p v-if="laptopSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No laptop snips yet</p>
             </div>
           </template>
 
@@ -70,7 +70,7 @@
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Laptop snip</label>
             <div class="max-h-32 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
               <label
-                v-for="snip in snips"
+                v-for="snip in laptopSnips"
                 :key="snip.id"
                 class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
               >
@@ -78,12 +78,12 @@
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
                 <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
               </label>
-              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+              <p v-if="laptopSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No laptop snips yet</p>
             </div>
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Phone snip</label>
             <div class="max-h-32 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
               <label
-                v-for="snip in snips"
+                v-for="snip in phoneSnips"
                 :key="snip.id"
                 class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
               >
@@ -91,7 +91,7 @@
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
                 <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
               </label>
-              <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
+              <p v-if="phoneSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No phone snips yet</p>
             </div>
           </template>
 
@@ -187,6 +187,8 @@ const phoneSnipId = ref<string>('')
 const selectedIds = ref<string[]>([])
 const backgroundColor = ref('#1a1a2e')
 const snips = computed(() => snipsStore.orderedSnips)
+const laptopSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapFrame === 'laptop'))
+const phoneSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapFrame === 'phone'))
 
 const types = [
   { value: 'laptop' as const, icon: '💻', label: 'Laptop', hint: 'One snip in a laptop frame' },

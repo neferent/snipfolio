@@ -297,6 +297,7 @@ function rowToSnip(row: Record<string, unknown>): Snip {
     width: row.width as number,
     height: row.height as number,
     sortOrder: (row.sort_order ?? row.sortOrder ?? 0) as number,
+    snapFrame: (row.snap_frame ?? row.snapFrame ?? null) as 'laptop' | 'phone' | null,
   }
 }
 
@@ -311,6 +312,7 @@ function snipToRow(snip: Snip) {
     width: snip.width,
     height: snip.height,
     sort_order: snip.sortOrder,
+    snap_frame: snip.snapFrame ?? null,
   }
 }
 
