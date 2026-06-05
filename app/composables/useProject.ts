@@ -3,6 +3,7 @@ import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
 import { useSourcesStore } from '~/stores/sources'
 import { useAuthStore } from '~/stores/auth'
+import { saveImageToDb, getImageFromDb, deleteImageFromDb, generateThumbnail } from '~/utils/imageDb'
 import type { Project, SourceImage, Snip, Composition } from '~/types'
 
 function generateId() {
@@ -127,7 +128,7 @@ export function useProject() {
       sourcesStore.setActiveSource(sources[0]?.id ?? null)
       snipsStore.setSnips(snips)
       compositionsStore.setCompositions(compositions)
-      restoreImages(id, sources)
+      await restoreImages(id, sources)
       return project
     }
     const sb = useSupabaseClient()
@@ -191,27 +192,54 @@ export function useProject() {
     }
   }
 
-  function saveImage(projectId: string, sourceId: string, src: string) {
+  function savePreview(projectId: string, img: HTMLImageElement) {
     if (!import.meta.client) return
     try {
-      localStorage.setItem(`snipfolio_img_${projectId}_${sourceId}`, src)
+      const thumb = generateThumbnail(img)
+      saveImageToDb(`preview_${projectId}`, thumb).catch(() => {})
     } catch {
-      // Quota exceeded — image too large for localStorage; user will need to re-upload on refresh
+      // Canvas error — preview won't show on dashboard
     }
   }
 
-  function restoreImages(projectId: string, sources: SourceImage[]) {
+  async function loadPreview(projectId: string): Promise<string | null> {
+    if (!import.meta.client) return null
+    return getImageFromDb(`preview_${projectId}`).catch(() => null)
+  }
+
+  function saveImage(projectId: string, sourceId: string, src: string) {
+    if (!import.meta.client) return
+    const key = `${projectId}_${sourceId}`
+    saveImageToDb(key, src).catch(() => {
+      // IndexedDB unavailable — image won't persist across sessions
+    })
+  }
+
+  function deleteImage(projectId: string, sourceId: string) {
+    if (!import.meta.client) return
+    deleteImageFromDb(`${projectId}_${sourceId}`).catch(() => {})
+  }
+
+  async function restoreImages(projectId: string, sources: SourceImage[]) {
     if (!import.meta.client) return
     for (const source of sources) {
-      // Check per-source key first, then fall back to the old single-image key for migration
-      const src =
-        localStorage.getItem(`snipfolio_img_${projectId}_${source.id}`) ??
-        (source.id === 'default' ? localStorage.getItem(`snipfolio_img_${projectId}`) : null)
+      const key = `${projectId}_${source.id}`
+      // Try IndexedDB first, fall back to legacy localStorage for migration
+      let src = await getImageFromDb(key).catch(() => null)
+      if (!src) {
+        src =
+          localStorage.getItem(`snipfolio_img_${projectId}_${source.id}`) ??
+          (source.id === 'default' ? localStorage.getItem(`snipfolio_img_${projectId}`) : null)
+        if (src) {
+          // Migrate to IndexedDB and clear from localStorage
+          saveImageToDb(key, src).catch(() => {})
+          localStorage.removeItem(`snipfolio_img_${projectId}_${source.id}`)
+        }
+      }
       if (!src) continue
       const img = new Image()
       img.onload = () => {
-        sourcesStore.setLoadedImage(source.id, img, src)
-        // Update stored dimensions if they were 0 (migration case)
+        sourcesStore.setLoadedImage(source.id, img, src!)
         if (source.width === 0 || source.height === 0) {
           sourcesStore.updateSource(source.id, { width: img.naturalWidth, height: img.naturalHeight })
         }
@@ -220,7 +248,7 @@ export function useProject() {
     }
   }
 
-  return { fetchProjects, createProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage }
+  return { fetchProjects, createProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, savePreview, loadPreview }
 }
 
 // --- Row mappers ---

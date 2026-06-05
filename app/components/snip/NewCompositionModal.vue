@@ -50,8 +50,8 @@
               @click="type = 'collage'"
             >
               <div class="text-lg">⊞</div>
-              <div class="mt-1 font-medium">Collage</div>
-              <div class="text-[10px] opacity-70">2–6 snips arranged</div>
+              <div class="mt-1 font-medium">Auto-Collage</div>
+              <div class="text-[10px] opacity-70">No frames · may clip</div>
             </button>
           </div>
         </div>
@@ -59,7 +59,7 @@
         <!-- Snip selector -->
         <div class="space-y-2">
           <label class="text-xs font-medium text-[var(--color-text-muted)]">
-            {{ type === 'single' ? 'Select snip' : 'Select snips (2–6)' }}
+            {{ type === 'single' ? 'Select snip' : `Select snips${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}` }}
           </label>
           <div class="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
             <label
@@ -82,7 +82,7 @@
                 class="accent-[var(--color-accent)]"
               />
               <SnipThumbnail :snip="snip" class="size-7 rounded" />
-              <span class="text-[var(--color-text)]">{{ snip.label }}</span>
+              <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
             </label>
             <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">
               No snips yet — draw some first
@@ -97,7 +97,7 @@
         <div class="flex-1 overflow-hidden rounded-lg border border-[var(--color-border)]" style="min-height: 260px">
           <CompositionCanvas v-if="previewComposition" :composition="previewComposition" />
           <div v-else class="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
-            {{ type === 'single' ? 'Select a snip to preview' : 'Select 2+ snips to preview' }}
+            {{ type === 'single' ? 'Select a snip to preview' : 'Select 2+ snips to preview auto-collage' }}
           </div>
         </div>
       </div>
@@ -134,6 +134,7 @@ const emit = defineEmits<{ close: [] }>()
 const snipsStore = useSnipsStore()
 const projectStore = useProjectStore()
 const { createSingleComposition, createCollageComposition } = useCompositions()
+const compositionsStore = useCompositionsStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -143,7 +144,6 @@ const singleId = ref<string>('')
 const selectedIds = ref<string[]>([])
 const backgroundColor = ref('#1a1a2e')
 const snips = computed(() => snipsStore.orderedSnips)
-const compositionsStore = useCompositionsStore()
 
 watch(
   () => props.open,
@@ -186,14 +186,12 @@ const previewComposition = computed<Composition | null>(() => {
     return { id: '__preview__', projectId, name: 'Preview', type: 'single', sortOrder: 0, config }
   } else {
     if (selectedIds.value.length < 2) return null
-    const count = selectedIds.value.length
-    const template = count === 2 ? '2-horizontal' : count === 4 ? '2x2' : '3-up'
     const config: CollageCompositionConfig = {
       slots: selectedIds.value.map((snipId) => {
         const snip = snipsStore.snips.find((s) => s.id === snipId)
         return { snipId, deviceFrame: snip?.deviceFrame ?? 'none' }
       }),
-      template,
+      template: 'auto',
       gap: 24,
       background: { ...DEFAULT_BACKGROUND.value },
       outputWidth: 1920,
@@ -205,7 +203,7 @@ const previewComposition = computed<Composition | null>(() => {
 
 const canCreate = computed(() => {
   if (type.value === 'single') return !!singleId.value
-  return selectedIds.value.length >= 2 && selectedIds.value.length <= 6
+  return selectedIds.value.length >= 2
 })
 
 function create() {

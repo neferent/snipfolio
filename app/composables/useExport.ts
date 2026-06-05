@@ -63,6 +63,8 @@ export function useExport() {
     canvas.width = snip.width
     canvas.height = snip.height
     const ctx = canvas.getContext('2d')!
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(loaded.img, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)
     const name = `snipfolio_snip_${sanitizeFilename(snip.label)}.png`
     downloadCanvas(canvas, name)

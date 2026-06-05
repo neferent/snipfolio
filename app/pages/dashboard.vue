@@ -36,11 +36,19 @@
             class="group relative cursor-pointer rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 transition-colors hover:border-white/20"
             @click="openProject(project.id)"
           >
-            <!-- Placeholder thumbnail -->
-            <div class="mb-3 flex h-32 items-center justify-center rounded-lg bg-[var(--color-surface-3)]">
-              <svg class="size-8 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12z" />
-              </svg>
+            <!-- Thumbnail preview -->
+            <div class="mb-3 h-32 overflow-hidden rounded-lg bg-[var(--color-surface-3)]">
+              <img
+                v-if="previews[project.id]"
+                :src="previews[project.id]"
+                class="h-full w-full object-cover object-top"
+                draggable="false"
+              />
+              <div v-else class="flex h-full items-center justify-center">
+                <svg class="size-8 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12z" />
+                </svg>
+              </div>
             </div>
 
             <p class="truncate text-sm font-medium text-[var(--color-text)]">{{ project.name }}</p>
@@ -135,19 +143,31 @@ definePageMeta({ middleware: 'auth' })
 const authStore = useAuthStore()
 const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
-const { fetchProjects, createProject: createProjectFn, deleteProject } = useProject()
+const { fetchProjects, createProject: createProjectFn, deleteProject, loadPreview } = useProject()
 
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)
 const newName = ref('')
 const nameInput = ref<HTMLInputElement>()
 const deleteTarget = ref<{ id: string; name: string } | null>(null)
+const previews = ref<Record<string, string>>({})
 
 watch(showNew, (v) => {
   if (v) nextTick(() => nameInput.value?.focus())
 })
 
-onMounted(() => fetchProjects())
+watch(projects, (list) => {
+  for (const p of list) {
+    if (previews.value[p.id]) continue
+    loadPreview(p.id).then((thumb) => {
+      if (thumb) previews.value = { ...previews.value, [p.id]: thumb }
+    })
+  }
+})
+
+onMounted(async () => {
+  await fetchProjects()
+})
 
 async function createProject() {
   if (!newName.value.trim()) return

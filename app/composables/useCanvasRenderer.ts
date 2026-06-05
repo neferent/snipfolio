@@ -9,8 +9,6 @@ import type {
   BackgroundConfig,
   CaptionConfig,
   DeviceFrame,
-  SnipSlotConfig,
-  CollageLayoutTemplate,
 } from '~/types'
 import { isSingleConfig, isCollageConfig } from '~/types'
 
@@ -27,6 +25,8 @@ export function useCanvasRenderer() {
     const ctx = canvas.getContext('2d')!
     canvas.width = cfg.outputWidth
     canvas.height = cfg.outputHeight
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (isSingleConfig(cfg)) {
@@ -59,9 +59,9 @@ function renderSingle(
   const contentCanvas = extractSnip(snip, snipSource)
   const aspect = snip.width / snip.height
 
-  // Compute content size fitting within scale limit
-  const maxW = W * cfg.scale
-  const maxH = H * cfg.scale
+  // Compute content size — fit within scale limit but never upscale past natural size
+  const maxW = Math.min(W * cfg.scale, snip.width)
+  const maxH = Math.min(H * cfg.scale, snip.height)
   let fw = maxW
   let fh = fw / aspect
   if (fh > maxH) {
@@ -106,7 +106,15 @@ function renderCollage(
   if (fallbackSource) drawBackground(ctx, W, H, cfg.background, fallbackSource)
 
   const slots = cfg.slots
-  const layout = computeCollageLayout(cfg.template, W, H, slots.length, cfg.gap)
+  const aspects = slots.map((slot) => {
+    const snip = snips.find((s) => s.id === slot.snipId)
+    return snip ? snip.width / snip.height : 1
+  })
+  const areas = slots.map((slot) => {
+    const snip = snips.find((s) => s.id === slot.snipId)
+    return snip ? snip.width * snip.height : 1
+  })
+  const layout = computeJustifiedLayout(W, H, cfg.gap, aspects, areas)
 
   slots.forEach((slot, i) => {
     const rect = layout[i]
@@ -115,30 +123,22 @@ function renderCollage(
     if (!snip) return
     const snipSource = sourceImages.get(snip.sourceImageId) ?? fallbackSource
     if (!snipSource) return
-    const content = extractSnip(snip, snipSource)
 
-    // Subtract frame padding from available slot area to get max content area
-    const estPad = computeFramePadding(slot.deviceFrame, rect.w, rect.h)
-    const availW = rect.w - estPad.left - estPad.right
-    const availH = rect.h - estPad.top - estPad.bottom
+    // Cover-fill: frames not used in auto-collage, content may be clipped.
+    const scale = Math.max(rect.w / snip.width, rect.h / snip.height)
+    const dw = snip.width * scale
+    const dh = snip.height * scale
+    const dx = rect.x + (rect.w - dw) / 2
+    const dy = rect.y + (rect.h - dh) / 2
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(rect.x, rect.y, rect.w, rect.h)
+    ctx.clip()
+    ctx.drawImage(snipSource, snip.x, snip.y, snip.width, snip.height, dx, dy, dw, dh)
+    ctx.restore()
 
-    // Scale snip to fill available content area while preserving aspect ratio
-    const scale = Math.min(availW / snip.width, availH / snip.height)
-    const contentW = snip.width * scale
-    const contentH = snip.height * scale
-
-    // Recompute padding based on actual content size, then get total framed dimensions
-    const framePad = computeFramePadding(slot.deviceFrame, contentW, contentH)
-    const totalW = contentW + framePad.left + framePad.right
-    const totalH = contentH + framePad.top + framePad.bottom
-
-    // Center the framed item within the slot
-    const drawX = rect.x + (rect.w - totalW) / 2
-    const drawY = rect.y + (rect.h - totalH) / 2
-
-    drawFramedContent(ctx, slot.deviceFrame, content, drawX, drawY, totalW, totalH)
     if (slot.caption) {
-      drawCaption(ctx, slot.caption, drawX, drawY, totalW, totalH)
+      drawCaption(ctx, slot.caption, rect.x, rect.y, rect.w, rect.h)
     }
   })
 
@@ -180,6 +180,8 @@ function drawBackground(
     tmpCanvas.width = W
     tmpCanvas.height = H
     const tmpCtx = tmpCanvas.getContext('2d')!
+    tmpCtx.imageSmoothingEnabled = true
+    tmpCtx.imageSmoothingQuality = 'high'
     tmpCtx.filter = 'blur(24px)'
     tmpCtx.drawImage(
       source,
@@ -282,85 +284,115 @@ function drawCaption(
   ctx.restore()
 }
 
-// --- Layout calculator ---
-interface SlotRect {
-  x: number
-  y: number
-  w: number
-  h: number
-}
-
-function computeCollageLayout(
-  template: CollageLayoutTemplate,
+// --- Justified grid layout ---
+// Snips are sorted by area, assigned to rows so the layout fills the canvas as
+// naturally as possible, then justified in both axes so all 4 sides are flush.
+// Cover rendering fills each cell — content may be slightly clipped.
+function computeJustifiedLayout(
   W: number,
   H: number,
-  count: number,
   gap: number,
-): SlotRect[] {
-  const pad = gap * 2
+  aspects: number[],
+  areas: number[],
+): Array<{ x: number; y: number; w: number; h: number }> {
+  const pad = gap
   const iW = W - pad * 2
   const iH = H - pad * 2
+  const n = aspects.length
 
-  switch (template) {
-    case '2-horizontal': {
-      const slotW = (iW - gap) / 2
-      return [
-        { x: pad, y: pad, w: slotW, h: iH },
-        { x: pad + slotW + gap, y: pad, w: slotW, h: iH },
-      ]
-    }
-    case '2-vertical': {
-      const slotH = (iH - gap) / 2
-      return [
-        { x: pad, y: pad, w: iW, h: slotH },
-        { x: pad, y: pad + slotH + gap, w: iW, h: slotH },
-      ]
-    }
-    case '3-up': {
-      const bigW = iW * 0.56 - gap / 2
-      const smallW = iW - bigW - gap
-      const smallH = (iH - gap) / 2
-      return [
-        { x: pad, y: pad, w: bigW, h: iH },
-        { x: pad + bigW + gap, y: pad, w: smallW, h: smallH },
-        { x: pad + bigW + gap, y: pad + smallH + gap, w: smallW, h: smallH },
-      ]
-    }
-    case '2x2': {
-      const slotW = (iW - gap) / 2
-      const slotH = (iH - gap) / 2
-      return [
-        { x: pad, y: pad, w: slotW, h: slotH },
-        { x: pad + slotW + gap, y: pad, w: slotW, h: slotH },
-        { x: pad, y: pad + slotH + gap, w: slotW, h: slotH },
-        { x: pad + slotW + gap, y: pad + slotH + gap, w: slotW, h: slotH },
-      ]
-    }
-    case '1+2-stacked': {
-      const bigH = iH * 0.56 - gap / 2
-      const smallH = iH - bigH - gap
-      const smallW = (iW - gap) / 2
-      return [
-        { x: pad, y: pad, w: iW, h: bigH },
-        { x: pad, y: pad + bigH + gap, w: smallW, h: smallH },
-        { x: pad + smallW + gap, y: pad + bigH + gap, w: smallW, h: smallH },
-      ]
-    }
-    case 'free':
-    default: {
-      // Even grid fallback for free mode
-      const cols = Math.ceil(Math.sqrt(count))
-      const rows = Math.ceil(count / cols)
-      const slotW = (iW - gap * (cols - 1)) / cols
-      const slotH = (iH - gap * (rows - 1)) / rows
-      return Array.from({ length: count }, (_, i) => ({
-        x: pad + (i % cols) * (slotW + gap),
-        y: pad + Math.floor(i / cols) * (slotH + gap),
-        w: slotW,
-        h: slotH,
-      }))
+  if (n === 0) return []
+  if (n === 1) return [{ x: pad, y: pad, w: iW, h: iH }]
+
+  // Sort slots by natural area descending for visual hierarchy
+  const order = [...Array(n).keys()].sort((a, b) => areas[b]! - areas[a]!)
+  const sortedAspects = order.map((i) => aspects[i]!)
+
+  // Try each row count; pick the one whose natural total height is closest to iH,
+  // minimising the distortion that cover rendering needs to correct.
+  let bestRows: number[][] = []
+  let bestScore = Infinity
+
+  for (let R = 1; R <= n; R++) {
+    const rows = partitionIntoRows(sortedAspects, R)
+    const totalH =
+      rows.reduce((s, row) => {
+        const sumA = row.reduce((a, j) => a + sortedAspects[j]!, 0)
+        return s + (iW - gap * (row.length - 1)) / sumA
+      }, 0) +
+      gap * (rows.length - 1)
+
+    // Score = aspect ratio distortion from vertical scaling.
+    // vScale stretches/shrinks every cell uniformly; minimise max(vScale, 1/vScale).
+    const score = totalH > iH ? totalH / iH : iH / totalH
+    if (score < bestScore) {
+      bestScore = score
+      bestRows = rows
     }
   }
+
+  // Natural row heights (each row fills canvas width exactly)
+  const naturalH = bestRows.map((row) => {
+    const sumA = row.reduce((s, j) => s + sortedAspects[j]!, 0)
+    return (iW - gap * (row.length - 1)) / sumA
+  })
+
+  // Vertical scale: stretch/compress rows so total height = iH
+  const totalNatH = naturalH.reduce((s, h) => s + h, 0) + gap * (bestRows.length - 1)
+  const vScale = iH / totalNatH
+
+  const rects: Array<{ x: number; y: number; w: number; h: number }> = new Array(n)
+
+  // Accumulate y using integers to avoid sub-pixel gaps between rows
+  let yAcc = pad
+  for (let r = 0; r < bestRows.length; r++) {
+    const row = bestRows[r]!
+    const rowH = naturalH[r]! * vScale
+    const rowHInt = r < bestRows.length - 1 ? Math.round(rowH) : pad + iH - yAcc
+
+    const sumA = row.reduce((s, j) => s + sortedAspects[j]!, 0)
+    const rowGaps = gap * (row.length - 1)
+
+    let xAcc = pad
+    for (let c = 0; c < row.length; c++) {
+      const j = row[c]!
+      const wFloat = (sortedAspects[j]! / sumA) * (iW - rowGaps)
+      const wInt = c < row.length - 1 ? Math.round(wFloat) : pad + iW - xAcc
+      rects[order[j]!] = { x: xAcc, y: yAcc, w: wInt, h: rowHInt }
+      xAcc += wInt + gap
+    }
+    yAcc += rowHInt + gap
+  }
+
+  return rects
+}
+
+// Greedy partition of n items into R rows, balancing total aspect sum per row.
+function partitionIntoRows(aspects: number[], R: number): number[][] {
+  const n = aspects.length
+  if (R >= n) return aspects.map((_, i) => [i])
+  if (R === 1) return [aspects.map((_, i) => i)]
+
+  const target = aspects.reduce((s, a) => s + a, 0) / R
+  const rows: number[][] = []
+  let row: number[] = []
+  let rowSum = 0
+
+  for (let i = 0; i < n; i++) {
+    row.push(i)
+    rowSum += aspects[i]!
+
+    const rowsLeft = R - rows.length - 1
+    const itemsLeft = n - i - 1
+
+    if (rowsLeft > 0 && itemsLeft >= rowsLeft && rowSum >= target) {
+      rows.push([...row])
+      row = []
+      rowSum = 0
+    }
+  }
+
+  if (row.length > 0) rows.push(row)
+  return rows
 }
 
 // --- Helpers ---
@@ -369,6 +401,8 @@ function extractSnip(snip: Snip, source: HTMLImageElement): HTMLCanvasElement {
   c.width = snip.width
   c.height = snip.height
   const ctx = c.getContext('2d')!
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(source, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)
   return c
 }

@@ -31,7 +31,7 @@
     <div v-if="sources.length === 0" class="flex flex-1 items-center justify-center">
       <div class="flex flex-col items-center gap-3">
         <p class="text-sm text-[var(--color-text-muted)]">Drop a screenshot to get started</p>
-        <ScreenshotDropzone @loaded="onFirstImageLoaded" />
+        <ScreenshotDropzone @loaded="(img, src, filename) => onFirstImageLoaded(img, src, filename)" />
       </div>
     </div>
 
@@ -193,7 +193,7 @@ const sourcesStore = useSourcesStore()
 const { createSnip } = useSnips()
 const { exportAllSnipsRaw } = useExport()
 const showExportPicker = ref(false)
-const { saveImage, scheduleSave } = useProject()
+const { saveImage, deleteImage, savePreview, scheduleSave } = useProject()
 
 const viewport = ref<HTMLElement>()
 const imageContainer = ref<HTMLElement>()
@@ -271,14 +271,15 @@ function commitAddSource() {
   nextTick(fitToWidth)
 }
 
-function onFirstImageLoaded(img: HTMLImageElement, src: string) {
+function onFirstImageLoaded(img: HTMLImageElement, src: string, filename: string) {
   if (!projectStore.current) return
   const sourceId = crypto.randomUUID()
+  const baseName = filename.replace(/\.[^.]+$/, '')
   const source: SourceImage = {
     id: sourceId,
     projectId: projectStore.current.id,
-    label: 'Screenshot',
-    filename: `source_${Date.now()}`,
+    label: baseName,
+    filename: filename,
     width: img.naturalWidth,
     height: img.naturalHeight,
     sortOrder: 0,
@@ -287,6 +288,7 @@ function onFirstImageLoaded(img: HTMLImageElement, src: string) {
   sourcesStore.setLoadedImage(sourceId, img, src)
   sourcesStore.setActiveSource(sourceId)
   saveImage(projectStore.current.id, sourceId, src)
+  savePreview(projectStore.current.id, img)
   scheduleSave()
   nextTick(fitToWidth)
 }
@@ -304,6 +306,7 @@ function removeSource(id: string) {
     .filter((s) => s.sourceImageId === id)
     .forEach((s) => snipsStore.removeSnip(s.id))
   sourcesStore.removeSource(id)
+  if (projectStore.current) deleteImage(projectStore.current.id, id)
   scheduleSave()
 }
 

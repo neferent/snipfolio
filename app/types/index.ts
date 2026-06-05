@@ -66,13 +66,7 @@ export interface SnipSlotConfig {
   height?: number
 }
 
-export type CollageLayoutTemplate =
-  | '2-horizontal'
-  | '2-vertical'
-  | '3-up'
-  | '2x2'
-  | '1+2-stacked'
-  | 'free'
+export type CollageLayoutTemplate = 'auto'
 
 export interface SingleCompositionConfig {
   snipId: string

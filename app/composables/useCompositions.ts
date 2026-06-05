@@ -54,7 +54,7 @@ export function useCompositions() {
         const snip = snipsStore.snips.find((s) => s.id === snipId)
         return { snipId, deviceFrame: snip?.deviceFrame ?? 'none' }
       }),
-      template: snipIds.length === 2 ? '2-horizontal' : snipIds.length === 4 ? '2x2' : '3-up',
+      template: 'auto',
       gap: 24,
       background: { ...DEFAULT_BACKGROUND, ...backgroundOverride },
       outputWidth: 1920,
@@ -63,7 +63,7 @@ export function useCompositions() {
     const comp: Composition = {
       id: crypto.randomUUID(),
       projectId: projectStore.current!.id,
-      name: name ?? `Collage ${store.compositions.length + 1}`,
+      name: name ?? `Auto-Collage ${store.compositions.length + 1}`,
       type: 'collage',
       config,
       sortOrder: store.compositions.length,
