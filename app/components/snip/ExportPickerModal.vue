@@ -12,7 +12,7 @@
             :indeterminate="someSelected && !allSelected"
             @change="toggleAll"
           />
-          <span class="text-xs font-semibold text-[var(--color-text-muted)]">
+          <span class="text-xs font-medium text-[var(--color-text-muted)]">
             {{ allSelected ? 'Deselect all' : 'Select all' }}
           </span>
         </label>
@@ -66,13 +66,22 @@
 
     <template #footer>
       <button
-        class="rounded-lg px-4 py-2 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+        v-if="authStore.isGuest"
+        class="mr-auto flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] opacity-50 transition hover:opacity-80"
+        @click="signOut"
+      >
+        <Sparkles class="size-3 shrink-0" />
+        Sign in to export without watermarks
+      </button>
+      <button
+        class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
         @click="$emit('close')"
       >
         Cancel
       </button>
       <button
-        class="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40"
+        style="color:#111316"
         :disabled="selected.size === 0"
         @click="exportSelected"
       >
@@ -83,7 +92,10 @@
 </template>
 
 <script setup lang="ts">
+import { Sparkles } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
+import { useAuthStore } from '~/stores/auth'
+import { useAuth } from '~/composables/useAuth'
 import { useExport } from '~/composables/useExport'
 import type { Composition } from '~/types'
 
@@ -91,6 +103,8 @@ defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const compositionsStore = useCompositionsStore()
+const authStore = useAuthStore()
+const { signOut } = useAuth()
 const { exportComposition } = useExport()
 
 const compositions = computed(() => compositionsStore.ordered)

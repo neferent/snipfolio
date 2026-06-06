@@ -13,7 +13,8 @@
       leave-to-class="opacity-0 scale-95 translate-y-1"
     >
       <MenuItems
-        class="absolute z-30 mt-1 min-w-40 rounded-lg bg-[var(--color-surface-3)] py-1 shadow-xl ring-1 ring-white/10 focus:outline-none"
+        class="absolute z-30 mt-1 flex min-w-40 flex-col gap-0.5 p-1.5 focus:outline-none"
+        style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.12);border-radius:8px"
         :class="alignClass"
       >
         <slot />

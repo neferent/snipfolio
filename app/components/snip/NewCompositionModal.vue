@@ -1,5 +1,5 @@
 <template>
-  <AppModal :open="open" title="New Composition" max-width="820px" @close="$emit('close')">
+  <AppModal :open="open" title="New Composition" max-width="760px" @close="$emit('close')">
     <div class="flex gap-5">
       <!-- Left: form controls -->
       <div class="w-64 shrink-0 space-y-4">
@@ -7,21 +7,14 @@
           <label class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
           <input
             v-model="name"
-            class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+            class="w-full"
             placeholder="My composition"
           />
         </div>
 
         <div class="space-y-1.5">
           <label class="text-xs font-medium text-[var(--color-text-muted)]">Background</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model="backgroundColor"
-              type="color"
-              class="h-8 w-10 cursor-pointer rounded border border-[var(--color-border)] bg-transparent p-0.5"
-            />
-            <span class="font-mono text-xs text-[var(--color-text-muted)]">{{ backgroundColor }}</span>
-          </div>
+          <AppColorPicker v-model="backgroundColor" />
         </div>
 
         <!-- Type picker -->
@@ -31,17 +24,15 @@
             <button
               v-for="t in types"
               :key="t.value"
-              class="rounded-lg border p-3 text-sm transition text-left"
-              :class="
-                type === t.value
-                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                  : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-white/20'
-              "
+              class="p-3 text-left transition"
+              :style="type === t.value
+                ? 'border-radius:8px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08)'
+                : 'border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);background:#1e2228'"
               @click="type = t.value"
             >
-              <div class="text-lg">{{ t.icon }}</div>
-              <div class="mt-1 font-medium text-xs">{{ t.label }}</div>
-              <div class="text-[10px] opacity-70 leading-tight mt-0.5">{{ t.hint }}</div>
+              <component :is="t.icon" class="size-5 text-[var(--color-text-muted)]" />
+              <div class="mt-2 font-medium" style="font-size:13px;color:#e2e6ea">{{ t.label }}</div>
+              <div class="leading-tight" style="font-size:12px;color:#6b7280;margin-top:2px">{{ t.hint }}</div>
             </button>
           </div>
         </div>
@@ -149,13 +140,14 @@
 
     <template #footer>
       <button
-        class="rounded-lg px-3 py-1.5 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
+        class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
         @click="$emit('close')"
       >
         Cancel
       </button>
       <button
-        class="rounded-lg bg-[var(--color-accent)] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
+        style="color:#111316"
         :disabled="!canCreate"
         @click="create"
       >
@@ -166,6 +158,7 @@
 </template>
 
 <script setup lang="ts">
+import { Laptop, MonitorSmartphone, LayoutGrid, Layers } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
 import { useCompositions } from '~/composables/useCompositions'
@@ -191,10 +184,10 @@ const laptopSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapF
 const phoneSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapFrame === 'phone'))
 
 const types = [
-  { value: 'laptop' as const, icon: '💻', label: 'Laptop', hint: 'One snip in a laptop frame' },
-  { value: 'laptop+phone' as const, icon: '💻📱', label: 'Laptop + Phone', hint: 'Two snips side by side' },
-  { value: 'auto' as const, icon: '⊞', label: 'Auto-Collage', hint: 'Justified grid · no frames' },
-  { value: 'freeform' as const, icon: '✦', label: 'Free-form', hint: 'Place and frame freely' },
+  { value: 'laptop' as const, icon: Laptop, label: 'Laptop', hint: 'One snip in a laptop frame' },
+  { value: 'laptop+phone' as const, icon: MonitorSmartphone, label: 'Laptop + Phone', hint: 'Two snips side by side' },
+  { value: 'auto' as const, icon: LayoutGrid, label: 'Auto-Collage', hint: 'Justified grid · no frames' },
+  { value: 'freeform' as const, icon: Layers, label: 'Free-form', hint: 'Place and frame freely' },
 ]
 
 watch(

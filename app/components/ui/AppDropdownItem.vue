@@ -1,11 +1,14 @@
 <template>
   <MenuItem v-slot="{ active }" :disabled="disabled">
     <button
-      class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition"
-      :class="[
-        active ? 'bg-white/10 text-[var(--color-text)]' : 'text-[var(--color-text-muted)]',
-        danger && active ? '!text-[var(--color-danger)]' : '',
-        disabled ? 'cursor-not-allowed opacity-50' : '',
+      class="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors"
+      style="border-radius:5px;font-size:13px;font-weight:400"
+      :style="[
+        active && !danger ? 'background:rgba(142,158,173,0.12);color:#e2e6ea' : '',
+        active && danger  ? 'background:rgba(240,149,149,0.12);color:#f09595' : '',
+        !active && danger ? 'color:#f09595' : '',
+        !active && !danger ? 'color:#e2e6ea' : '',
+        disabled ? 'color:#6b7280;cursor:not-allowed' : 'cursor:pointer',
       ]"
       @click="$emit('click')"
     >

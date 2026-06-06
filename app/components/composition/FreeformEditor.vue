@@ -2,8 +2,8 @@
   <div class="absolute inset-0 flex">
     <!-- Left sidebar: slot list (z-order) + add snips -->
     <aside class="flex w-56 shrink-0 flex-col overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
-      <div class="border-b border-[var(--color-border)] px-4 py-3">
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Layers</h2>
+      <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+        <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Layers</h2>
       </div>
 
       <div class="flex-1 overflow-y-auto">
@@ -31,11 +31,7 @@
             @dragend.stop="dragSlotId = null; dragOverIdx = null"
           >
             <!-- drag handle -->
-            <svg class="size-3 shrink-0 cursor-grab text-[var(--color-text-muted)] opacity-40 group-hover:opacity-100" viewBox="0 0 10 14" fill="currentColor">
-              <circle cx="3" cy="2.5" r="1"/><circle cx="7" cy="2.5" r="1"/>
-              <circle cx="3" cy="6" r="1"/><circle cx="7" cy="6" r="1"/>
-              <circle cx="3" cy="9.5" r="1"/><circle cx="7" cy="9.5" r="1"/>
-            </svg>
+            <GripVertical class="size-3 shrink-0 cursor-grab text-[var(--color-text-muted)] opacity-40 group-hover:opacity-100" />
 
             <SnipThumbnail :snip="snipFor(slot.snipId)" class="size-7 shrink-0 rounded" />
 
@@ -49,9 +45,7 @@
               @click.stop="removeSlot(slot.id)"
               title="Remove slot"
             >
-              <svg class="size-3" viewBox="0 0 10 10" fill="currentColor">
-                <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-              </svg>
+              <X class="size-3" />
             </button>
           </div>
         </div>
@@ -70,9 +64,7 @@
             <span class="truncate">{{ snip.label }}</span>
             <span v-if="snip.snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
             <span v-else-if="snip.snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
-            <svg class="size-3 shrink-0 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" d="M5 1v8M1 5h8"/>
-            </svg>
+            <Plus class="size-3 shrink-0 text-[var(--color-text-muted)]" />
           </div>
           <p v-if="availableSnips.length === 0" class="px-2 py-2 text-[var(--color-text-muted)]">
             No snips — draw some first
@@ -107,11 +99,16 @@
         :class="spacePressed ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : ''"
         @mousedown.self="onContainerSelfMouseDown"
       >
+        <div class="pointer-events-none absolute bottom-4 left-0 right-0 z-20 flex justify-center">
+          <div class="pointer-events-auto">
+            <WatermarkToggle />
+          </div>
+        </div>
       <div class="flex min-h-full items-center justify-center p-8">
         <!-- Artboard -->
         <div
           ref="artboard"
-          class="relative shadow-2xl"
+          class="relative"
           :style="{ width: previewW + 'px', height: previewH + 'px' }"
           @mousedown.self="selectedSlotId = null"
         >
@@ -155,22 +152,20 @@
     <aside class="flex w-64 shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
       <!-- Selected slot controls -->
       <template v-if="selectedSlot">
-        <div class="border-b border-[var(--color-border)] px-4 py-3">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Slot</h2>
+        <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+          <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Slot</h2>
         </div>
-        <div class="border-b border-[var(--color-border)] p-4 space-y-3">
+        <div class="p-4 space-y-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
           <div class="space-y-2">
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Frame</label>
             <div class="grid grid-cols-2 gap-1.5">
               <button
                 v-for="frame in frames"
                 :key="frame.value"
-                class="rounded-lg border py-1.5 text-xs transition"
-                :class="
-                  selectedSlot.deviceFrame === frame.value
-                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                    : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-white/20'
-                "
+                class="py-1.5 text-xs transition"
+                :style="selectedSlot.deviceFrame === frame.value
+                  ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
+                  : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);color:#6b7280'"
                 @click="updateSlotFrame(selectedSlot.id, frame.value)"
               >
                 {{ frame.label }}
@@ -178,14 +173,12 @@
             </div>
             <div v-if="selectedSlot.deviceFrame !== 'none'" class="flex items-center gap-2">
               <label class="text-xs text-[var(--color-text-muted)]">Color</label>
-              <input
-                type="color"
-                :value="selectedSlot.frameColor ?? '#262c44'"
-                class="h-7 w-10 cursor-pointer rounded border border-[var(--color-border)] bg-transparent p-0.5"
-                @input="patchSlot(selectedSlot.id, { frameColor: ($event.target as HTMLInputElement).value })"
+              <AppColorPicker
+                :model-value="selectedSlot.frameColor ?? '#262c44'"
+                @update:model-value="patchSlot(selectedSlot.id, { frameColor: $event })"
               />
               <button
-                class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+                class="rounded-[6px] text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
                 @click="patchSlot(selectedSlot.id, { frameColor: undefined })"
               >
                 Reset
@@ -195,8 +188,8 @@
         </div>
       </template>
 
-      <div class="px-4 py-3 border-b border-[var(--color-border)]">
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Settings</h2>
+      <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+        <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Settings</h2>
       </div>
 
       <div class="flex-1 overflow-y-auto p-4 space-y-5">
@@ -204,17 +197,15 @@
 
         <!-- Output size -->
         <div class="space-y-2">
-          <label class="text-xs font-medium text-[var(--color-text-muted)]">Output size</label>
-          <div class="grid grid-cols-2 gap-2">
+          <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Output size</label>
+          <div class="grid grid-cols-2 gap-1.5">
             <button
               v-for="preset in sizePresets"
               :key="preset.label"
-              class="rounded-lg border py-1.5 text-xs transition"
-              :class="
-                config.outputWidth === preset.w && config.outputHeight === preset.h
-                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                  : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-white/20'
-              "
+              class="flex h-[30px] items-center justify-center px-3 transition"
+              :style="config.outputWidth === preset.w && config.outputHeight === preset.h
+                ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500;font-family:var(--font-mono);font-size:12px'
+                : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280;font-family:var(--font-mono);font-size:12px'"
               @click="setOutputSize(preset.w, preset.h)"
             >
               {{ preset.label }}
@@ -224,7 +215,8 @@
             <input
               type="number"
               :value="config.outputWidth"
-              class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-2 py-1 text-xs text-[var(--color-text)] outline-none"
+              class="w-full"
+              style="font-family:var(--font-mono)"
               placeholder="Width"
               @change="setOutputSize(Number(($event.target as HTMLInputElement).value), config.outputHeight)"
             />
@@ -232,7 +224,8 @@
             <input
               type="number"
               :value="config.outputHeight"
-              class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-2 py-1 text-xs text-[var(--color-text)] outline-none"
+              class="w-full"
+              style="font-family:var(--font-mono)"
               placeholder="Height"
               @change="setOutputSize(config.outputWidth, Number(($event.target as HTMLInputElement).value))"
             />
@@ -244,19 +237,18 @@
           <label class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
           <input
             :value="composition.name"
-            class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+            class="w-full"
             @input="$emit('update-name', ($event.target as HTMLInputElement).value)"
           />
         </div>
 
         <!-- Export -->
         <button
-          class="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] py-2 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)]"
+          class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+          style="color:#111316"
           @click="$emit('export')"
         >
-          <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 17l4 4 4-4m-4-12v16" />
-          </svg>
+          <Upload class="size-4" />
           Export PNG
         </button>
       </div>
@@ -265,10 +257,12 @@
 </template>
 
 <script setup lang="ts">
+import { Upload, GripVertical, X, Plus } from 'lucide-vue-next'
 import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
+import { useWatermarkPreview } from '~/composables/useWatermarkPreview'
 import type { Composition, FreeformCompositionConfig, FreeformSlotConfig, DeviceFrame, Snip, BackgroundConfig } from '~/types'
 
 const props = defineProps<{
@@ -284,6 +278,7 @@ const emit = defineEmits<{
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
 const { render } = useCanvasRenderer()
+const { active: watermark } = useWatermarkPreview()
 
 const canvas = ref<HTMLCanvasElement>()
 const canvasContainer = ref<HTMLElement>()
@@ -800,11 +795,11 @@ function buildSourceMap() {
 function renderCanvas() {
   const c = canvas.value
   if (!c || sourcesStore.loadedImages.size === 0) return
-  render(c, { composition: props.composition, snips: snipsStore.snips, sourceImages: buildSourceMap() })
+  render(c, { composition: props.composition, snips: snipsStore.snips, sourceImages: buildSourceMap(), watermark: watermark.value })
 }
 
 watch(
-  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages],
+  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark],
   () => nextTick(renderCanvas),
   { deep: true, immediate: true },
 )

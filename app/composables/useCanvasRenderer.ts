@@ -16,11 +16,12 @@ export interface RenderInput {
   composition: Composition
   snips: Snip[]
   sourceImages: Map<string, HTMLImageElement>
+  watermark?: boolean
 }
 
 export function useCanvasRenderer() {
   function render(canvas: HTMLCanvasElement, input: RenderInput) {
-    const { composition, snips, sourceImages } = input
+    const { composition, snips, sourceImages, watermark = false } = input
     const cfg = composition.config
     const ctx = canvas.getContext('2d')!
     canvas.width = cfg.outputWidth
@@ -30,9 +31,9 @@ export function useCanvasRenderer() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (isFreeformConfig(cfg)) {
-      renderFreeform(ctx, cfg, snips, sourceImages)
+      renderFreeform(ctx, cfg, snips, sourceImages, watermark)
     } else if (isCollageConfig(cfg)) {
-      renderCollage(ctx, cfg, snips, sourceImages)
+      renderCollage(ctx, cfg, snips, sourceImages, watermark)
     }
   }
 
@@ -61,10 +62,12 @@ function renderFreeform(
   cfg: FreeformCompositionConfig,
   snips: Snip[],
   sourceImages: Map<string, HTMLImageElement>,
+  watermark: boolean,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
   if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
+  if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   // Render back to front (index 0 = back)
   for (const slot of cfg.slots) {
@@ -75,6 +78,8 @@ function renderFreeform(
     const content = extractSnip(snip, snipSource)
     drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor)
   }
+
+  if (watermark) drawBadge(ctx, W, H)
 }
 
 // --- Collage composition ---
@@ -83,10 +88,12 @@ function renderCollage(
   cfg: CollageCompositionConfig,
   snips: Snip[],
   sourceImages: Map<string, HTMLImageElement>,
+  watermark: boolean,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
   if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
+  if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   const slots = cfg.slots
   const aspects = slots.map((slot) => {
@@ -128,6 +135,104 @@ function renderCollage(
   if (cfg.globalCaption) {
     drawCaption(ctx, cfg.globalCaption, 0, 0, W, H)
   }
+
+  if (watermark) drawBadge(ctx, W, H)
+}
+
+// --- Watermarks ---
+function drawDiagonalWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
+  ctx.save()
+  const fontSize = Math.round(Math.max(18, Math.min(W * 0.016, 40)))
+  ctx.font = `${fontSize}px system-ui, sans-serif`
+  ctx.fillStyle = '#ffffff'
+  ctx.globalAlpha = 0.055
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  const text = 'snipfol.io'
+  const textW = ctx.measureText(text).width
+  const colSpacing = textW * 2.8
+  const rowSpacing = fontSize * 3.8
+
+  const diagLen = Math.ceil(Math.sqrt(W * W + H * H))
+  const cols = Math.ceil((diagLen * 2) / colSpacing) + 2
+  const rows = Math.ceil((diagLen * 2) / rowSpacing) + 2
+
+  ctx.translate(W / 2, H / 2)
+  ctx.rotate(-Math.PI / 6)
+
+  for (let r = -rows; r <= rows; r++) {
+    for (let c = -cols; c <= cols; c++) {
+      const x = c * colSpacing + (r % 2 === 0 ? 0 : colSpacing / 2)
+      const y = r * rowSpacing
+      ctx.fillText(text, x, y)
+    }
+  }
+  ctx.restore()
+}
+
+function drawBadge(ctx: CanvasRenderingContext2D, W: number, H: number) {
+  ctx.save()
+
+  const fontSize = Math.round(Math.max(10, Math.min(W * 0.008, 14)))
+  const iconSize = Math.round(fontSize * 1.5)
+  const padH = Math.round(fontSize * 0.65)
+  const padV = Math.round(fontSize * 0.5)
+  const gap = Math.round(fontSize * 0.5)
+  const cornerPad = Math.round(Math.max(12, W * 0.012))
+  const radius = Math.round(fontSize * 0.4)
+
+  ctx.font = `${fontSize}px system-ui, sans-serif`
+  const label = 'Made with snipfol.io'
+  const textW = ctx.measureText(label).width
+  const badgeW = padH + iconSize + gap + textW + padH
+  const badgeH = padV * 2 + Math.max(iconSize, fontSize)
+
+  const bx = W - cornerPad - badgeW
+  const by = H - cornerPad - badgeH
+
+  ctx.fillStyle = 'rgba(0,0,0,0.52)'
+  ctx.beginPath()
+  ctx.roundRect(bx, by, badgeW, badgeH, radius)
+  ctx.fill()
+
+  drawLogoIcon(ctx, bx + padH, by + (badgeH - iconSize) / 2, iconSize)
+
+  ctx.fillStyle = '#ffffff'
+  ctx.globalAlpha = 1
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(label, bx + padH + iconSize + gap, by + badgeH / 2)
+
+  ctx.restore()
+}
+
+function drawLogoIcon(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  const s = size / 48
+  ctx.save()
+  ctx.translate(x, y)
+
+  ctx.fillStyle = '#8e9ead'
+  ctx.beginPath()
+  ctx.roundRect(0, 0, size, size, size * 0.25)
+  ctx.fill()
+
+  ctx.fillStyle = '#373d43'
+  ctx.beginPath()
+  ctx.roundRect(8 * s, 7.82 * s, 17 * s, 24 * s, 2.5 * s)
+  ctx.fill()
+
+  ctx.fillStyle = '#373d43'
+  ctx.beginPath()
+  ctx.roundRect(28.1 * s, 7.82 * s, 12 * s, 13 * s, 2.5 * s)
+  ctx.fill()
+
+  ctx.fillStyle = '#565f69'
+  ctx.beginPath()
+  ctx.roundRect(28.1 * s, 23.82 * s, 12 * s, 16 * s, 2.5 * s)
+  ctx.fill()
+
+  ctx.restore()
 }
 
 // --- Background ---

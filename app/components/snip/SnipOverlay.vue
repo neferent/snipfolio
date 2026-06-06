@@ -9,27 +9,15 @@
       style="pointer-events: all"
       @mousedown.stop="startMove($event, snip)"
     >
-      <!-- Fill -->
+      <!-- Fill + border as single element -->
       <div
         class="absolute inset-0 transition-colors"
-        :class="
+        :style="
           resizingSnipId === snip.id && resizeSnapFrame
-            ? 'bg-emerald-400/15'
+            ? 'border:2px solid #34d399;background:rgba(52,211,153,0.10);border-radius:3px'
             : snip.id === selectedId
-              ? 'bg-indigo-500/20'
-              : 'bg-indigo-500/10 hover:bg-indigo-500/15'
-        "
-      />
-
-      <!-- Border -->
-      <div
-        class="absolute inset-0 border-2 transition-colors"
-        :class="
-          resizingSnipId === snip.id && resizeSnapFrame
-            ? 'border-emerald-400 shadow-[0_0_0_1px_rgba(52,211,153,0.4)]'
-            : snip.id === selectedId
-              ? 'border-indigo-400'
-              : 'border-indigo-400/50'
+              ? 'border:2px solid #8e9ead;background:rgba(142,158,173,0.14);border-radius:3px'
+              : 'border:1.5px solid rgba(142,158,173,0.75);background:rgba(142,158,173,0.08);border-radius:3px'
         "
       />
 
@@ -38,27 +26,26 @@
         v-if="resizingSnipId === snip.id && resizeSnapFrame"
         class="absolute inset-0 flex items-center justify-center"
       >
-        <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-semibold tracking-wide text-white">
+        <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-medium tracking-wide text-white">
           {{ resizeSnapFrame === 'laptop' ? '💻 Laptop' : '📱 Phone' }}
         </span>
       </div>
 
-      <!-- Label badge -->
+      <!-- Label badge — top-left, bottom-right radius only -->
       <div
-        class="absolute left-1 top-1 max-w-[80%] truncate rounded bg-indigo-500/80 px-1.5 py-0.5 text-[10px] font-medium text-white"
+        class="absolute left-0 top-0 max-w-[80%] truncate px-1.5 py-0.5"
+        style="background:#8e9ead;color:#111316;font-size:10px;font-weight:500;font-family:var(--font-mono);border-radius:0 0 4px 0"
       >
         {{ snip.label }}
       </div>
 
-      <!-- Resize handles (selected only) -->
+      <!-- Resize handles (selected only) — 8×8px per spec -->
       <template v-if="snip.id === selectedId">
         <div
           v-for="handle in handles"
           :key="handle.cursor"
-          class="absolute size-2.5 rounded-sm border border-white bg-indigo-500"
-          :style="handle.style"
-          :class="'cursor-' + handle.cursor"
-          style="pointer-events: all"
+          class="absolute"
+          :style="[handle.style, 'width:8px;height:8px;border-radius:2px;background:#8e9ead;border:1.5px solid #111316;pointer-events:all;cursor:' + handle.cursor]"
           @mousedown.stop="startResize($event, snip, handle.dir)"
         />
       </template>
@@ -68,21 +55,23 @@
     <div
       v-if="drawRect"
       class="absolute"
-      :class="snapFrame ? 'border-2 border-emerald-400 bg-emerald-400/15 shadow-[0_0_0_1px_rgba(52,211,153,0.4)]' : 'border-2 border-dashed border-indigo-400 bg-indigo-500/20'"
-      :style="drawRectStyle"
+      :style="[drawRectStyle, snapFrame
+        ? 'border:2px solid #34d399;background:rgba(52,211,153,0.10);border-radius:3px'
+        : 'border:2px dashed #8e9ead;background:rgba(142,158,173,0.10);border-radius:3px']"
     >
       <!-- Snap frame label -->
       <div
         v-if="snapFrame"
         class="absolute inset-0 flex items-center justify-center"
       >
-        <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-semibold tracking-wide text-white">
+        <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-medium tracking-wide text-white">
           {{ snapFrame === 'laptop' ? '💻 Laptop' : '📱 Phone' }}
         </span>
       </div>
 
       <div
-        class="absolute -bottom-6 left-0 whitespace-nowrap rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white"
+        class="absolute -bottom-6 left-0 whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-[10px]"
+        style="background:#1e2228;color:#8e9ead;font-family:var(--font-mono);border:0.5px solid rgba(255,255,255,0.12)"
       >
         {{ Math.round(drawRect.w) }} × {{ Math.round(drawRect.h) }}
       </div>
@@ -113,7 +102,6 @@ const snips = computed(() =>
 const selectedId = computed(() => store.selectedSnipId)
 
 function overlayStyle(snip: Snip) {
-  // Parent imageContainer already applies transform:scale(zoom), so use raw image pixels here
   return {
     left: `${snip.x}px`,
     top: `${snip.y}px`,
@@ -161,7 +149,6 @@ function startMove(e: MouseEvent, snip: Snip) {
 const drawRectStyle = computed(() => {
   const r = props.drawRect
   if (!r) return {}
-  // drawRect is already in image coordinates; parent transform handles visual scaling
   return {
     left: `${r.x}px`,
     top: `${r.y}px`,
@@ -172,7 +159,7 @@ const drawRectStyle = computed(() => {
 
 const SNAP_THRESHOLD = 0.20
 const MIN_SNAP_PX = 60
-const LAPTOP_RATIO = 3034.7 / 1964.07 // matches laptop3.svg screen dimensions
+const LAPTOP_RATIO = 3034.7 / 1964.07
 const PHONE_RATIO = 9 / 16
 
 function detectSnap(w: number, h: number): 'laptop' | 'phone' | null {
@@ -186,16 +173,15 @@ function detectSnap(w: number, h: number): 'laptop' | 'phone' | null {
 const resizingSnipId = ref<string | null>(null)
 const resizeSnapFrame = ref<'laptop' | 'phone' | null>(null)
 
-// Resize handle positions
 const handles = [
-  { dir: 'nw', cursor: 'nw-resize', style: { top: '-5px', left: '-5px' } },
-  { dir: 'n', cursor: 'n-resize', style: { top: '-5px', left: 'calc(50% - 5px)' } },
-  { dir: 'ne', cursor: 'ne-resize', style: { top: '-5px', right: '-5px' } },
-  { dir: 'e', cursor: 'e-resize', style: { top: 'calc(50% - 5px)', right: '-5px' } },
-  { dir: 'se', cursor: 'se-resize', style: { bottom: '-5px', right: '-5px' } },
-  { dir: 's', cursor: 's-resize', style: { bottom: '-5px', left: 'calc(50% - 5px)' } },
-  { dir: 'sw', cursor: 'sw-resize', style: { bottom: '-5px', left: '-5px' } },
-  { dir: 'w', cursor: 'w-resize', style: { top: 'calc(50% - 5px)', left: '-5px' } },
+  { dir: 'nw', cursor: 'nw-resize', style: { top: '-4px', left: '-4px' } },
+  { dir: 'n',  cursor: 'n-resize',  style: { top: '-4px', left: 'calc(50% - 4px)' } },
+  { dir: 'ne', cursor: 'ne-resize', style: { top: '-4px', right: '-4px' } },
+  { dir: 'e',  cursor: 'e-resize',  style: { top: 'calc(50% - 4px)', right: '-4px' } },
+  { dir: 'se', cursor: 'se-resize', style: { bottom: '-4px', right: '-4px' } },
+  { dir: 's',  cursor: 's-resize',  style: { bottom: '-4px', left: 'calc(50% - 4px)' } },
+  { dir: 'sw', cursor: 'sw-resize', style: { bottom: '-4px', left: '-4px' } },
+  { dir: 'w',  cursor: 'w-resize',  style: { top: 'calc(50% - 4px)', left: '-4px' } },
 ]
 
 function startResize(e: MouseEvent, snip: Snip, dir: string) {
@@ -254,13 +240,11 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
     }
 
     if (fromCenter) {
-      // Simple clamp for center-scale mode
       if (x < 0) { w += x; x = 0 }
       if (y < 0) { h += y; y = 0 }
       if (x + w > props.imageWidth) w = props.imageWidth - x
       if (y + h > props.imageHeight) h = props.imageHeight - y
     } else {
-      // Clamp to image bounds — keep fixed edges anchored correctly
       if (dir.includes('w')) {
         x = Math.max(0, x)
         w = (orig.x + orig.w) - x

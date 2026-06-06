@@ -21,7 +21,7 @@
       class="rounded px-2 py-1 text-xs transition"
       :class="
         modelValue === level
-          ? 'bg-[var(--color-accent)] text-white'
+          ? 'bg-[var(--color-accent)] text-[#111316]'
           : 'text-[var(--color-text-muted)] hover:bg-white/10 hover:text-[var(--color-text)]'
       "
       @click="$emit('update:modelValue', level)"

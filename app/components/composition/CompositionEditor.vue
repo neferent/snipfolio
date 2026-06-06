@@ -13,13 +13,13 @@
     <div v-else-if="comp && !isFreeform" class="absolute inset-0 flex">
       <!-- Left sidebar: gap + caption controls -->
       <aside class="flex w-64 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
-        <div class="border-b border-[var(--color-border)] px-4 py-3">
-          <h2 class="truncate text-sm font-semibold text-[var(--color-text)]">
+        <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+          <h2 class="truncate text-sm font-medium text-[var(--color-text)]">
             {{ comp.name }}
           </h2>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 space-y-5">
+        <div class="flex-1 overflow-y-auto space-y-5 p-4">
           <CollageLayout
             :model-value="collageCfg!"
             @update:model-value="updateCollage"
@@ -40,13 +40,13 @@
 
       <!-- Right sidebar: bg + output + export -->
       <aside class="flex w-64 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
-        <div class="border-b border-[var(--color-border)] px-4 py-3">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+        <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+          <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">
             Settings
           </h2>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 space-y-5">
+        <div class="flex-1 overflow-y-auto space-y-5 p-4">
           <BackgroundControls
             :model-value="collageCfg!.background"
             @update:model-value="updateCollageProp('background', $event)"
@@ -54,17 +54,15 @@
 
           <!-- Output size -->
           <div class="space-y-2">
-            <label class="text-xs font-medium text-[var(--color-text-muted)]">Output size</label>
-            <div class="grid grid-cols-2 gap-2">
+            <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Output size</label>
+            <div class="grid grid-cols-2 gap-1.5">
               <button
                 v-for="preset in sizePresets"
                 :key="preset.label"
-                class="rounded-lg border py-1.5 text-xs transition"
-                :class="
-                  comp.config.outputWidth === preset.w && comp.config.outputHeight === preset.h
-                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                    : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-white/20'
-                "
+                class="flex h-[30px] items-center justify-center px-3 transition"
+                :style="comp.config.outputWidth === preset.w && comp.config.outputHeight === preset.h
+                  ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500;font-family:var(--font-mono);font-size:12px'
+                  : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280;font-family:var(--font-mono);font-size:12px'"
                 @click="setOutputSize(preset.w, preset.h)"
               >
                 {{ preset.label }}
@@ -74,7 +72,8 @@
               <input
                 type="number"
                 :value="comp.config.outputWidth"
-                class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-2 py-1 text-xs text-[var(--color-text)] outline-none"
+                class="w-full"
+                style="font-family:var(--font-mono)"
                 placeholder="Width"
                 @change="setOutputSize(Number(($event.target as HTMLInputElement).value), comp!.config.outputHeight)"
               />
@@ -82,7 +81,8 @@
               <input
                 type="number"
                 :value="comp.config.outputHeight"
-                class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-2 py-1 text-xs text-[var(--color-text)] outline-none"
+                class="w-full"
+                style="font-family:var(--font-mono)"
                 placeholder="Height"
                 @change="setOutputSize(comp!.config.outputWidth, Number(($event.target as HTMLInputElement).value))"
               />
@@ -94,19 +94,18 @@
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
             <input
               :value="comp.name"
-              class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+              class="w-full"
               @input="updateName(($event.target as HTMLInputElement).value)"
             />
           </div>
 
           <!-- Export -->
           <button
-            class="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] py-2 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)]"
+            class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+            style="color:#111316"
             @click="doExport"
           >
-            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 17l4 4 4-4m-4-12v16" />
-            </svg>
+            <Upload class="size-4" />
             Export PNG
           </button>
         </div>
@@ -116,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import { Upload } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
 import { useCompositions } from '~/composables/useCompositions'
 import { useExport } from '~/composables/useExport'

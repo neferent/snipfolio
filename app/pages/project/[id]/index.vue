@@ -24,7 +24,9 @@
 
     <!-- relative + flex-1 gives SnipTool's absolute inset-0 a defined bounding box -->
     <div class="relative min-h-0 flex-1">
-      <SnipTool />
+      <Transition name="fade">
+        <SnipTool v-if="!loading" />
+      </Transition>
     </div>
   </div>
 </template>
@@ -40,9 +42,11 @@ const projectStore = useProjectStore()
 const { loadProject, scheduleSave } = useProject()
 
 const projectId = computed(() => route.params.id as string)
+const loading = ref(true)
 
 onMounted(async () => {
   await loadProject(projectId.value)
+  loading.value = false
 })
 
 let renameTimer: ReturnType<typeof setTimeout> | null = null

@@ -2,6 +2,7 @@ import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
 import { useSourcesStore } from '~/stores/sources'
+import { useAuthStore } from '~/stores/auth'
 import type { Composition, Snip } from '~/types'
 
 function sanitizeFilename(name: string) {
@@ -25,6 +26,7 @@ export function useExport() {
   const snipsStore = useSnipsStore()
   const compositionsStore = useCompositionsStore()
   const sourcesStore = useSourcesStore()
+  const authStore = useAuthStore()
 
   function buildSourceImagesMap(): Map<string, HTMLImageElement> {
     const map = new Map<string, HTMLImageElement>()
@@ -40,6 +42,7 @@ export function useExport() {
       composition,
       snips: snipsStore.snips,
       sourceImages: buildSourceImagesMap(),
+      watermark: authStore.isGuest,
     })
     return canvas
   }

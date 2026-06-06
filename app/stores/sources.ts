@@ -5,6 +5,7 @@ export const useSourcesStore = defineStore('sources', () => {
   const sources = ref<SourceImage[]>([])
   const activeSourceId = ref<string | null>(null)
   const loadedImages = ref<Map<string, { img: HTMLImageElement; src: string }>>(new Map())
+  const loadingSourceIds = ref<Set<string>>(new Set())
 
   const activeSource = computed(() =>
     sources.value.find((s) => s.id === activeSourceId.value) ?? null,
@@ -15,6 +16,10 @@ export const useSourcesStore = defineStore('sources', () => {
     return loadedImages.value.get(activeSourceId.value) ?? null
   })
 
+  const isActiveSourceLoading = computed(() =>
+    activeSourceId.value !== null && loadingSourceIds.value.has(activeSourceId.value),
+  )
+
   const orderedSources = computed(() =>
     [...sources.value].sort((a, b) => a.sortOrder - b.sortOrder),
   )
@@ -22,6 +27,17 @@ export const useSourcesStore = defineStore('sources', () => {
   function setSources(list: SourceImage[]) {
     sources.value = list
     loadedImages.value = new Map()
+    loadingSourceIds.value = new Set()
+  }
+
+  function markSourceLoading(id: string) {
+    loadingSourceIds.value = new Set([...loadingSourceIds.value, id])
+  }
+
+  function markSourceLoaded(id: string) {
+    const next = new Set(loadingSourceIds.value)
+    next.delete(id)
+    loadingSourceIds.value = next
   }
 
   function addSource(source: SourceImage) {
@@ -61,8 +77,10 @@ export const useSourcesStore = defineStore('sources', () => {
     sources,
     activeSourceId,
     loadedImages,
+    loadingSourceIds,
     activeSource,
     activeImage,
+    isActiveSourceLoading,
     orderedSources,
     setSources,
     addSource,
@@ -70,6 +88,8 @@ export const useSourcesStore = defineStore('sources', () => {
     removeSource,
     setActiveSource,
     setLoadedImage,
+    markSourceLoading,
+    markSourceLoaded,
     getImage,
   }
 })

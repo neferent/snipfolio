@@ -40,7 +40,7 @@ export function useProject() {
   // --- Project CRUD ---
   async function fetchProjects(): Promise<Project[]> {
     if (!isSupabase) {
-      const projects = loadLocalProjects()
+      const projects = loadLocalProjects().filter((p) => p.userId === authStore.user!.id)
       projectStore.setProjects(projects)
       return projects
     }
@@ -125,6 +125,7 @@ export function useProject() {
       }
 
       sourcesStore.setSources(sources)
+      sources.forEach((s) => sourcesStore.markSourceLoading(s.id))
       sourcesStore.setActiveSource(sources[0]?.id ?? null)
       snipsStore.setSnips(snips)
       compositionsStore.setCompositions(compositions)
@@ -144,9 +145,11 @@ export function useProject() {
 
     const sources = (sourcesData ?? []).map(rowToSourceImage)
     sourcesStore.setSources(sources)
+    sources.forEach((s) => sourcesStore.markSourceLoading(s.id))
     sourcesStore.setActiveSource(sources[0]?.id ?? null)
     snipsStore.setSnips((snipsData ?? []).map(rowToSnip))
     compositionsStore.setCompositions((compsData ?? []).map(rowToComposition))
+    await restoreImages(id, sources)
     return proj
   }
 
@@ -192,11 +195,48 @@ export function useProject() {
     }
   }
 
+  // --- Supabase Storage helpers ---
+  async function uploadImageToStorage(projectId: string, sourceId: string, src: string): Promise<void> {
+    const userId = authStore.user!.id
+    const sb = useSupabaseClient()
+    const blob = await fetch(src).then((r) => r.blob())
+    const path = `${userId}/${projectId}/${sourceId}`
+    const { error } = await sb.storage.from('screenshots').upload(path, blob, {
+      contentType: blob.type || 'image/png',
+      upsert: true,
+    })
+    if (error) throw error
+  }
+
+  async function downloadImageFromStorage(projectId: string, sourceId: string): Promise<string | null> {
+    const userId = authStore.user!.id
+    const sb = useSupabaseClient()
+    const path = `${userId}/${projectId}/${sourceId}`
+    const { data, error } = await sb.storage.from('screenshots').download(path)
+    if (error || !data) return null
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(data)
+    })
+  }
+
+  async function deleteImageFromStorage(projectId: string, sourceId: string): Promise<void> {
+    const userId = authStore.user!.id
+    const sb = useSupabaseClient()
+    const path = `${userId}/${projectId}/${sourceId}`
+    await sb.storage.from('screenshots').remove([path])
+  }
+
   function savePreview(projectId: string, img: HTMLImageElement) {
     if (!import.meta.client) return
     try {
       const thumb = generateThumbnail(img)
-      saveImageToDb(`preview_${projectId}`, thumb).catch(() => {})
+      if (isSupabase) {
+        uploadImageToStorage(projectId, `__preview__`, thumb).catch(() => {})
+      } else {
+        saveImageToDb(`preview_${projectId}`, thumb).catch(() => {})
+      }
     } catch {
       // Canvas error — preview won't show on dashboard
     }
@@ -204,24 +244,58 @@ export function useProject() {
 
   async function loadPreview(projectId: string): Promise<string | null> {
     if (!import.meta.client) return null
+    if (isSupabase) {
+      const cached = await getImageFromDb(`preview_${projectId}`).catch(() => null)
+      if (cached) return cached
+      const remote = await downloadImageFromStorage(projectId, `__preview__`).catch(() => null)
+      if (remote) saveImageToDb(`preview_${projectId}`, remote).catch(() => {})
+      return remote
+    }
     return getImageFromDb(`preview_${projectId}`).catch(() => null)
   }
 
   function saveImage(projectId: string, sourceId: string, src: string) {
     if (!import.meta.client) return
-    const key = `${projectId}_${sourceId}`
-    saveImageToDb(key, src).catch(() => {
-      // IndexedDB unavailable — image won't persist across sessions
-    })
+    if (isSupabase) {
+      uploadImageToStorage(projectId, sourceId, src).catch(() => {})
+    } else {
+      const key = `${projectId}_${sourceId}`
+      saveImageToDb(key, src).catch(() => {})
+    }
   }
 
   function deleteImage(projectId: string, sourceId: string) {
     if (!import.meta.client) return
-    deleteImageFromDb(`${projectId}_${sourceId}`).catch(() => {})
+    if (isSupabase) {
+      deleteImageFromStorage(projectId, sourceId).catch(() => {})
+    } else {
+      deleteImageFromDb(`${projectId}_${sourceId}`).catch(() => {})
+    }
   }
 
   async function restoreImages(projectId: string, sources: SourceImage[]) {
     if (!import.meta.client) return
+    if (isSupabase) {
+      for (const source of sources) {
+        const key = `${projectId}_${source.id}`
+        let src = await getImageFromDb(key).catch(() => null)
+        if (!src) {
+          src = await downloadImageFromStorage(projectId, source.id).catch(() => null)
+          if (src) saveImageToDb(key, src).catch(() => {})
+        }
+        sourcesStore.markSourceLoaded(source.id)
+        if (!src) continue
+        const img = new Image()
+        img.onload = () => {
+          sourcesStore.setLoadedImage(source.id, img, src!)
+          if (source.width === 0 || source.height === 0) {
+            sourcesStore.updateSource(source.id, { width: img.naturalWidth, height: img.naturalHeight })
+          }
+        }
+        img.src = src
+      }
+      return
+    }
     for (const source of sources) {
       const key = `${projectId}_${source.id}`
       // Try IndexedDB first, fall back to legacy localStorage for migration
@@ -236,6 +310,7 @@ export function useProject() {
           localStorage.removeItem(`snipfolio_img_${projectId}_${source.id}`)
         }
       }
+      sourcesStore.markSourceLoaded(source.id)
       if (!src) continue
       const img = new Image()
       img.onload = () => {

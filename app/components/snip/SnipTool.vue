@@ -1,27 +1,5 @@
 <template>
   <div class="absolute inset-0 flex flex-col bg-[var(--color-surface)]">
-    <!-- Top toolbar (only once at least one image is loaded) -->
-    <div
-      v-if="sources.length > 0"
-      class="flex shrink-0 items-center gap-3 border-b border-[var(--color-border)] px-4 py-2"
-    >
-      <div class="flex-1" />
-      <AppDropdown align="right">
-        <template #trigger>
-          <button
-            class="flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)]"
-          >
-            Export
-            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 17l4 4 4-4m-4-12v16" />
-            </svg>
-          </button>
-        </template>
-        <AppDropdownItem @click="showExportPicker = true">Export compositions…</AppDropdownItem>
-        <AppDropdownItem @click="exportAllSnipsRaw">Export all snips (raw)</AppDropdownItem>
-      </AppDropdown>
-    </div>
-
     <!-- No sources yet: full-area dropzone -->
     <div v-if="sources.length === 0" class="flex flex-1 items-center justify-center">
       <div class="flex flex-col items-center gap-3">
@@ -59,7 +37,7 @@
               @blur="onSourceLabelBlur(source.id, $event)"
               @keydown.stop="onSourceLabelKeydown(source.id, $event)"
             />
-            <span class="ml-0.5 text-[10px] text-[var(--color-text-muted)]">
+            <span class="ml-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
               {{ source.width }}×{{ source.height }}
             </span>
             <span
@@ -68,9 +46,7 @@
               title="Remove source"
               @click.stop="removeSource(source.id)"
             >
-              <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X class="size-3" />
             </span>
           </div>
 
@@ -78,11 +54,25 @@
             class="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
             @click="showAddSource = true"
           >
-            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus class="size-3.5" />
             Add source
           </button>
+
+          <div class="flex-1" />
+
+          <AppDropdown align="right">
+            <template #trigger>
+              <button
+                class="flex h-7 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-2.5 text-xs font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+                style="color:#111316"
+              >
+                Export
+                <ArrowUpFromLine class="size-3.5" />
+              </button>
+            </template>
+            <AppDropdownItem @click="showExportPicker = true">Export compositions…</AppDropdownItem>
+            <AppDropdownItem @click="exportAllSnipsRaw">Export all snips (raw)</AppDropdownItem>
+          </AppDropdown>
         </div>
 
         <!-- Viewport toolbar -->
@@ -102,7 +92,7 @@
             <ZoomOut class="size-3.5" />
           </button>
           <input
-            class="w-14 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
+            class="w-16 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center font-mono text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
             :value="zoomLabel"
             @focus="($event.target as HTMLInputElement).select()"
             @keydown.enter.prevent="onSnipZoomCommit($event)"
@@ -121,19 +111,20 @@
         <div
           ref="viewport"
           class="relative flex-1 overflow-auto"
-          :class="spacePressed ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : activeImage ? 'cursor-crosshair' : ''"
+          :class="isPanning ? 'cursor-grabbing' : spacePressed ? 'cursor-grab' : activeImage ? 'cursor-crosshair' : ''"
           @mousedown="onMouseDown"
         >
           <!-- Source not yet loaded -->
           <div
-            v-if="!activeImage"
+            v-if="!activeImage && !isActiveSourceLoading"
             class="flex h-full items-center justify-center"
           >
             <ScreenshotDropzone @loaded="(img, src) => onImageLoaded(activeSourceId!, img, src)" />
           </div>
 
+          <Transition name="fade">
           <div
-            v-else
+            v-if="activeImage"
             ref="imageContainer"
             class="relative origin-top-left"
             :style="{
@@ -163,6 +154,7 @@
               @mousedown.stop="onPanMouseDown"
             />
           </div>
+          </Transition>
         </div>
       </div>
 
@@ -180,7 +172,7 @@
           <label class="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">Label</label>
           <input
             v-model="newSourceLabel"
-            class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+            class="w-full"
             placeholder="e.g. Mobile, Desktop"
             @keydown.enter="pendingFile && commitAddSource()"
           />
@@ -195,13 +187,14 @@
       </div>
       <template #footer>
         <button
-          class="rounded-lg px-4 py-2 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
           @click="cancelAddSource"
         >
           Cancel
         </button>
         <button
-          class="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40"
+          style="color:#111316"
           :disabled="!pendingFile || !newSourceLabel.trim()"
           @click="commitAddSource"
         >
@@ -213,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import { Crop, ZoomIn, ZoomOut, Maximize2 } from 'lucide-vue-next'
+import { Crop, ZoomIn, ZoomOut, Maximize2, ArrowUpFromLine, X, Plus } from 'lucide-vue-next'
 import { useProjectStore } from '~/stores/project'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
@@ -248,6 +241,7 @@ function onSnipZoomCommit(e: KeyboardEvent) {
 const sources = computed(() => sourcesStore.orderedSources)
 const activeSourceId = computed(() => sourcesStore.activeSourceId)
 const activeImage = computed(() => sourcesStore.activeImage)
+const isActiveSourceLoading = computed(() => sourcesStore.isActiveSourceLoading)
 
 // --- Source tab renaming ---
 const sourceLabelOriginals = new Map<string, string>()
@@ -386,15 +380,20 @@ function onPanUp() {
   window.removeEventListener('mouseup', onPanUp)
 }
 
-// --- Zoom (Cmd/Ctrl+scroll, toward cursor) ---
+// --- Zoom (Cmd/Ctrl/Alt+scroll, toward cursor) ---
 function onViewportWheel(e: WheelEvent) {
-  if (!e.metaKey && !e.ctrlKey) return
+  if (!e.metaKey && !e.ctrlKey && !e.altKey) return
   e.preventDefault()
   const vp = viewport.value
   if (!vp) return
 
+  // Normalize across deltaMode: 0=pixels, 1=lines (~40px), 2=pages (~800px)
+  let delta = e.deltaY
+  if (e.deltaMode === 1) delta *= 40
+  else if (e.deltaMode === 2) delta *= 800
+
   const oldZoom = zoom.value
-  const newZoom = Math.max(0.05, Math.min(8, oldZoom * Math.exp(-e.deltaY / 300)))
+  const newZoom = Math.max(0.05, Math.min(8, oldZoom * Math.exp(-delta / 300)))
   if (newZoom === oldZoom) return
 
   const vpRect = vp.getBoundingClientRect()
@@ -471,13 +470,26 @@ function onKeyUp(e: KeyboardEvent) {
   if (e.key === ' ') spacePressed.value = false
 }
 
+function onViewportMiddleDown(e: MouseEvent) {
+  if (e.button !== 1) return
+  e.preventDefault()
+  const vp = viewport.value
+  if (!vp) return
+  isPanning.value = true
+  pan = { startX: e.clientX, startY: e.clientY, scrollLeft: vp.scrollLeft, scrollTop: vp.scrollTop }
+  window.addEventListener('mousemove', onPanMove)
+  window.addEventListener('mouseup', onPanUp)
+}
+
 let _viewportEl: HTMLElement | null = null
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
   _viewportEl = viewport.value ?? null
-  _viewportEl?.addEventListener('wheel', onViewportWheel, { passive: false })
+  // Use capture phase so snip @mousedown.stop doesn't block these
+  _viewportEl?.addEventListener('wheel', onViewportWheel, { passive: false, capture: true })
+  _viewportEl?.addEventListener('mousedown', onViewportMiddleDown, { capture: true })
 })
 
 onUnmounted(() => {
@@ -485,7 +497,8 @@ onUnmounted(() => {
   window.removeEventListener('keyup', onKeyUp)
   window.removeEventListener('mousemove', onPanMove)
   window.removeEventListener('mouseup', onPanUp)
-  _viewportEl?.removeEventListener('wheel', onViewportWheel)
+  _viewportEl?.removeEventListener('wheel', onViewportWheel, { capture: true } as EventListenerOptions)
+  _viewportEl?.removeEventListener('mousedown', onViewportMiddleDown, { capture: true } as EventListenerOptions)
 })
 
 // --- Draw logic ---

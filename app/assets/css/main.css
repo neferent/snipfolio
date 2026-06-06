@@ -1,28 +1,88 @@
 @import "tailwindcss";
 
+/* ─── Brand palette ──────────────────────────────────────────────────────── */
+
 @theme {
-  --color-surface: #0f0f0f;
-  --color-surface-2: #1a1a1a;
-  --color-surface-3: #242424;
-  --color-border: #2e2e2e;
-  --color-text: #e8e8e8;
-  --color-text-muted: #888888;
-  --color-accent: #6366f1;
-  --color-accent-hover: #818cf8;
-  --color-danger: #ef4444;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
+  --color-brand-300: #8e9ead;
+  --color-brand-500: #565f69;
+  --color-brand-700: #373d43;
 
-  --font-sans: 'Inter', 'system-ui', sans-serif;
+  /* Surfaces */
+  --color-surface:   #111316;
+  --color-surface-2: #16191d;
+  --color-surface-3: #1e2228;
+  --color-surface-4: #2c3238;
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* Borders */
+  --color-border:        rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Text */
+  --color-text:       #e2e6ea;
+  --color-text-muted: #6b7280;
+  --color-text-faint: #4a5e6e;
+
+  /* Accent */
+  --color-accent:       #8e9ead;
+  --color-accent-hover: #4a5e6e;   /* darker on hover, not lighter */
+  --color-accent-dim:   rgba(142, 158, 173, 0.12);
+
+  /* Status */
+  --color-danger:  #f09595;
+  --color-success: #5dcaa5;
+  --color-warning: #ef9f27;
+  --color-info:    #38bdf8;
+
+  /* Typography */
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  /* Radius */
+  --radius-sm:  4px;
+  --radius-md:  6px;
+  --radius-lg:  8px;
+  --radius-xl:  12px;
+  --radius-2xl: 16px;
 }
 
-* {
+/* ─── SF design tokens (spec names for reference) ────────────────────────── */
+:root {
+  --sf-accent:         #8e9ead;
+  --sf-accent-dark:    #4a5e6e;
+  --sf-accent-tint:    rgba(142, 158, 173, 0.12);
+  --sf-accent-tint-md: rgba(142, 158, 173, 0.15);
+
+  --sf-bg:             #111316;
+  --sf-surface:        #16191d;
+  --sf-surface-raised: #1e2228;
+
+  --sf-border:         rgba(255, 255, 255, 0.06);
+  --sf-border-emphasis: rgba(255, 255, 255, 0.12);
+
+  --sf-text-primary:   #e2e6ea;
+  --sf-text-muted:     #6b7280;
+  --sf-text-accent:    #8e9ead;
+
+  --sf-success:        #5dcaa5;
+  --sf-danger:         #f09595;
+  --sf-warning:        #ef9f27;
+
+  --sf-success-tint:   rgba(93, 202, 165, 0.12);
+  --sf-danger-tint:    rgba(240, 149, 149, 0.12);
+  --sf-warning-tint:   rgba(239, 159, 39, 0.12);
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+::selection {
+  background: var(--sf-accent-tint-md);
+  color: var(--sf-text-primary);
 }
 
 html,
@@ -30,13 +90,16 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: var(--color-surface);
-  color: var(--color-text);
+  background-color: var(--sf-bg);
+  color: var(--sf-text-primary);
   font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Nuxt 4 mounts to #__nuxt; make it fill the viewport */
 #__nuxt,
 #app {
   height: 100%;
@@ -44,20 +107,127 @@ body {
   flex-direction: column;
 }
 
+/* ─── Focus ring ─────────────────────────────────────────────────────────── */
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sf-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Global inputs ──────────────────────────────────────────────────────── */
+
+input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]) {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: var(--font-sans);
+  border-radius: 6px;
+  border: 0.5px solid var(--sf-border-emphasis);
+  background: var(--sf-surface);
+  color: var(--sf-text-primary);
+  caret-color: var(--sf-accent);
+  outline: none;
+  transition: border-color 120ms ease;
+}
+
+input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):focus {
+  border-color: var(--sf-accent);
+}
+
+input::placeholder {
+  color: var(--sf-text-muted);
+  opacity: 1;
+}
+
+/* Transparent inputs (inline editable names) */
+input.bg-transparent {
+  background: transparent;
+  border-color: transparent;
+  height: auto;
+  padding: 0;
+}
+
+input.bg-transparent:hover:not(:focus),
+input.bg-transparent:focus {
+  border-color: transparent;
+}
+
+/* ─── Global range slider ────────────────────────────────────────────────── */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--sf-surface-raised);
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  width: 100%;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  background: var(--sf-accent);
+  border: 2px solid var(--sf-bg);
+  cursor: grab;
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  background: var(--sf-accent);
+  border: 2px solid var(--sf-bg);
+  cursor: grab;
+}
+
+/* ─── Scrollbars ─────────────────────────────────────────────────────────── */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-surface-2);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
+  background: rgba(142, 158, 173, 0.18);
+  border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: rgba(142, 158, 173, 0.32);
+}
+
+/* ─── Page / content transitions ─────────────────────────────────────────── */
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }

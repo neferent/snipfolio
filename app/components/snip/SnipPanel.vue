@@ -1,7 +1,7 @@
 <template>
   <aside class="flex w-64 flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
-    <div class="border-b border-[var(--color-border)] px-4 py-3">
-      <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+    <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+      <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">
         Snip Properties
       </h2>
     </div>
@@ -12,10 +12,10 @@
 
       <!-- Label -->
       <div class="space-y-1.5">
-        <label class="text-xs font-medium text-[var(--color-text-muted)]">Label</label>
+        <label class="text-xs text-[var(--color-text-muted)]">Label</label>
         <input
           :value="snip.label"
-          class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+          class="w-full"
           @input="updateLabel(($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -55,13 +55,14 @@
       <!-- Actions -->
       <div class="pt-2 space-y-2">
         <button
-          class="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] py-2 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)]"
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+          style="color:#111316"
           @click="createCompositionFromSnip"
         >
           Create composition
         </button>
         <button
-          class="flex w-full items-center justify-center gap-2 rounded-lg bg-transparent py-2 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-danger)]"
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-transparent text-sm text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-danger)]"
           @click="exportRaw"
         >
           Export raw PNG

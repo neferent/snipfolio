@@ -2,7 +2,6 @@
   <TransitionRoot appear :show="open" as="template">
     <Dialog as="div" class="relative z-50" @close="$emit('close')">
 
-      <!-- Backdrop: TransitionChild without as="template" so it renders a real div -->
       <TransitionChild
         enter="ease-out duration-200"
         enter-from="opacity-0"
@@ -11,10 +10,9 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="fixed inset-0" style="background:rgba(0,0,0,0.6)" />
       </TransitionChild>
 
-      <!-- Scroll container keeps modal on-screen on short viewports -->
       <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
           <TransitionChild
@@ -27,33 +25,33 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel
-              class="relative w-full rounded-xl bg-[var(--color-surface-2)] shadow-2xl ring-1 ring-white/10"
-              :style="{ maxWidth: maxWidth ?? '480px' }"
+              class="relative w-full"
+              :style="{ maxWidth: maxWidth ?? '520px', background: '#1e2228', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '16px' }"
             >
               <div
                 v-if="title"
-                class="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4"
+                class="flex items-center justify-between px-6 py-4"
+                style="border-bottom:0.5px solid rgba(255,255,255,0.08)"
               >
-                <DialogTitle class="text-sm font-semibold text-[var(--color-text)]">
+                <DialogTitle class="text-sm font-medium text-[var(--color-text)]">
                   {{ title }}
                 </DialogTitle>
                 <button
-                  class="rounded p-1 text-[var(--color-text-muted)] transition hover:bg-white/10 hover:text-[var(--color-text)]"
+                  class="rounded-[6px] p-1 text-[var(--color-text-muted)] transition hover:bg-white/10 hover:text-[var(--color-text)]"
                   @click="$emit('close')"
                 >
-                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X class="size-4" />
                 </button>
               </div>
 
-              <div class="p-5">
+              <div class="p-6">
                 <slot />
               </div>
 
               <div
                 v-if="hasFooter"
-                class="flex justify-end gap-2 border-t border-[var(--color-border)] px-5 py-4"
+                class="flex justify-end gap-2 px-6 py-4"
+                style="border-top:0.5px solid rgba(255,255,255,0.08)"
               >
                 <slot name="footer" />
               </div>
@@ -74,6 +72,7 @@ import {
   DialogPanel,
   DialogTitle,
 } from '@headlessui/vue'
+import { X } from 'lucide-vue-next'
 
 defineProps<{
   open: boolean

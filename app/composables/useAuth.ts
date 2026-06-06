@@ -25,6 +25,10 @@ function useLocalAuth() {
     store.setToken(token)
   }
 
+  async function signUp(email: string, password: string) {
+    await signIn(email, password)
+  }
+
   async function signOut() {
     if (import.meta.client) localStorage.removeItem(LOCAL_TOKEN_KEY)
     store.clear()
@@ -45,7 +49,7 @@ function useLocalAuth() {
     }
   }
 
-  return { signIn, signOut, restoreSession }
+  return { signIn, signUp, signOut, restoreSession }
 }
 
 function useSupabaseAuth() {
@@ -60,6 +64,17 @@ function useSupabaseAuth() {
     if (data.user) {
       store.setUser({ id: data.user.id, email: data.user.email ?? '' })
       store.setToken(data.session?.access_token ?? null)
+    }
+  }
+
+  async function signUp(email: string, password: string) {
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) throw error
+    if (data.user && data.session) {
+      store.setUser({ id: data.user.id, email: data.user.email ?? '' })
+      store.setToken(data.session.access_token)
+    } else if (data.user && !data.session) {
+      throw new Error('Check your email to confirm your account.')
     }
   }
 
@@ -88,11 +103,24 @@ function useSupabaseAuth() {
     })
   }
 
-  return { signIn, signOut, restoreSession }
+  return { signIn, signUp, signOut, restoreSession }
 }
 
 export function useAuth() {
   const config = useRuntimeConfig()
   const mode = config.public.authMode as string
-  return mode === 'supabase' ? useSupabaseAuth() : useLocalAuth()
+  const impl = mode === 'supabase' ? useSupabaseAuth() : useLocalAuth()
+  const store = useAuthStore()
+
+  async function restoreSession() {
+    await impl.restoreSession()
+    if (!store.isAuthenticated) store.restoreGuest()
+  }
+
+  async function continueAsGuest() {
+    store.setGuest()
+    await navigateTo('/dashboard')
+  }
+
+  return { ...impl, restoreSession, continueAsGuest }
 }

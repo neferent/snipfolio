@@ -1,18 +1,22 @@
 <template>
   <div
-    class="flex h-80 w-96 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-surface-2)] transition-colors"
-    :class="isDragOver ? 'border-[var(--color-accent)] bg-indigo-500/5' : ''"
+    class="flex flex-col items-center justify-center transition-colors"
+    :class="isDragOver ? 'bg-[rgba(142,158,173,0.04)]' : 'bg-[var(--color-surface-2)]'"
+    :style="{
+      borderRadius: '12px',
+      border: isDragOver ? '1.5px dashed #8e9ead' : '1.5px dashed rgba(255,255,255,0.12)',
+      padding: '48px 32px',
+    }"
     @dragover.prevent="isDragOver = true"
     @dragleave="isDragOver = false"
     @drop.prevent="onDrop"
   >
-    <svg class="mb-3 size-10 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm0 0H9m4.06-7.19l-4.5-4.5a1.125 1.125 0 00-1.591 0l-4.5 4.5" />
-    </svg>
+    <ImageIcon class="mb-3 size-10 text-[var(--color-text-muted)]" :stroke-width="1.5" />
     <p class="mb-1 text-sm font-medium text-[var(--color-text)]">Drop your screenshot here</p>
-    <p class="mb-4 text-xs text-[var(--color-text-muted)]">PNG, JPG, or WebP</p>
+    <p class="text-xs text-[var(--color-text-muted)]" style="margin-top:4px">PNG, JPG, or WebP</p>
     <button
-      class="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)]"
+      class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text)] transition hover:bg-white/5"
+      style="margin-top:16px;border:0.5px solid rgba(255,255,255,0.12)"
       @click="fileInput?.click()"
     >
       Choose file
@@ -28,6 +32,8 @@
 </template>
 
 <script setup lang="ts">
+import { ImageIcon } from 'lucide-vue-next'
+
 const emit = defineEmits<{
   loaded: [img: HTMLImageElement, src: string, filename: string]
 }>()

@@ -1,10 +1,13 @@
 <template>
-  <div ref="container" class="flex h-full items-center justify-center overflow-hidden bg-[var(--color-surface)] p-6">
+  <div ref="container" class="relative flex h-full flex-col items-center justify-center overflow-hidden bg-[var(--color-surface)] p-6">
     <div
-      class="relative shadow-2xl"
+      class="relative"
       :style="{ width: previewW + 'px', height: previewH + 'px' }"
     >
       <canvas ref="canvas" class="block h-full w-full" />
+    </div>
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2">
+      <WatermarkToggle />
     </div>
   </div>
 </template>
@@ -14,6 +17,7 @@ import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
+import { useWatermarkPreview } from '~/composables/useWatermarkPreview'
 import type { Composition } from '~/types'
 
 const props = defineProps<{
@@ -25,6 +29,7 @@ const container = ref<HTMLElement>()
 const { render } = useCanvasRenderer()
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
+const { active: watermark } = useWatermarkPreview()
 
 const outputW = computed(() => props.composition.config.outputWidth)
 const outputH = computed(() => props.composition.config.outputHeight)
@@ -59,11 +64,12 @@ function renderCanvas() {
     composition: props.composition,
     snips: snipsStore.snips,
     sourceImages: buildSourceImagesMap(),
+    watermark: watermark.value,
   })
 }
 
 watch(
-  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages],
+  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark],
   () => nextTick(renderCanvas),
   { deep: true, immediate: true },
 )
