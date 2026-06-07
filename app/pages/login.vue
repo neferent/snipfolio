@@ -22,7 +22,6 @@
         <div class="mb-5 flex items-center justify-between">
           <h2 class="text-sm font-medium text-[var(--color-text)]">{{ isSignUp ? 'Create account' : 'Sign in' }}</h2>
           <button
-            v-if="authMode !== 'local'"
             class="text-xs text-[var(--color-accent)] hover:underline"
             type="button"
             @click="toggleMode"
@@ -97,9 +96,6 @@
         Exports will include a watermark
       </p>
 
-      <p v-if="authMode === 'local'" class="mt-4 text-center text-xs text-[var(--color-text-muted)]">
-        Local auth mode -- use .env credentials
-      </p>
     </div>
   </div>
 </template>
@@ -113,16 +109,14 @@ import { useAuthStore } from '~/stores/auth'
 
 const { signIn: authSignIn, signUp: authSignUp, continueAsGuest } = useAuth()
 const authStore = useAuthStore()
-const config = useRuntimeConfig()
 
-const email = ref(config.public.authMode === 'local' ? config.public.localDevEmail : '')
+const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
 const message = ref('')
 const isSignUp = ref(false)
 const checking = ref(true)
-const authMode = computed(() => config.public.authMode)
 
 onMounted(async () => {
   if (authStore.isAuthenticated) {

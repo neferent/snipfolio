@@ -1,59 +1,6 @@
-import { SignJWT, jwtVerify } from 'jose'
 import { useAuthStore } from '~/stores/auth'
 
-const LOCAL_TOKEN_KEY = 'snipfolio_local_token'
-
-// Track whether the auth state listener has been registered so we never double-register
 let _authListenerRegistered = false
-
-function useLocalAuth() {
-  const store = useAuthStore()
-  const config = useRuntimeConfig()
-
-  async function signIn(email: string, password: string) {
-    if (email !== config.public.localDevEmail || password !== config.public.localDevPassword) {
-      throw new Error('Invalid credentials')
-    }
-    const secret = new TextEncoder().encode(config.public.localJwtSecret)
-    const token = await new SignJWT({ email, sub: 'local-dev-user' })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('30d')
-      .sign(secret)
-
-    if (import.meta.client) localStorage.setItem(LOCAL_TOKEN_KEY, token)
-    store.setUser({ id: 'local-dev-user', email })
-    store.setToken(token)
-  }
-
-  async function signUp(email: string, password: string) {
-    await signIn(email, password)
-  }
-
-  async function signOut() {
-    if (import.meta.client) localStorage.removeItem(LOCAL_TOKEN_KEY)
-    store.clear()
-    await navigateTo('/')
-  }
-
-  async function restoreSession() {
-    if (!import.meta.client) return
-    const token = localStorage.getItem(LOCAL_TOKEN_KEY)
-    if (!token) return
-    try {
-      const secret = new TextEncoder().encode(config.public.localJwtSecret)
-      const { payload } = await jwtVerify(token, secret)
-      store.setUser({ id: payload.sub as string, email: payload.email as string })
-      store.setToken(token)
-    } catch {
-      localStorage.removeItem(LOCAL_TOKEN_KEY)
-    }
-  }
-
-  async function refreshProfile() { /* no-op in local mode */ }
-
-  return { signIn, signUp, signOut, restoreSession, refreshProfile }
-}
 
 function useSupabaseAuth() {
   const store = useAuthStore()
@@ -137,9 +84,7 @@ function useSupabaseAuth() {
 }
 
 export function useAuth() {
-  const config = useRuntimeConfig()
-  const mode = config.public.authMode as string
-  const impl = mode === 'supabase' ? useSupabaseAuth() : useLocalAuth()
+  const impl = useSupabaseAuth()
   const store = useAuthStore()
 
   async function restoreSession() {
