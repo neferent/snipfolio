@@ -31,6 +31,22 @@ const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
 const { active: watermark } = useWatermarkPreview()
 
+const loadedBgImage = ref<HTMLImageElement | undefined>()
+
+watch(
+  () => props.composition.config.background,
+  (bg) => {
+    if (bg.type === 'image' && bg.imageDataUrl) {
+      const img = new Image()
+      img.onload = () => { loadedBgImage.value = img }
+      img.src = bg.imageDataUrl
+    } else {
+      loadedBgImage.value = undefined
+    }
+  },
+  { immediate: true, deep: false },
+)
+
 const outputW = computed(() => props.composition.config.outputWidth)
 const outputH = computed(() => props.composition.config.outputHeight)
 
@@ -64,12 +80,13 @@ function renderCanvas() {
     composition: props.composition,
     snips: snipsStore.snips,
     sourceImages: buildSourceImagesMap(),
+    backgroundImage: loadedBgImage.value,
     watermark: watermark.value,
   })
 }
 
 watch(
-  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark],
+  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark, loadedBgImage],
   () => nextTick(renderCanvas),
   { deep: true, immediate: true },
 )

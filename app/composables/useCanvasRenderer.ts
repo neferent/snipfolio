@@ -1,4 +1,6 @@
+import { computeJustifiedLayout, partitionIntoRows } from '~/utils/justifiedLayout'
 import { drawPhoneFrame } from '~/components/frames/PhoneFrame'
+import { drawTabletFrame } from '~/components/frames/TabletFrame'
 import { drawBrowserFrame, browserToolbarHeight } from '~/components/frames/BrowserFrame'
 import { drawLaptopFrame } from '~/components/frames/LaptopFrame'
 import type {
@@ -16,12 +18,13 @@ export interface RenderInput {
   composition: Composition
   snips: Snip[]
   sourceImages: Map<string, HTMLImageElement>
+  backgroundImage?: HTMLImageElement
   watermark?: boolean
 }
 
 export function useCanvasRenderer() {
   function render(canvas: HTMLCanvasElement, input: RenderInput) {
-    const { composition, snips, sourceImages, watermark = false } = input
+    const { composition, snips, sourceImages, backgroundImage, watermark = false } = input
     const cfg = composition.config
     const ctx = canvas.getContext('2d')!
     canvas.width = cfg.outputWidth
@@ -31,9 +34,9 @@ export function useCanvasRenderer() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (isFreeformConfig(cfg)) {
-      renderFreeform(ctx, cfg, snips, sourceImages, watermark)
+      renderFreeform(ctx, cfg, snips, sourceImages, backgroundImage, watermark)
     } else if (isCollageConfig(cfg)) {
-      renderCollage(ctx, cfg, snips, sourceImages, watermark)
+      renderCollage(ctx, cfg, snips, sourceImages, backgroundImage, watermark)
     }
   }
 
@@ -62,11 +65,12 @@ function renderFreeform(
   cfg: FreeformCompositionConfig,
   snips: Snip[],
   sourceImages: Map<string, HTMLImageElement>,
+  backgroundImage: HTMLImageElement | undefined,
   watermark: boolean,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
-  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
+  drawBackground(ctx, W, H, cfg.background, bgSource, backgroundImage)
   if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   // Render back to front (index 0 = back)
@@ -77,6 +81,10 @@ function renderFreeform(
     if (!snipSource) continue
     const content = extractSnip(snip, snipSource)
     drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor)
+    if (slot.caption) {
+      const scr = getFrameScreenBounds(slot.deviceFrame, slot.x, slot.y, slot.width, slot.height)
+      drawCaption(ctx, slot.caption, scr.x, scr.y, scr.w, scr.h, scr.r)
+    }
   }
 
   if (watermark) drawBadge(ctx, W, H)
@@ -88,11 +96,12 @@ function renderCollage(
   cfg: CollageCompositionConfig,
   snips: Snip[],
   sourceImages: Map<string, HTMLImageElement>,
+  backgroundImage: HTMLImageElement | undefined,
   watermark: boolean,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
-  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
+  drawBackground(ctx, W, H, cfg.background, bgSource, backgroundImage)
   if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   const slots = cfg.slots
@@ -241,7 +250,8 @@ function drawBackground(
   W: number,
   H: number,
   bg: BackgroundConfig,
-  source: HTMLImageElement,
+  source: HTMLImageElement | undefined,
+  bgImage: HTMLImageElement | undefined,
 ) {
   ctx.save()
   if (bg.type === 'solid') {
@@ -261,7 +271,14 @@ function drawBackground(
     grad.addColorStop(1, bg.gradientEnd)
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, W, H)
-  } else if (bg.type === 'blur') {
+  } else if (bg.type === 'image' && bgImage) {
+    const iW = bgImage.naturalWidth
+    const iH = bgImage.naturalHeight
+    const scale = Math.max(W / iW, H / iH)
+    const dw = iW * scale
+    const dh = iH * scale
+    ctx.drawImage(bgImage, (W - dw) / 2, (H - dh) / 2, dw, dh)
+  } else if (bg.type === 'blur' && source) {
     const region = bg.blurRegion ?? { x: 0, y: 0, width: source.naturalWidth, height: source.naturalHeight }
     const tmpCanvas = document.createElement('canvas')
     tmpCanvas.width = W
@@ -275,6 +292,40 @@ function drawBackground(
     tmpCtx.fillRect(0, 0, W, H)
     ctx.drawImage(tmpCanvas, 0, 0)
   }
+  ctx.restore()
+
+  if (bg.noiseOpacity && bg.noiseOpacity > 0) {
+    drawNoise(ctx, W, H, bg.noiseOpacity)
+  }
+}
+
+let _noiseCachedCanvas: HTMLCanvasElement | null = null
+let _noiseCachedOpacity = -1
+
+function drawNoise(ctx: CanvasRenderingContext2D, W: number, H: number, opacity: number) {
+  if (!_noiseCachedCanvas || _noiseCachedOpacity !== opacity) {
+    const size = 200
+    const noiseCanvas = document.createElement('canvas')
+    noiseCanvas.width = size
+    noiseCanvas.height = size
+    const nc = noiseCanvas.getContext('2d')!
+    const imageData = nc.createImageData(size, size)
+    const { data } = imageData
+    for (let i = 0; i < data.length; i += 4) {
+      const v = (Math.random() * 255) | 0
+      data[i] = v
+      data[i + 1] = v
+      data[i + 2] = v
+      data[i + 3] = (opacity * 255) | 0
+    }
+    nc.putImageData(imageData, 0, 0)
+    _noiseCachedCanvas = noiseCanvas
+    _noiseCachedOpacity = opacity
+  }
+  ctx.save()
+  const pattern = ctx.createPattern(_noiseCachedCanvas, 'repeat')!
+  ctx.fillStyle = pattern
+  ctx.fillRect(0, 0, W, H)
   ctx.restore()
 }
 
@@ -293,6 +344,14 @@ function computeFramePadding(frame: DeviceFrame, contentW: number, contentH: num
       right: contentW * 0.041,
       top: contentH * 0.0196,
       bottom: contentH * 0.0196,
+    }
+  }
+  if (frame === 'tablet') {
+    return {
+      left: contentW * 0.0467,
+      right: contentW * 0.0467,
+      top: contentH * 0.0838,
+      bottom: contentH * 0.0890,
     }
   }
   if (frame === 'browser') {
@@ -323,6 +382,9 @@ function drawFramedContent(
     case 'phone':
       drawPhoneFrame(ctx, x, y, w, h, content, frameColor)
       break
+    case 'tablet':
+      drawTabletFrame(ctx, x, y, w, h, content, frameColor)
+      break
     case 'browser':
       drawBrowserFrame(ctx, x, y, w, h, content, frameColor)
       break
@@ -335,6 +397,66 @@ function drawFramedContent(
 }
 
 // --- Caption ---
+
+interface ScreenBounds { x: number; y: number; w: number; h: number; r: number }
+
+function getFrameScreenBounds(
+  frame: DeviceFrame,
+  slotX: number,
+  slotY: number,
+  slotW: number,
+  slotH: number,
+): ScreenBounds {
+  if (frame === 'phone') {
+    // SVG_W=772.5, SVG_H=1600; SCR_X=34.05, SCR_Y=30.12, SCR_W=709.65, SCR_H=1539.77
+    return {
+      x: slotX + (34.05 / 772.5) * slotW,
+      y: slotY + (30.12 / 1600) * slotH,
+      w: (709.65 / 772.5) * slotW,
+      h: (1539.77 / 1600) * slotH,
+      r: (111.08 / 772.5) * slotW,
+    }
+  }
+  if (frame === 'tablet') {
+    // SVG_W=2449.87, SVG_H=1877.1; SCR_X=79.14, SCR_Y=80.08, SCR_W=2298.56, SCR_H=1723.03
+    return {
+      x: slotX + (79.14 / 2449.87) * slotW,
+      y: slotY + (80.08 / 1877.1) * slotH,
+      w: (2298.56 / 2449.87) * slotW,
+      h: (1723.03 / 1877.1) * slotH,
+      r: (45.46 / 2449.87) * slotW,
+    }
+  }
+  if (frame === 'laptop') {
+    // SVG_W=3809.99, SVG_H=2300; SCR_X=387.63, SCR_Y=59.07, SCR_W=3034.7, SCR_H=1964.07
+    return {
+      x: slotX + (387.63 / 3809.99) * slotW,
+      y: slotY + (59.07 / 2300) * slotH,
+      w: (3034.7 / 3809.99) * slotW,
+      h: (1964.07 / 2300) * slotH,
+      r: 0,
+    }
+  }
+  return { x: slotX, y: slotY, w: slotW, h: slotH, r: 0 }
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      current = candidate
+    } else {
+      if (current) lines.push(current)
+      current = word
+    }
+  }
+  if (current) lines.push(current)
+  return lines.length ? lines : ['']
+}
+
 function drawCaption(
   ctx: CanvasRenderingContext2D,
   cap: CaptionConfig,
@@ -342,122 +464,50 @@ function drawCaption(
   y: number,
   w: number,
   h: number,
+  cornerRadius = 0,
 ) {
   const fontSize = cap.size
   const padding = fontSize * 0.6
-  const bgH = fontSize + padding * 2
+  const lineHeight = fontSize * 1.35
+  const weight = cap.fontWeight ?? 'normal'
+  const family = cap.fontFamily ?? 'system-ui, sans-serif'
+  const align = cap.align ?? 'center'
+
+  ctx.save()
+
+  // Set font before measuring so word-wrap is accurate
+  ctx.font = `${weight} ${fontSize}px ${family}`
+  const lines = wrapText(ctx, cap.text, w - padding * 2)
+  const bgH = lines.length * lineHeight + padding * 2
 
   const bgY = cap.position === 'top' ? y : y + h - bgH
-  ctx.save()
+
+  // Clip to screen content area so background respects rounded frame corners
+  ctx.beginPath()
+  if (cornerRadius > 0) {
+    ctx.roundRect(x, y, w, h, cornerRadius)
+  } else {
+    ctx.rect(x, y, w, h)
+  }
+  ctx.clip()
+
   ctx.fillStyle = `rgba(0,0,0,${cap.bgOpacity})`
   ctx.fillRect(x, bgY, w, bgH)
 
   ctx.fillStyle = cap.color
-  ctx.font = `${fontSize}px system-ui, sans-serif`
-  ctx.textAlign = 'center'
+  ctx.textAlign = align
   ctx.textBaseline = 'middle'
-  ctx.fillText(cap.text, x + w / 2, bgY + bgH / 2)
+
+  const textX = align === 'left' ? x + padding : align === 'right' ? x + w - padding : x + w / 2
+  lines.forEach((line, i) => {
+    const lineY = bgY + padding + lineHeight * (i + 0.5)
+    ctx.fillText(line, textX, lineY)
+  })
+
   ctx.restore()
 }
 
-// --- Justified grid layout ---
-function computeJustifiedLayout(
-  W: number,
-  H: number,
-  gap: number,
-  aspects: number[],
-  areas: number[],
-): Array<{ x: number; y: number; w: number; h: number }> {
-  const pad = gap
-  const iW = W - pad * 2
-  const iH = H - pad * 2
-  const n = aspects.length
-
-  if (n === 0) return []
-  if (n === 1) return [{ x: pad, y: pad, w: iW, h: iH }]
-
-  const order = [...Array(n).keys()].sort((a, b) => areas[b]! - areas[a]!)
-  const sortedAspects = order.map((i) => aspects[i]!)
-
-  let bestRows: number[][] = []
-  let bestScore = Infinity
-
-  for (let R = 1; R <= n; R++) {
-    const rows = partitionIntoRows(sortedAspects, R)
-    const totalH =
-      rows.reduce((s, row) => {
-        const sumA = row.reduce((a, j) => a + sortedAspects[j]!, 0)
-        return s + (iW - gap * (row.length - 1)) / sumA
-      }, 0) +
-      gap * (rows.length - 1)
-
-    const score = totalH > iH ? totalH / iH : iH / totalH
-    if (score < bestScore) {
-      bestScore = score
-      bestRows = rows
-    }
-  }
-
-  const naturalH = bestRows.map((row) => {
-    const sumA = row.reduce((s, j) => s + sortedAspects[j]!, 0)
-    return (iW - gap * (row.length - 1)) / sumA
-  })
-
-  const totalNatH = naturalH.reduce((s, h) => s + h, 0) + gap * (bestRows.length - 1)
-  const vScale = iH / totalNatH
-
-  const rects: Array<{ x: number; y: number; w: number; h: number }> = new Array(n)
-
-  let yAcc = pad
-  for (let r = 0; r < bestRows.length; r++) {
-    const row = bestRows[r]!
-    const rowH = naturalH[r]! * vScale
-    const rowHInt = r < bestRows.length - 1 ? Math.round(rowH) : pad + iH - yAcc
-
-    const sumA = row.reduce((s, j) => s + sortedAspects[j]!, 0)
-    const rowGaps = gap * (row.length - 1)
-
-    let xAcc = pad
-    for (let c = 0; c < row.length; c++) {
-      const j = row[c]!
-      const wFloat = (sortedAspects[j]! / sumA) * (iW - rowGaps)
-      const wInt = c < row.length - 1 ? Math.round(wFloat) : pad + iW - xAcc
-      rects[order[j]!] = { x: xAcc, y: yAcc, w: wInt, h: rowHInt }
-      xAcc += wInt + gap
-    }
-    yAcc += rowHInt + gap
-  }
-
-  return rects
-}
-
-function partitionIntoRows(aspects: number[], R: number): number[][] {
-  const n = aspects.length
-  if (R >= n) return aspects.map((_, i) => [i])
-  if (R === 1) return [aspects.map((_, i) => i)]
-
-  const target = aspects.reduce((s, a) => s + a, 0) / R
-  const rows: number[][] = []
-  let row: number[] = []
-  let rowSum = 0
-
-  for (let i = 0; i < n; i++) {
-    row.push(i)
-    rowSum += aspects[i]!
-
-    const rowsLeft = R - rows.length - 1
-    const itemsLeft = n - i - 1
-
-    if (rowsLeft > 0 && itemsLeft >= rowsLeft && rowSum >= target) {
-      rows.push([...row])
-      row = []
-      rowSum = 0
-    }
-  }
-
-  if (row.length > 0) rows.push(row)
-  return rows
-}
+// computeJustifiedLayout and partitionIntoRows live in ~/utils/justifiedLayout.ts
 
 // --- Helpers ---
 function extractSnip(snip: Snip, source: HTMLImageElement): HTMLCanvasElement {

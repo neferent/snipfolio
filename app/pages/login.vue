@@ -17,20 +17,68 @@
         </p>
       </div>
 
-      <!-- Sign in / Sign up form -->
+      <!-- Sign in / Sign up / Forgot password form -->
       <div class="p-6" style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.12);border-radius:16px">
         <div class="mb-5 flex items-center justify-between">
-          <h2 class="text-sm font-medium text-[var(--color-text)]">{{ isSignUp ? 'Create account' : 'Sign in' }}</h2>
+          <h2 class="text-sm font-medium text-[var(--color-text)]">
+            {{ isForgotPassword ? 'Reset password' : isSignUp ? 'Create account' : 'Sign in' }}
+          </h2>
           <button
+            v-if="!isForgotPassword"
             class="text-xs text-[var(--color-accent)] hover:underline"
             type="button"
             @click="toggleMode"
           >
             {{ isSignUp ? 'Sign in instead' : 'Create account' }}
           </button>
+          <button
+            v-else
+            class="text-xs text-[var(--color-accent)] hover:underline"
+            type="button"
+            @click="isForgotPassword = false; error = ''; message = ''"
+          >
+            Back to sign in
+          </button>
         </div>
 
-        <form class="space-y-4" @submit.prevent="submit">
+        <!-- Forgot password form -->
+        <form v-if="isForgotPassword" class="space-y-4" @submit.prevent="submitForgotPassword">
+          <p class="text-xs text-[var(--color-text-muted)]">Enter your email and we'll send you a reset link.</p>
+          <div class="space-y-1.5">
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Email</label>
+            <input
+              v-model="email"
+              type="email"
+              autocomplete="email"
+              required
+              class="w-full"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div v-if="error" class="rounded-[6px] bg-red-500/15 px-3 py-2 text-xs text-red-400">
+            {{ error }}
+          </div>
+          <div v-if="message" class="rounded-[6px] bg-emerald-500/15 px-3 py-2 text-xs text-emerald-400">
+            {{ message }}
+          </div>
+
+          <button
+            type="submit"
+            :disabled="loading"
+            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
+            style="color:#111316"
+          >
+            <svg v-if="loading" class="mr-2 size-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            {{ loading ? '...' : 'Send reset link' }}
+          </button>
+        </form>
+
+        <!-- Sign in / Sign up form -->
+        <form v-else class="space-y-4" @submit.prevent="submit">
           <div class="space-y-1.5">
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Email</label>
             <input
@@ -44,7 +92,17 @@
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-medium text-[var(--color-text-muted)]">Password</label>
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-medium text-[var(--color-text-muted)]">Password</label>
+              <button
+                v-if="!isSignUp"
+                type="button"
+                class="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+                @click="isForgotPassword = true; error = ''; message = ''"
+              >
+                Forgot password?
+              </button>
+            </div>
             <input
               v-model="password"
               type="password"
@@ -107,7 +165,7 @@ useHead({ title: 'Sign in -- Snipfolio' })
 import { useAuth } from '~/composables/useAuth'
 import { useAuthStore } from '~/stores/auth'
 
-const { signIn: authSignIn, signUp: authSignUp, continueAsGuest } = useAuth()
+const { signIn: authSignIn, signUp: authSignUp, continueAsGuest, sendPasswordReset } = useAuth()
 const authStore = useAuthStore()
 
 const email = ref('')
@@ -116,6 +174,7 @@ const loading = ref(false)
 const error = ref('')
 const message = ref('')
 const isSignUp = ref(false)
+const isForgotPassword = ref(false)
 const checking = ref(true)
 
 onMounted(async () => {
@@ -128,9 +187,24 @@ onMounted(async () => {
 
 function toggleMode() {
   isSignUp.value = !isSignUp.value
+  isForgotPassword.value = false
   error.value = ''
   message.value = ''
   password.value = ''
+}
+
+async function submitForgotPassword() {
+  error.value = ''
+  message.value = ''
+  loading.value = true
+  try {
+    await sendPasswordReset(email.value)
+    message.value = 'Check your email for a reset link.'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to send reset email'
+  } finally {
+    loading.value = false
+  }
 }
 
 async function submit() {

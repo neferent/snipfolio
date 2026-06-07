@@ -25,6 +25,7 @@ const MIN_BASE_SCALE = 0.005
 // Lower = less affected by baseScale reduction = protected from shrinking.
 const FRAME_EXPONENT: Record<DeviceFrame, number> = {
   phone: 0.1,
+  tablet: 0.2,
   laptop: 0.4,
   browser: 0.7,
   none: 1.0,
@@ -33,6 +34,7 @@ const FRAME_EXPONENT: Record<DeviceFrame, number> = {
 // Total slot size multipliers accounting for frame bezel overhead.
 const FRAME_SLOT_MULT: Record<DeviceFrame, { x: number; y: number }> = {
   phone: { x: 1.089, y: 1.039 },
+  tablet: { x: 1.093, y: 1.173 },
   laptop: { x: 1.471, y: 1.304 },
   browser: { x: 1.0, y: 1.08 },
   none: { x: 1.0, y: 1.0 },

@@ -51,6 +51,22 @@ function useSupabaseAuth() {
     await navigateTo('/')
   }
 
+  async function sendPasswordReset(email: string) {
+    const supabase = useSupabaseClient()
+    if (!supabase) throw new Error('Supabase is not configured')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) throw error
+  }
+
+  async function updatePassword(newPassword: string) {
+    const supabase = useSupabaseClient()
+    if (!supabase) throw new Error('Supabase is not configured')
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
   async function refreshProfile() {
     const userId = store.user?.id
     if (!userId || store.isGuest) return
@@ -85,7 +101,7 @@ function useSupabaseAuth() {
     }
   }
 
-  return { signIn, signUp, signOut, restoreSession, refreshProfile }
+  return { signIn, signUp, signOut, restoreSession, refreshProfile, sendPasswordReset, updatePassword }
 }
 
 export function useAuth() {

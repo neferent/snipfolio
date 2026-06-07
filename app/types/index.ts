@@ -21,7 +21,7 @@ export interface SourceImage {
   sortOrder: number
 }
 
-export type DeviceFrame = 'none' | 'phone' | 'browser' | 'laptop'
+export type DeviceFrame = 'none' | 'phone' | 'tablet' | 'browser' | 'laptop'
 
 export interface Snip {
   id: string
@@ -33,11 +33,11 @@ export interface Snip {
   width: number
   height: number
   sortOrder: number
-  snapFrame?: 'laptop' | 'phone' | null
+  snapFrame?: 'laptop' | 'phone' | 'tablet' | null
 }
 
 export type CompositionType = 'laptop' | 'laptop+phone' | 'auto' | 'freeform'
-export type BackgroundType = 'solid' | 'gradient' | 'blur'
+export type BackgroundType = 'solid' | 'gradient' | 'image' | 'blur'
 
 export interface BackgroundConfig {
   type: BackgroundType
@@ -45,6 +45,8 @@ export interface BackgroundConfig {
   gradientStart: string
   gradientEnd: string
   gradientAngle: number
+  imageDataUrl?: string
+  noiseOpacity?: number
   blurRegion?: { x: number; y: number; width: number; height: number }
 }
 
@@ -54,6 +56,9 @@ export interface CaptionConfig {
   color: string
   position: 'top' | 'bottom'
   bgOpacity: number
+  fontFamily?: string
+  fontWeight?: 'normal' | 'bold'
+  align?: 'left' | 'center' | 'right'
 }
 
 // Per-slot config in free-form compositions
@@ -62,6 +67,7 @@ export interface FreeformSlotConfig {
   snipId: string
   deviceFrame: DeviceFrame
   frameColor?: string
+  caption?: CaptionConfig
   // All in output canvas pixels. (x,y) = top-left corner of the total slot bounding box.
   x: number
   y: number

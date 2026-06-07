@@ -8,37 +8,56 @@
 
       <div class="flex-1 overflow-y-auto">
         <!-- Slot list (top = front) -->
-        <div v-if="slots.length > 0" class="p-2">
+        <div
+          v-if="slots.length > 0"
+          class="p-2"
+          @dragleave.stop="onListDragLeave"
+        >
           <p class="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
             Slots · top = front
           </p>
-          <div
-            v-for="(slot, idx) in displaySlots"
-            :key="slot.id"
-            draggable="true"
-            class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
-            :class="[
-              selectedSlotId === slot.id
-                ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                : 'cursor-pointer text-[var(--color-text)] hover:bg-white/5',
-              dragOverIdx === idx && dragSlotId !== slot.id ? 'border-t-2 border-[var(--color-accent)]' : 'border-t-2 border-transparent',
-            ]"
-            @click="selectedSlotId = slot.id"
-            @dragstart.stop="onDragStart(slot.id)"
-            @dragover.prevent.stop="dragOverIdx = idx"
-            @dragleave.stop="dragOverIdx = null"
-            @drop.stop="onDrop(idx)"
-            @dragend.stop="dragSlotId = null; dragOverIdx = null"
-          >
+          <template v-for="(slot, idx) in displaySlots" :key="slot.id">
+            <!-- drop indicator line before this item -->
+            <div
+              class="mx-1 flex items-center gap-1 py-px transition-opacity duration-100"
+              :class="dragOverIdx === idx && dragFromIdx !== idx && dragFromIdx !== idx - 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+            >
+              <div class="size-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+              <div class="h-0.5 flex-1 rounded-full bg-[var(--color-accent)]" />
+            </div>
+            <div
+              draggable="true"
+              class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
+              :class="[
+                selectedSlotId === slot.id
+                  ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+                  : 'cursor-pointer text-[var(--color-text)] hover:bg-white/5',
+                dragSlotId === slot.id ? 'opacity-40' : '',
+              ]"
+              @click="selectedSlotId = slot.id"
+              @dragstart.stop="onDragStart(slot.id)"
+              @dragover.prevent.stop="onDragOver($event, idx)"
+              @drop.stop="onDrop(dragOverIdx!)"
+              @dragend.stop="dragSlotId = null; dragOverIdx = null"
+            >
             <!-- drag handle -->
             <GripVertical class="size-3 shrink-0 cursor-grab text-[var(--color-text-muted)] opacity-40 group-hover:opacity-100" />
 
             <SnipThumbnail :snip="snipFor(slot.snipId)" class="size-7 shrink-0 rounded" />
 
             <span class="truncate">{{ snipLabel(slot.snipId) }}</span>
-            <span v-if="snipFor(slot.snipId).snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
-            <span v-else-if="snipFor(slot.snipId).snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
+            <span v-if="snipFor(slot.snipId).snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Desktop</span>
+            <span v-else-if="snipFor(slot.snipId).snapFrame === 'tablet'" class="shrink-0 rounded bg-teal-500/20 px-1 py-px text-[9px] font-medium text-teal-400">Tablet</span>
+            <span v-else-if="snipFor(slot.snipId).snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Mobile</span>
             <span class="flex-1" />
+
+            <span
+              v-if="frameMismatches.some(m => m.slotId === slot.id)"
+              class="mismatch-tip shrink-0"
+            >
+              <CircleAlert class="size-3" style="color:#fbbf24" />
+              <span class="mismatch-tip-label">Frame will appear distorted</span>
+            </span>
 
             <button
               class="ml-auto shrink-0 rounded p-0.5 text-[var(--color-text-muted)] opacity-0 transition hover:text-red-400 group-hover:opacity-100"
@@ -47,7 +66,17 @@
             >
               <X class="size-3" />
             </button>
-          </div>
+            </div>
+            <!-- drop indicator line after last item -->
+            <div
+              v-if="idx === displaySlots.length - 1"
+              class="mx-1 flex items-center gap-1 py-px transition-opacity duration-100"
+              :class="dragOverIdx === displaySlots.length && dragFromIdx !== displaySlots.length - 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+            >
+              <div class="size-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+              <div class="h-0.5 flex-1 rounded-full bg-[var(--color-accent)]" />
+            </div>
+          </template>
         </div>
 
         <div class="border-t border-[var(--color-border)] p-2">
@@ -62,8 +91,9 @@
           >
             <SnipThumbnail :snip="snip" class="size-7 shrink-0 rounded" />
             <span class="truncate">{{ snip.label }}</span>
-            <span v-if="snip.snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
-            <span v-else-if="snip.snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
+            <span v-if="snip.snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Desktop</span>
+            <span v-else-if="snip.snapFrame === 'tablet'" class="shrink-0 rounded bg-teal-500/20 px-1 py-px text-[9px] font-medium text-teal-400">Tablet</span>
+            <span v-else-if="snip.snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Mobile</span>
             <Plus class="size-3 shrink-0 text-[var(--color-text-muted)]" />
           </div>
           <p v-if="availableSnips.length === 0" class="px-2 py-2 text-[var(--color-text-muted)]">
@@ -104,6 +134,39 @@
             <WatermarkToggle />
           </div>
         </div>
+
+        <!-- Frame mismatch overlay (bottom-right, dismissible) -->
+        <Transition name="mismatch-fade">
+          <div
+            v-if="frameMismatches.length > 0 && !mismatchDismissed"
+            class="pointer-events-auto absolute bottom-4 right-4 z-20 max-w-[240px]"
+            style="border-radius:8px;border:1px solid rgba(251,191,36,0.3);background:rgba(18,20,24,0.92);backdrop-filter:blur(8px);padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,0.4)"
+          >
+            <div class="flex items-center justify-between gap-3 mb-1.5">
+              <span style="font-size:11px;font-weight:600;color:#fbbf24;letter-spacing:0.04em">Frame mismatch</span>
+              <button
+                style="color:rgba(251,191,36,0.5);line-height:1;flex-shrink:0"
+                class="transition hover:text-[#fbbf24]"
+                @click="mismatchDismissed = true"
+              >
+                <X class="size-3" />
+              </button>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px">
+              <li
+                v-for="m in frameMismatches"
+                :key="m.slotId"
+                style="font-size:11px;color:rgba(251,191,36,0.7);line-height:1.4"
+              >
+                <span style="color:rgba(251,191,36,0.4)">{{ m.frameName }}</span>
+                {{ m.snipLabel }}
+              </li>
+            </ul>
+            <p style="font-size:10px;color:rgba(251,191,36,0.4);margin-top:6px;line-height:1.4">
+              Frame will appear distorted
+            </p>
+          </div>
+        </Transition>
       <div class="flex min-h-full items-center justify-center p-8">
         <!-- Artboard -->
         <div
@@ -185,6 +248,14 @@
               </button>
             </div>
           </div>
+
+          <div style="border-top:0.5px solid rgba(255,255,255,0.06);padding-top:12px">
+            <CaptionControls
+              label="Caption"
+              :model-value="selectedSlot.caption"
+              @update:model-value="patchSlot(selectedSlot.id, { caption: $event })"
+            />
+          </div>
         </div>
       </template>
 
@@ -257,7 +328,8 @@
 </template>
 
 <script setup lang="ts">
-import { Upload, GripVertical, X, Plus } from 'lucide-vue-next'
+import { Upload, GripVertical, X, Plus, CircleAlert } from 'lucide-vue-next'
+import { getFrameMismatches } from '~/composables/useFrameMismatches'
 import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
@@ -284,7 +356,24 @@ const canvas = ref<HTMLCanvasElement>()
 const canvasContainer = ref<HTMLElement>()
 const artboard = ref<HTMLElement>()
 
+const loadedBgImage = ref<HTMLImageElement | undefined>()
+
 const config = computed(() => props.composition.config as FreeformCompositionConfig)
+
+watch(
+  () => config.value.background,
+  (bg) => {
+    if (bg.type === 'image' && bg.imageDataUrl) {
+      const img = new Image()
+      img.onload = () => { loadedBgImage.value = img }
+      img.src = bg.imageDataUrl
+    } else {
+      loadedBgImage.value = undefined
+    }
+  },
+  { immediate: true, deep: false },
+)
+
 // slots stored back-to-front (index 0 = back). Display reversed so top of list = front.
 const slots = computed(() => config.value.slots)
 const displaySlots = computed(() => [...slots.value].reverse())
@@ -316,10 +405,18 @@ const availableSnips = computed(() => snipsStore.orderedSnips)
 
 const frames: { value: DeviceFrame; label: string }[] = [
   { value: 'none', label: 'None' },
-  { value: 'phone', label: 'Phone' },
+  { value: 'phone', label: 'Mobile' },
+  { value: 'tablet', label: 'Tablet' },
   { value: 'browser', label: 'Browser' },
-  { value: 'laptop', label: 'Laptop' },
+  { value: 'laptop', label: 'Desktop' },
 ]
+
+const frameMismatches = computed(() => getFrameMismatches(props.composition, snipsStore.snips))
+
+const mismatchDismissed = ref(false)
+watch(() => frameMismatches.value.length, (n, prev) => {
+  if (n > (prev ?? 0)) mismatchDismissed.value = false
+})
 
 const sizePresets = [
   { label: '1920×1080', w: 1920, h: 1080 },
@@ -380,18 +477,37 @@ function removeSlot(slotId: string) {
 // --- Drag-to-reorder (displaySlots is front-first; slots array is back-first) ---
 const dragSlotId = ref<string | null>(null)
 const dragOverIdx = ref<number | null>(null)
+const dragFromIdx = computed(() =>
+  dragSlotId.value ? displaySlots.value.findIndex((s) => s.id === dragSlotId.value) : -1,
+)
 
 function onDragStart(slotId: string) {
   dragSlotId.value = slotId
 }
 
+function onDragOver(e: DragEvent, idx: number) {
+  const el = e.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  dragOverIdx.value = e.clientY < rect.top + rect.height / 2 ? idx : idx + 1
+}
+
+function onListDragLeave(e: DragEvent) {
+  const list = e.currentTarget as HTMLElement
+  if (!list.contains(e.relatedTarget as Node)) {
+    dragOverIdx.value = null
+  }
+}
+
 function onDrop(toDisplayIdx: number) {
-  if (!dragSlotId.value) return
+  if (!dragSlotId.value || toDisplayIdx === null) return
   const display = [...displaySlots.value]
   const fromIdx = display.findIndex((s) => s.id === dragSlotId.value)
-  if (fromIdx === -1 || fromIdx === toDisplayIdx) return
+  if (fromIdx === -1) return
+  // Adjust index for the gap left by removing the dragged item
+  const insertAt = toDisplayIdx > fromIdx ? toDisplayIdx - 1 : toDisplayIdx
+  if (insertAt === fromIdx) return
   const [item] = display.splice(fromIdx, 1)
-  display.splice(toDisplayIdx, 0, item!)
+  display.splice(insertAt, 0, item!)
   // displaySlots is front-first; slots array is back-first — reverse to restore storage order
   patchConfig({ slots: [...display].reverse() })
   dragSlotId.value = null
@@ -795,11 +911,11 @@ function buildSourceMap() {
 function renderCanvas() {
   const c = canvas.value
   if (!c || sourcesStore.loadedImages.size === 0) return
-  render(c, { composition: props.composition, snips: snipsStore.snips, sourceImages: buildSourceMap(), watermark: watermark.value })
+  render(c, { composition: props.composition, snips: snipsStore.snips, sourceImages: buildSourceMap(), backgroundImage: loadedBgImage.value, watermark: watermark.value })
 }
 
 watch(
-  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark],
+  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark, loadedBgImage],
   () => nextTick(renderCanvas),
   { deep: true, immediate: true },
 )
@@ -818,4 +934,34 @@ watch(
 .handle.tr { top: -5px; right: -5px; cursor: ne-resize; }
 .handle.bl { bottom: -5px; left: -5px; cursor: sw-resize; }
 .handle.br { bottom: -5px; right: -5px; cursor: se-resize; }
+
+.mismatch-tip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: default;
+}
+.mismatch-tip-label {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 5px);
+  right: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #fbbf24;
+  background: #111316;
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 5px;
+  padding: 3px 7px;
+  pointer-events: none;
+  z-index: 50;
+}
+.mismatch-tip:hover .mismatch-tip-label {
+  display: block;
+}
+
+.mismatch-fade-enter-active,
+.mismatch-fade-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
+.mismatch-fade-enter-from,
+.mismatch-fade-leave-to { opacity: 0; transform: translateY(4px); }
 </style>

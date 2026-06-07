@@ -506,19 +506,21 @@ const isDrawing = ref(false)
 
 interface DrawRect { x: number; y: number; w: number; h: number }
 const drawRect = ref<DrawRect | null>(null)
-const snapFrame = ref<'laptop' | 'phone' | null>(null)
+const snapFrame = ref<'laptop' | 'phone' | 'tablet' | null>(null)
 let drawStart: { x: number; y: number } | null = null
 
 const SNAP_THRESHOLD = 0.20
 const MIN_SNAP_PX = 60
 const LAPTOP_RATIO = 3034.7 / 1964.07 // matches laptop3.svg screen dimensions
 const PHONE_RATIO = 709.65 / 1539.77 // matches mobile.svg screen dimensions
+const TABLET_RATIO = 750 / 955 // matches TabletFrame.ts screen dimensions (portrait)
 
-function detectSnap(w: number, h: number): 'laptop' | 'phone' | null {
+function detectSnap(w: number, h: number): 'laptop' | 'phone' | 'tablet' | null {
   if (w < MIN_SNAP_PX || h < MIN_SNAP_PX) return null
   const ratio = w / h
   if (ratio >= LAPTOP_RATIO * (1 - SNAP_THRESHOLD) && ratio <= LAPTOP_RATIO * (1 + SNAP_THRESHOLD)) return 'laptop'
   if (ratio >= PHONE_RATIO * (1 - SNAP_THRESHOLD) && ratio <= PHONE_RATIO * (1 + SNAP_THRESHOLD)) return 'phone'
+  if (ratio >= TABLET_RATIO * (1 - SNAP_THRESHOLD) && ratio <= TABLET_RATIO * (1 + SNAP_THRESHOLD)) return 'tablet'
   return null
 }
 
@@ -571,6 +573,7 @@ function onMouseDown(e: MouseEvent) {
     let snappedH = rawH
     if (detected === 'laptop') snappedH = rawW / LAPTOP_RATIO
     else if (detected === 'phone') snappedW = rawH * PHONE_RATIO
+    else if (detected === 'tablet') snappedW = rawH * TABLET_RATIO
 
     drawRect.value = {
       x: anchorRight ? drawStart.x - snappedW : drawStart.x,
