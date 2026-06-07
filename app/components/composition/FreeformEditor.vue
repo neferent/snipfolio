@@ -8,28 +8,38 @@
 
       <div class="flex-1 overflow-y-auto">
         <!-- Slot list (top = front) -->
-        <div v-if="slots.length > 0" class="p-2">
+        <div
+          v-if="slots.length > 0"
+          class="p-2"
+          @dragleave.stop="onListDragLeave"
+        >
           <p class="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
             Slots · top = front
           </p>
-          <div
-            v-for="(slot, idx) in displaySlots"
-            :key="slot.id"
-            draggable="true"
-            class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
-            :class="[
-              selectedSlotId === slot.id
-                ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                : 'cursor-pointer text-[var(--color-text)] hover:bg-white/5',
-              dragOverIdx === idx && dragSlotId !== slot.id ? 'border-t-2 border-[var(--color-accent)]' : 'border-t-2 border-transparent',
-            ]"
-            @click="selectedSlotId = slot.id"
-            @dragstart.stop="onDragStart(slot.id)"
-            @dragover.prevent.stop="dragOverIdx = idx"
-            @dragleave.stop="dragOverIdx = null"
-            @drop.stop="onDrop(idx)"
-            @dragend.stop="dragSlotId = null; dragOverIdx = null"
-          >
+          <template v-for="(slot, idx) in displaySlots" :key="slot.id">
+            <!-- drop indicator line before this item -->
+            <div
+              class="mx-1 flex items-center gap-1 py-px transition-opacity duration-100"
+              :class="dragOverIdx === idx && dragFromIdx !== idx && dragFromIdx !== idx - 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+            >
+              <div class="size-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+              <div class="h-0.5 flex-1 rounded-full bg-[var(--color-accent)]" />
+            </div>
+            <div
+              draggable="true"
+              class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
+              :class="[
+                selectedSlotId === slot.id
+                  ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+                  : 'cursor-pointer text-[var(--color-text)] hover:bg-white/5',
+                dragSlotId === slot.id ? 'opacity-40' : '',
+              ]"
+              @click="selectedSlotId = slot.id"
+              @dragstart.stop="onDragStart(slot.id)"
+              @dragover.prevent.stop="onDragOver($event, idx)"
+              @drop.stop="onDrop(dragOverIdx!)"
+              @dragend.stop="dragSlotId = null; dragOverIdx = null"
+            >
             <!-- drag handle -->
             <GripVertical class="size-3 shrink-0 cursor-grab text-[var(--color-text-muted)] opacity-40 group-hover:opacity-100" />
 
@@ -56,7 +66,17 @@
             >
               <X class="size-3" />
             </button>
-          </div>
+            </div>
+            <!-- drop indicator line after last item -->
+            <div
+              v-if="idx === displaySlots.length - 1"
+              class="mx-1 flex items-center gap-1 py-px transition-opacity duration-100"
+              :class="dragOverIdx === displaySlots.length && dragFromIdx !== displaySlots.length - 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+            >
+              <div class="size-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+              <div class="h-0.5 flex-1 rounded-full bg-[var(--color-accent)]" />
+            </div>
+          </template>
         </div>
 
         <div class="border-t border-[var(--color-border)] p-2">
@@ -457,18 +477,37 @@ function removeSlot(slotId: string) {
 // --- Drag-to-reorder (displaySlots is front-first; slots array is back-first) ---
 const dragSlotId = ref<string | null>(null)
 const dragOverIdx = ref<number | null>(null)
+const dragFromIdx = computed(() =>
+  dragSlotId.value ? displaySlots.value.findIndex((s) => s.id === dragSlotId.value) : -1,
+)
 
 function onDragStart(slotId: string) {
   dragSlotId.value = slotId
 }
 
+function onDragOver(e: DragEvent, idx: number) {
+  const el = e.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  dragOverIdx.value = e.clientY < rect.top + rect.height / 2 ? idx : idx + 1
+}
+
+function onListDragLeave(e: DragEvent) {
+  const list = e.currentTarget as HTMLElement
+  if (!list.contains(e.relatedTarget as Node)) {
+    dragOverIdx.value = null
+  }
+}
+
 function onDrop(toDisplayIdx: number) {
-  if (!dragSlotId.value) return
+  if (!dragSlotId.value || toDisplayIdx === null) return
   const display = [...displaySlots.value]
   const fromIdx = display.findIndex((s) => s.id === dragSlotId.value)
-  if (fromIdx === -1 || fromIdx === toDisplayIdx) return
+  if (fromIdx === -1) return
+  // Adjust index for the gap left by removing the dragged item
+  const insertAt = toDisplayIdx > fromIdx ? toDisplayIdx - 1 : toDisplayIdx
+  if (insertAt === fromIdx) return
   const [item] = display.splice(fromIdx, 1)
-  display.splice(toDisplayIdx, 0, item!)
+  display.splice(insertAt, 0, item!)
   // displaySlots is front-first; slots array is back-first — reverse to restore storage order
   patchConfig({ slots: [...display].reverse() })
   dragSlotId.value = null
