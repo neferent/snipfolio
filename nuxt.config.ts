@@ -32,6 +32,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     supabaseServiceKey: process.env.NUXT_SUPABASE_SERVICE_KEY ?? '',
     public: {
+      appEnabled: process.env.NUXT_PUBLIC_APP_ENABLED === 'true',
       authMode: process.env.NUXT_PUBLIC_AUTH_MODE ?? 'local',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL ?? '',
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY ?? '',

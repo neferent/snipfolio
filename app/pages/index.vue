@@ -133,10 +133,10 @@
       <section class="border-t border-[var(--color-border)] bg-[var(--color-surface-2)]">
         <div class="mx-auto max-w-2xl px-4 py-16 text-center">
           <p class="pullquote text-[var(--color-text-muted)]">
-            You take a screenshot to share something specific -- maybe a UI component, an error state, a dashboard widget. But the screenshot is 2700px wide and full of things that don't matter. So you open Figma or Preview, crop it, add a frame, realize the proportions are off, redo it, export it, and then realize you need to do this for four more shots.
+            You need to share a screenshot. Maybe it's a UI component, an error state, or a widget. You take a screenshot but it's much too wide and full of things that don't matter. So you crop it, frame it, fix the proportions, and export it. Then you realize you need to do it four more times...
           </p>
           <p class="pullquote-answer mt-5 text-[var(--color-text)]">
-            Snipfolio cuts that loop short.
+            Snipfolio skips all that.
           </p>
         </div>
       </section>
@@ -306,7 +306,7 @@
               :key="feature.title"
               class="mk-card rounded-xl p-5"
             >
-              <div class="mb-3 text-2xl">{{ feature.icon }}</div>
+              <component :is="feature.icon" class="mb-3 size-6 text-[var(--color-accent)]" :stroke-width="1.5" />
               <h3 class="feature-title mb-1.5">{{ feature.title }}</h3>
               <p class="feature-body text-[var(--color-text-muted)]">{{ feature.body }}</p>
             </div>
@@ -336,14 +336,14 @@
         <div class="mx-auto max-w-5xl px-4 py-20">
           <h2 class="mb-4 text-center">Pricing</h2>
           <p class="mb-12 text-center text-[var(--color-text-muted)]">
-            Not sure yet? A day pass lets you export one project without watermarks for 24 hours. No subscription.
+            Not sure yet? A day pass lets you export one project without watermarks for 24 hours. No subscription required.
           </p>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <!-- Free -->
-            <div class="mk-card rounded-xl p-6">
+            <div class="mk-card flex flex-col rounded-xl p-6">
               <div class="plan-name mb-1 font-medium text-[var(--color-text-muted)]">Free</div>
               <div class="plan-price mb-4 font-semibold">$0</div>
-              <ul class="space-y-2.5">
+              <ul class="mb-6 space-y-2.5">
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
                   No account needed
@@ -359,18 +359,18 @@
               </ul>
               <NuxtLink
                 to="/login"
-                class="btn-ghost mk-border mt-6 flex h-10 w-full items-center justify-center rounded-md text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
+                class="btn-ghost mk-border mt-auto flex h-10 w-full items-center justify-center rounded-md text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
               >
                 Get started
               </NuxtLink>
             </div>
 
             <!-- Day pass -->
-            <div class="mk-card rounded-xl p-6">
+            <div class="mk-card flex flex-col rounded-xl p-6">
               <div class="plan-name mb-1 font-medium text-[var(--color-text-muted)]">Day pass</div>
               <div class="plan-price mb-1 font-semibold">$4.99</div>
               <div class="plan-note mb-4 text-[var(--color-text-muted)]">one-time, 24 hours</div>
-              <ul class="space-y-2.5">
+              <ul class="mb-6 space-y-2.5">
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
                   Export 1 project without watermarks
@@ -386,14 +386,14 @@
               </ul>
               <NuxtLink
                 to="/login"
-                class="btn-ghost mk-border mt-6 flex h-10 w-full items-center justify-center rounded-md text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
+                class="btn-ghost mk-border mt-auto flex h-10 w-full items-center justify-center rounded-md text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
               >
                 Buy a day pass
               </NuxtLink>
             </div>
 
             <!-- Pro -->
-            <div class="mk-card-accent rounded-xl p-6">
+            <div class="mk-card-accent flex flex-col rounded-xl p-6">
               <div class="mb-1 flex items-center gap-2">
                 <span class="plan-name font-medium text-[var(--color-accent)]">Pro</span>
                 <span
@@ -404,8 +404,8 @@
                 </span>
               </div>
               <div class="plan-price mb-1 font-semibold">$9.99<span class="plan-price-unit font-normal text-[var(--color-text-muted)]">/mo</span></div>
-              <div class="plan-note mb-4 text-[var(--color-text-muted)]">going to $14.99 after launch</div>
-              <ul class="space-y-2.5">
+              <div class="plan-note mb-4 text-[var(--color-text-muted)]">$14.99 after launch</div>
+              <ul class="mb-6 space-y-2.5">
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
                   Everything in Free
@@ -429,7 +429,7 @@
               </ul>
               <NuxtLink
                 to="/login"
-                class="btn-primary mt-6 flex h-10 w-full items-center justify-center rounded-md bg-[var(--color-accent)] font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+                class="btn-primary mt-auto flex h-10 w-full items-center justify-center rounded-md bg-[var(--color-accent)] font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
                 style="color:var(--color-surface)"
               >
                 Get Pro
@@ -516,6 +516,7 @@
 </template>
 
 <script setup lang="ts">
+import { Crop, Layers, LayoutDashboard, Palette, Type, ArrowUpFromLine } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({ layout: 'landing', middleware: [] })
@@ -537,7 +538,7 @@ useSeoMeta({
 const faq = [
   {
     q: 'Does Snipfolio store my screenshots?',
-    a: 'When you are signed in, your source images are uploaded and stored securely on our servers so your work persists across sessions. If you use the app without an account, nothing is uploaded -- everything stays in your browser tab and is gone when you close it.',
+    a: 'When you are signed in, your source images are uploaded and stored securely on our servers so your work persists across sessions. If you use the app without an account, nothing is uploaded, everything stays in your browser tab and is gone when you close it.',
   },
   {
     q: 'What file types can I drop in?',
@@ -557,7 +558,7 @@ const faq = [
   },
   {
     q: 'What is the difference between the day pass and Pro?',
-    a: 'The day pass is a one-time purchase that lets you export one project without watermarks for 24 hours. Pro is a monthly subscription with no watermarks, unlimited projects, higher storage limits, and access to Pro-only features as they ship. If you just need a clean export once in a while, the day pass is probably the better pick.',
+    a: 'The day pass is a one-time purchase that lets you export one project without watermarks for 24 hours. Pro is a monthly subscription with no watermarks, unlimited projects, higher storage limits, and access to Pro-only features as they ship. If you just need a clean export once in a while, a day pass is probably the better pick.',
   },
   {
     q: 'Do I need an account to use it?',
@@ -632,32 +633,32 @@ useHead({
 
 const features = [
   {
-    icon: '⬡',
+    icon: Crop,
     title: 'Frame matching',
     body: 'Snaps crops to desktop and mobile aspect ratios so the device frame fits without stretching.',
   },
   {
-    icon: '⊞',
+    icon: Layers,
     title: 'Multiple snips per screenshot',
     body: 'Draw as many crop regions as you need and organize them in the sidebar.',
   },
   {
-    icon: '▣',
+    icon: LayoutDashboard,
     title: 'Composition layouts',
-    body: 'Single snip or auto-arranged grid. Snipfolio spaces and scales them for you.',
+    body: 'Single snips or auto-arranged grids Snipfolio spaces and scales them for you.',
   },
   {
-    icon: '◫',
+    icon: Palette,
     title: 'Custom backgrounds',
     body: 'Solid colors, gradients, or your own image.',
   },
   {
-    icon: '⌖',
+    icon: Type,
     title: 'Captions',
     body: 'Add a label under any snip inside the composition.',
   },
   {
-    icon: '↗',
+    icon: ArrowUpFromLine,
     title: 'PNG export',
     body: 'One click. No watermark on paid plans.',
   },
@@ -666,15 +667,15 @@ const features = [
 const useCases = [
   {
     title: 'PRs and code review',
-    body: 'Drop in a screenshot, clip the relevant UI state, export a clean image to paste in the PR description. Less "here is a 4MB screenshot," more "here is the button that changed."',
+    body: 'Drop in a screenshot, clip the relevant UI state, export a clean image to paste in the PR description.',
   },
   {
     title: 'App store screenshots',
-    body: 'Clip your UI, put it in the right device frame, batch-export. No Figma template to maintain.',
+    body: 'Clip your UI, put it in the right device frame, batch-export. No Figma templates to maintain.',
   },
   {
     title: 'Portfolio and documentation',
-    body: 'Make your project screenshots look like you meant it, not like you pressed Command-Shift-3 and called it done.',
+    body: 'Make your project screenshots look the way you want them, not like you just hit print screen and called it done.',
   },
 ]
 
