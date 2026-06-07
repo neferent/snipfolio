@@ -36,9 +36,18 @@
             <SnipThumbnail :snip="snipFor(slot.snipId)" class="size-7 shrink-0 rounded" />
 
             <span class="truncate">{{ snipLabel(slot.snipId) }}</span>
-            <span v-if="snipFor(slot.snipId).snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
-            <span v-else-if="snipFor(slot.snipId).snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
+            <span v-if="snipFor(slot.snipId).snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Desktop</span>
+            <span v-else-if="snipFor(slot.snipId).snapFrame === 'tablet'" class="shrink-0 rounded bg-teal-500/20 px-1 py-px text-[9px] font-medium text-teal-400">Tablet</span>
+            <span v-else-if="snipFor(slot.snipId).snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Mobile</span>
             <span class="flex-1" />
+
+            <span
+              v-if="frameMismatches.some(m => m.slotId === slot.id)"
+              class="mismatch-tip shrink-0"
+            >
+              <CircleAlert class="size-3" style="color:#fbbf24" />
+              <span class="mismatch-tip-label">Frame will appear distorted</span>
+            </span>
 
             <button
               class="ml-auto shrink-0 rounded p-0.5 text-[var(--color-text-muted)] opacity-0 transition hover:text-red-400 group-hover:opacity-100"
@@ -62,8 +71,9 @@
           >
             <SnipThumbnail :snip="snip" class="size-7 shrink-0 rounded" />
             <span class="truncate">{{ snip.label }}</span>
-            <span v-if="snip.snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
-            <span v-else-if="snip.snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
+            <span v-if="snip.snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Desktop</span>
+            <span v-else-if="snip.snapFrame === 'tablet'" class="shrink-0 rounded bg-teal-500/20 px-1 py-px text-[9px] font-medium text-teal-400">Tablet</span>
+            <span v-else-if="snip.snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Mobile</span>
             <Plus class="size-3 shrink-0 text-[var(--color-text-muted)]" />
           </div>
           <p v-if="availableSnips.length === 0" class="px-2 py-2 text-[var(--color-text-muted)]">
@@ -104,6 +114,39 @@
             <WatermarkToggle />
           </div>
         </div>
+
+        <!-- Frame mismatch overlay (bottom-right, dismissible) -->
+        <Transition name="mismatch-fade">
+          <div
+            v-if="frameMismatches.length > 0 && !mismatchDismissed"
+            class="pointer-events-auto absolute bottom-4 right-4 z-20 max-w-[240px]"
+            style="border-radius:8px;border:1px solid rgba(251,191,36,0.3);background:rgba(18,20,24,0.92);backdrop-filter:blur(8px);padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,0.4)"
+          >
+            <div class="flex items-center justify-between gap-3 mb-1.5">
+              <span style="font-size:11px;font-weight:600;color:#fbbf24;letter-spacing:0.04em">Frame mismatch</span>
+              <button
+                style="color:rgba(251,191,36,0.5);line-height:1;flex-shrink:0"
+                class="transition hover:text-[#fbbf24]"
+                @click="mismatchDismissed = true"
+              >
+                <X class="size-3" />
+              </button>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px">
+              <li
+                v-for="m in frameMismatches"
+                :key="m.slotId"
+                style="font-size:11px;color:rgba(251,191,36,0.7);line-height:1.4"
+              >
+                <span style="color:rgba(251,191,36,0.4)">{{ m.frameName }}</span>
+                {{ m.snipLabel }}
+              </li>
+            </ul>
+            <p style="font-size:10px;color:rgba(251,191,36,0.4);margin-top:6px;line-height:1.4">
+              Frame will appear distorted
+            </p>
+          </div>
+        </Transition>
       <div class="flex min-h-full items-center justify-center p-8">
         <!-- Artboard -->
         <div
@@ -185,6 +228,14 @@
               </button>
             </div>
           </div>
+
+          <div style="border-top:0.5px solid rgba(255,255,255,0.06);padding-top:12px">
+            <CaptionControls
+              label="Caption"
+              :model-value="selectedSlot.caption"
+              @update:model-value="patchSlot(selectedSlot.id, { caption: $event })"
+            />
+          </div>
         </div>
       </template>
 
@@ -257,7 +308,8 @@
 </template>
 
 <script setup lang="ts">
-import { Upload, GripVertical, X, Plus } from 'lucide-vue-next'
+import { Upload, GripVertical, X, Plus, CircleAlert } from 'lucide-vue-next'
+import { getFrameMismatches } from '~/composables/useFrameMismatches'
 import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
@@ -284,7 +336,24 @@ const canvas = ref<HTMLCanvasElement>()
 const canvasContainer = ref<HTMLElement>()
 const artboard = ref<HTMLElement>()
 
+const loadedBgImage = ref<HTMLImageElement | undefined>()
+
 const config = computed(() => props.composition.config as FreeformCompositionConfig)
+
+watch(
+  () => config.value.background,
+  (bg) => {
+    if (bg.type === 'image' && bg.imageDataUrl) {
+      const img = new Image()
+      img.onload = () => { loadedBgImage.value = img }
+      img.src = bg.imageDataUrl
+    } else {
+      loadedBgImage.value = undefined
+    }
+  },
+  { immediate: true, deep: false },
+)
+
 // slots stored back-to-front (index 0 = back). Display reversed so top of list = front.
 const slots = computed(() => config.value.slots)
 const displaySlots = computed(() => [...slots.value].reverse())
@@ -316,10 +385,18 @@ const availableSnips = computed(() => snipsStore.orderedSnips)
 
 const frames: { value: DeviceFrame; label: string }[] = [
   { value: 'none', label: 'None' },
-  { value: 'phone', label: 'Phone' },
+  { value: 'phone', label: 'Mobile' },
+  { value: 'tablet', label: 'Tablet' },
   { value: 'browser', label: 'Browser' },
-  { value: 'laptop', label: 'Laptop' },
+  { value: 'laptop', label: 'Desktop' },
 ]
+
+const frameMismatches = computed(() => getFrameMismatches(props.composition, snipsStore.snips))
+
+const mismatchDismissed = ref(false)
+watch(() => frameMismatches.value.length, (n, prev) => {
+  if (n > (prev ?? 0)) mismatchDismissed.value = false
+})
 
 const sizePresets = [
   { label: '1920×1080', w: 1920, h: 1080 },
@@ -795,11 +872,11 @@ function buildSourceMap() {
 function renderCanvas() {
   const c = canvas.value
   if (!c || sourcesStore.loadedImages.size === 0) return
-  render(c, { composition: props.composition, snips: snipsStore.snips, sourceImages: buildSourceMap(), watermark: watermark.value })
+  render(c, { composition: props.composition, snips: snipsStore.snips, sourceImages: buildSourceMap(), backgroundImage: loadedBgImage.value, watermark: watermark.value })
 }
 
 watch(
-  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark],
+  [() => props.composition, () => snipsStore.snips, () => sourcesStore.loadedImages, watermark, loadedBgImage],
   () => nextTick(renderCanvas),
   { deep: true, immediate: true },
 )
@@ -818,4 +895,34 @@ watch(
 .handle.tr { top: -5px; right: -5px; cursor: ne-resize; }
 .handle.bl { bottom: -5px; left: -5px; cursor: sw-resize; }
 .handle.br { bottom: -5px; right: -5px; cursor: se-resize; }
+
+.mismatch-tip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: default;
+}
+.mismatch-tip-label {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 5px);
+  right: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #fbbf24;
+  background: #111316;
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 5px;
+  padding: 3px 7px;
+  pointer-events: none;
+  z-index: 50;
+}
+.mismatch-tip:hover .mismatch-tip-label {
+  display: block;
+}
+
+.mismatch-fade-enter-active,
+.mismatch-fade-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
+.mismatch-fade-enter-from,
+.mismatch-fade-leave-to { opacity: 0; transform: translateY(4px); }
 </style>

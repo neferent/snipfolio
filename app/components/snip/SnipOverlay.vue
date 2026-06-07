@@ -4,7 +4,7 @@
     <div
       v-for="snip in snips"
       :key="snip.id"
-      class="absolute cursor-move"
+      class="group absolute cursor-move"
       :style="overlayStyle(snip)"
       style="pointer-events: all"
       @mousedown.stop="startMove($event, snip)"
@@ -27,7 +27,7 @@
         class="absolute inset-0 flex items-center justify-center"
       >
         <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-medium tracking-wide text-white">
-          {{ resizeSnapFrame === 'laptop' ? '💻 Laptop' : '📱 Phone' }}
+          {{ resizeSnapFrame === 'laptop' ? 'Desktop' : resizeSnapFrame === 'tablet' ? 'Tablet' : 'Mobile' }}
         </span>
       </div>
 
@@ -38,6 +38,32 @@
       >
         {{ snip.label }}
       </div>
+
+      <!-- Frame type badge — bottom-left, hidden during resize snap -->
+      <div
+        v-if="snip.snapFrame && !(resizingSnipId === snip.id && resizeSnapFrame)"
+        class="absolute bottom-0 left-0 select-none px-1.5 py-0.5"
+        :style="frameBadgeStyle(snip.snapFrame)"
+      >
+        {{ snip.snapFrame === 'laptop' ? 'Desktop' : snip.snapFrame === 'tablet' ? 'Tablet' : 'Mobile' }}
+      </div>
+
+      <!-- Drag grip — center, visible on hover -->
+      <div class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-60">
+        <GripHorizontal class="size-4 drop-shadow" style="color:#fff" />
+      </div>
+
+      <!-- Rotate button — top-right, hover only, phone/tablet only -->
+      <button
+        v-if="snip.snapFrame === 'phone' || snip.snapFrame === 'tablet'"
+        class="absolute right-1 top-1 flex size-[18px] items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
+        style="background:rgba(0,0,0,0.55);color:#fff;pointer-events:all"
+        title="Rotate orientation"
+        @mousedown.stop
+        @click.stop="rotateSnip(snip)"
+      >
+        <RotateCw class="size-2.5" />
+      </button>
 
       <!-- Resize handles (selected only) — 8×8px per spec -->
       <template v-if="snip.id === selectedId">
@@ -65,7 +91,7 @@
         class="absolute inset-0 flex items-center justify-center"
       >
         <span class="rounded-full bg-emerald-500/80 px-3 py-1 text-xs font-medium tracking-wide text-white">
-          {{ snapFrame === 'laptop' ? '💻 Laptop' : '📱 Phone' }}
+          {{ snapFrame === 'laptop' ? 'Desktop' : snapFrame === 'tablet' ? 'Tablet' : 'Mobile' }}
         </span>
       </div>
 
@@ -80,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import { GripHorizontal, RotateCw } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
 import type { Snip } from '~/types'
@@ -87,7 +114,7 @@ import type { Snip } from '~/types'
 const props = defineProps<{
   zoom: number
   drawRect: { x: number; y: number; w: number; h: number } | null
-  snapFrame: 'laptop' | 'phone' | null
+  snapFrame: 'laptop' | 'phone' | 'tablet' | null
   imageWidth: number
   imageHeight: number
 }>()
@@ -161,17 +188,19 @@ const SNAP_THRESHOLD = 0.20
 const MIN_SNAP_PX = 60
 const LAPTOP_RATIO = 3034.7 / 1964.07
 const PHONE_RATIO = 9 / 16
+const TABLET_RATIO = 750 / 955
 
-function detectSnap(w: number, h: number): 'laptop' | 'phone' | null {
+function detectSnap(w: number, h: number): 'laptop' | 'phone' | 'tablet' | null {
   if (w < MIN_SNAP_PX || h < MIN_SNAP_PX) return null
   const ratio = w / h
   if (ratio >= LAPTOP_RATIO * (1 - SNAP_THRESHOLD) && ratio <= LAPTOP_RATIO * (1 + SNAP_THRESHOLD)) return 'laptop'
   if (ratio >= PHONE_RATIO * (1 - SNAP_THRESHOLD) && ratio <= PHONE_RATIO * (1 + SNAP_THRESHOLD)) return 'phone'
+  if (ratio >= TABLET_RATIO * (1 - SNAP_THRESHOLD) && ratio <= TABLET_RATIO * (1 + SNAP_THRESHOLD)) return 'tablet'
   return null
 }
 
 const resizingSnipId = ref<string | null>(null)
-const resizeSnapFrame = ref<'laptop' | 'phone' | null>(null)
+const resizeSnapFrame = ref<'laptop' | 'phone' | 'tablet' | null>(null)
 
 const handles = [
   { dir: 'nw', cursor: 'nw-resize', style: { top: '-4px', left: '-4px' } },
@@ -226,6 +255,10 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
       const newW = h * (9 / 16)
       if (dir.includes('w')) x = fromCenter ? cx - newW / 2 : orig.x + orig.w - newW
       w = newW
+    } else if (detected === 'tablet') {
+      const newW = h * TABLET_RATIO
+      if (dir.includes('w')) x = fromCenter ? cx - newW / 2 : orig.x + orig.w - newW
+      w = newW
     }
 
     if (lockAspect) {
@@ -274,5 +307,25 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
 
   window.addEventListener('mousemove', onMove)
   window.addEventListener('mouseup', onUp)
+}
+
+function rotateSnip(snip: Snip) {
+  const cx = snip.x + snip.width / 2
+  const cy = snip.y + snip.height / 2
+  const newW = snip.height
+  const newH = snip.width
+  const x = Math.round(Math.max(0, Math.min(cx - newW / 2, props.imageWidth - newW)))
+  const y = Math.round(Math.max(0, Math.min(cy - newH / 2, props.imageHeight - newH)))
+  store.updateSnip(snip.id, { x, y, width: newW, height: newH })
+  scheduleSave()
+}
+
+function frameBadgeStyle(snapFrame: 'laptop' | 'phone' | 'tablet') {
+  const map: Record<string, string> = {
+    laptop: 'background:rgba(14,165,233,0.28);color:#7dd3fc',
+    tablet: 'background:rgba(20,184,166,0.28);color:#5eead4',
+    phone:  'background:rgba(139,92,246,0.28);color:#c4b5fd',
+  }
+  return map[snapFrame] + ';font-size:9px;font-weight:500;border-radius:0 4px 0 0'
 }
 </script>

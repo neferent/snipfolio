@@ -1,4 +1,5 @@
 import { drawPhoneFrame } from '~/components/frames/PhoneFrame'
+import { drawTabletFrame } from '~/components/frames/TabletFrame'
 import { drawBrowserFrame, browserToolbarHeight } from '~/components/frames/BrowserFrame'
 import { drawLaptopFrame } from '~/components/frames/LaptopFrame'
 import type {
@@ -16,12 +17,13 @@ export interface RenderInput {
   composition: Composition
   snips: Snip[]
   sourceImages: Map<string, HTMLImageElement>
+  backgroundImage?: HTMLImageElement
   watermark?: boolean
 }
 
 export function useCanvasRenderer() {
   function render(canvas: HTMLCanvasElement, input: RenderInput) {
-    const { composition, snips, sourceImages, watermark = false } = input
+    const { composition, snips, sourceImages, backgroundImage, watermark = false } = input
     const cfg = composition.config
     const ctx = canvas.getContext('2d')!
     canvas.width = cfg.outputWidth
@@ -31,9 +33,9 @@ export function useCanvasRenderer() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (isFreeformConfig(cfg)) {
-      renderFreeform(ctx, cfg, snips, sourceImages, watermark)
+      renderFreeform(ctx, cfg, snips, sourceImages, backgroundImage, watermark)
     } else if (isCollageConfig(cfg)) {
-      renderCollage(ctx, cfg, snips, sourceImages, watermark)
+      renderCollage(ctx, cfg, snips, sourceImages, backgroundImage, watermark)
     }
   }
 
@@ -62,11 +64,12 @@ function renderFreeform(
   cfg: FreeformCompositionConfig,
   snips: Snip[],
   sourceImages: Map<string, HTMLImageElement>,
+  backgroundImage: HTMLImageElement | undefined,
   watermark: boolean,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
-  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
+  drawBackground(ctx, W, H, cfg.background, bgSource, backgroundImage)
   if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   // Render back to front (index 0 = back)
@@ -77,6 +80,9 @@ function renderFreeform(
     if (!snipSource) continue
     const content = extractSnip(snip, snipSource)
     drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor)
+    if (slot.caption) {
+      drawCaption(ctx, slot.caption, slot.x, slot.y, slot.width, slot.height)
+    }
   }
 
   if (watermark) drawBadge(ctx, W, H)
@@ -88,11 +94,12 @@ function renderCollage(
   cfg: CollageCompositionConfig,
   snips: Snip[],
   sourceImages: Map<string, HTMLImageElement>,
+  backgroundImage: HTMLImageElement | undefined,
   watermark: boolean,
 ) {
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
-  if (bgSource) drawBackground(ctx, W, H, cfg.background, bgSource)
+  drawBackground(ctx, W, H, cfg.background, bgSource, backgroundImage)
   if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   const slots = cfg.slots
@@ -241,7 +248,8 @@ function drawBackground(
   W: number,
   H: number,
   bg: BackgroundConfig,
-  source: HTMLImageElement,
+  source: HTMLImageElement | undefined,
+  bgImage: HTMLImageElement | undefined,
 ) {
   ctx.save()
   if (bg.type === 'solid') {
@@ -261,7 +269,14 @@ function drawBackground(
     grad.addColorStop(1, bg.gradientEnd)
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, W, H)
-  } else if (bg.type === 'blur') {
+  } else if (bg.type === 'image' && bgImage) {
+    const iW = bgImage.naturalWidth
+    const iH = bgImage.naturalHeight
+    const scale = Math.max(W / iW, H / iH)
+    const dw = iW * scale
+    const dh = iH * scale
+    ctx.drawImage(bgImage, (W - dw) / 2, (H - dh) / 2, dw, dh)
+  } else if (bg.type === 'blur' && source) {
     const region = bg.blurRegion ?? { x: 0, y: 0, width: source.naturalWidth, height: source.naturalHeight }
     const tmpCanvas = document.createElement('canvas')
     tmpCanvas.width = W
@@ -275,6 +290,40 @@ function drawBackground(
     tmpCtx.fillRect(0, 0, W, H)
     ctx.drawImage(tmpCanvas, 0, 0)
   }
+  ctx.restore()
+
+  if (bg.noiseOpacity && bg.noiseOpacity > 0) {
+    drawNoise(ctx, W, H, bg.noiseOpacity)
+  }
+}
+
+let _noiseCachedCanvas: HTMLCanvasElement | null = null
+let _noiseCachedOpacity = -1
+
+function drawNoise(ctx: CanvasRenderingContext2D, W: number, H: number, opacity: number) {
+  if (!_noiseCachedCanvas || _noiseCachedOpacity !== opacity) {
+    const size = 200
+    const noiseCanvas = document.createElement('canvas')
+    noiseCanvas.width = size
+    noiseCanvas.height = size
+    const nc = noiseCanvas.getContext('2d')!
+    const imageData = nc.createImageData(size, size)
+    const { data } = imageData
+    for (let i = 0; i < data.length; i += 4) {
+      const v = (Math.random() * 255) | 0
+      data[i] = v
+      data[i + 1] = v
+      data[i + 2] = v
+      data[i + 3] = (opacity * 255) | 0
+    }
+    nc.putImageData(imageData, 0, 0)
+    _noiseCachedCanvas = noiseCanvas
+    _noiseCachedOpacity = opacity
+  }
+  ctx.save()
+  const pattern = ctx.createPattern(_noiseCachedCanvas, 'repeat')!
+  ctx.fillStyle = pattern
+  ctx.fillRect(0, 0, W, H)
   ctx.restore()
 }
 
@@ -293,6 +342,14 @@ function computeFramePadding(frame: DeviceFrame, contentW: number, contentH: num
       right: contentW * 0.041,
       top: contentH * 0.0196,
       bottom: contentH * 0.0196,
+    }
+  }
+  if (frame === 'tablet') {
+    return {
+      left: contentW * 0.0467,
+      right: contentW * 0.0467,
+      top: contentH * 0.0838,
+      bottom: contentH * 0.0890,
     }
   }
   if (frame === 'browser') {
@@ -323,6 +380,9 @@ function drawFramedContent(
     case 'phone':
       drawPhoneFrame(ctx, x, y, w, h, content, frameColor)
       break
+    case 'tablet':
+      drawTabletFrame(ctx, x, y, w, h, content, frameColor)
+      break
     case 'browser':
       drawBrowserFrame(ctx, x, y, w, h, content, frameColor)
       break
@@ -352,11 +412,17 @@ function drawCaption(
   ctx.fillStyle = `rgba(0,0,0,${cap.bgOpacity})`
   ctx.fillRect(x, bgY, w, bgH)
 
+  const weight = cap.fontWeight ?? 'normal'
+  const family = cap.fontFamily ?? 'system-ui, sans-serif'
+  const align = cap.align ?? 'center'
+
   ctx.fillStyle = cap.color
-  ctx.font = `${fontSize}px system-ui, sans-serif`
-  ctx.textAlign = 'center'
+  ctx.font = `${weight} ${fontSize}px ${family}`
+  ctx.textAlign = align
   ctx.textBaseline = 'middle'
-  ctx.fillText(cap.text, x + w / 2, bgY + bgH / 2)
+
+  const textX = align === 'left' ? x + padding : align === 'right' ? x + w - padding : x + w / 2
+  ctx.fillText(cap.text, textX, bgY + bgH / 2)
   ctx.restore()
 }
 

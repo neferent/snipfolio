@@ -41,7 +41,7 @@
         <div class="space-y-2">
           <!-- Laptop: single radio -->
           <template v-if="type === 'laptop'">
-            <label class="text-xs font-medium text-[var(--color-text-muted)]">Laptop snip</label>
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Desktop snip</label>
             <div class="max-h-40 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
               <label
                 v-for="snip in laptopSnips"
@@ -52,13 +52,13 @@
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
                 <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
               </label>
-              <p v-if="laptopSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No laptop snips yet</p>
+              <p v-if="laptopSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No desktop snips yet</p>
             </div>
           </template>
 
           <!-- Laptop + Phone: two separate pickers -->
           <template v-else-if="type === 'laptop+phone'">
-            <label class="text-xs font-medium text-[var(--color-text-muted)]">Laptop snip</label>
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Desktop snip</label>
             <div class="max-h-32 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
               <label
                 v-for="snip in laptopSnips"
@@ -69,9 +69,9 @@
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
                 <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
               </label>
-              <p v-if="laptopSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No laptop snips yet</p>
+              <p v-if="laptopSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No desktop snips yet</p>
             </div>
-            <label class="text-xs font-medium text-[var(--color-text-muted)]">Phone snip</label>
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Mobile snip</label>
             <div class="max-h-32 overflow-y-auto space-y-1 rounded-lg border border-[var(--color-border)] p-1">
               <label
                 v-for="snip in phoneSnips"
@@ -82,7 +82,7 @@
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
                 <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
               </label>
-              <p v-if="phoneSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No phone snips yet</p>
+              <p v-if="phoneSnips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No mobile snips yet</p>
             </div>
           </template>
 
@@ -184,8 +184,8 @@ const laptopSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapF
 const phoneSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapFrame === 'phone'))
 
 const types = [
-  { value: 'laptop' as const, icon: Laptop, label: 'Laptop', hint: 'One snip in a laptop frame' },
-  { value: 'laptop+phone' as const, icon: MonitorSmartphone, label: 'Laptop + Phone', hint: 'Two snips side by side' },
+  { value: 'laptop' as const, icon: Laptop, label: 'Desktop', hint: 'One snip in a desktop frame' },
+  { value: 'laptop+phone' as const, icon: MonitorSmartphone, label: 'Desktop + Mobile', hint: 'Two snips side by side' },
   { value: 'auto' as const, icon: LayoutGrid, label: 'Auto-Collage', hint: 'Justified grid · no frames' },
   { value: 'freeform' as const, icon: Layers, label: 'Free-form', hint: 'Place and frame freely' },
 ]
@@ -214,7 +214,7 @@ const bg = computed(() => ({
 }))
 
 const previewHint = computed(() => {
-  if (type.value === 'laptop') return 'Select a laptop snip to preview'
+  if (type.value === 'laptop') return 'Select a desktop snip to preview'
   if (type.value === 'laptop+phone') return 'Select both snips to preview'
   if (type.value === 'auto') return 'Select 2+ snips to preview'
   return 'Select snips to preview (optional)'

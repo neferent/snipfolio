@@ -63,6 +63,26 @@
       </div>
     </div>
 
+    <!-- Frame mismatch warning -->
+    <div
+      v-if="exportMismatches.length > 0"
+      class="mt-4 rounded-lg px-4 py-3"
+      style="background:rgba(251,191,36,0.05);border:0.5px solid rgba(251,191,36,0.25)"
+    >
+      <p style="font-size:11px;font-weight:600;color:#fbbf24;margin-bottom:5px;letter-spacing:0.04em">Frame mismatch</p>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px">
+        <li
+          v-for="m in exportMismatches"
+          :key="m.slotId"
+          style="font-size:11px;color:rgba(251,191,36,0.7)"
+        >
+          <span style="color:rgba(251,191,36,0.4)">{{ m.frameName }}</span>
+          {{ m.snipLabel }}<span v-if="exportMismatches.length > 1 && m.compName" style="color:rgba(251,191,36,0.35)"> · {{ m.compName }}</span>
+        </li>
+      </ul>
+      <p style="font-size:10px;color:rgba(251,191,36,0.4);margin-top:5px">Frame will appear distorted</p>
+    </div>
+
     <!-- Tier upsell banner -->
     <div v-if="!authStore.isPro" class="mt-4 rounded-lg px-4 py-3" style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.08)">
       <!-- Guest -->
@@ -148,6 +168,8 @@ import { useProjectStore } from '~/stores/project'
 import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
+import { useSnipsStore } from '~/stores/snips'
+import { getFrameMismatches } from '~/composables/useFrameMismatches'
 import type { Composition } from '~/types'
 
 const props = defineProps<{
@@ -157,6 +179,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const compositionsStore = useCompositionsStore()
+const snipsStore = useSnipsStore()
 const projectStore = useProjectStore()
 const authStore = useAuthStore()
 const { getDayAccessExpiry } = usePlan()
@@ -169,6 +192,12 @@ const previewComp = ref<Composition | null>(null)
 const dayAccessExpiry = ref<Date | null>(null)
 
 const allSelected = computed(() => compositions.value.length > 0 && selected.value.size === compositions.value.length)
+
+const exportMismatches = computed(() =>
+  compositions.value
+    .filter((c) => selected.value.has(c.id))
+    .flatMap((c) => getFrameMismatches(c, snipsStore.snips).map((m) => ({ ...m, compName: c.name }))),
+)
 const someSelected = computed(() => selected.value.size > 0)
 
 // Load day access state whenever the modal opens

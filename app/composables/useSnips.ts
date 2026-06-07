@@ -9,7 +9,7 @@ export function useSnips() {
   const sourcesStore = useSourcesStore()
   const { scheduleSave } = useProject()
 
-  function createSnip(x: number, y: number, width: number, height: number, snapFrame?: 'laptop' | 'phone' | null): Snip {
+  function createSnip(x: number, y: number, width: number, height: number, snapFrame?: 'laptop' | 'phone' | 'tablet' | null): Snip {
     const snip: Snip = {
       id: crypto.randomUUID(),
       projectId: projectStore.current!.id,

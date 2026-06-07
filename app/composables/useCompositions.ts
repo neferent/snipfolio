@@ -16,6 +16,7 @@ import type {
 const FRAME_ASPECT: Record<DeviceFrame, number | null> = {
   laptop: 3809.99 / 2300,
   phone: 772.5 / 1600,
+  tablet: 820 / 1120,
   browser: null, // computed from snip aspect (toolbar is thin)
   none: null,    // use snip aspect
 }
@@ -108,7 +109,7 @@ export function useCompositions() {
       outputWidth: outputW,
       outputHeight: outputH,
     }
-    return _makeComposition(name ?? 'Laptop', 'laptop', config)
+    return _makeComposition(name ?? 'Desktop', 'laptop', config)
   }
 
   function createLaptopPhoneComposition(
@@ -140,7 +141,7 @@ export function useCompositions() {
       outputWidth: outputW,
       outputHeight: outputH,
     }
-    return _makeComposition(name ?? 'Laptop + Phone', 'laptop+phone', config)
+    return _makeComposition(name ?? 'Desktop + Mobile', 'laptop+phone', config)
   }
 
   function createAutoComposition(

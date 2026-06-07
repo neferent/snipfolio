@@ -43,7 +43,7 @@ Snap threshold: ±20% of ratio, minimum 60px on either side.
 
 Snapping applies during **draw** (all handles) and **resize** (corner handles only — edge-only handles don't snap to avoid moving the perpendicular edge unexpectedly).
 
-When snapping is active the selection box turns emerald green and shows a label pill ("💻 Laptop" / "📱 Phone").
+When snapping is active the selection box turns emerald green and shows a label pill ("Desktop" / "Mobile").
 
 ### Auto-scroll during draw
 `SnipTool.vue` runs a `requestAnimationFrame` loop while a draw is in progress. If the mouse is within 60px of any viewport edge it scrolls at up to 12px/frame (proportional to proximity). After each scroll tick it recomputes the draw rect from the last known mouse position so the rect grows to match the newly revealed image area.

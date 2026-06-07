@@ -56,8 +56,9 @@
                     <p class="font-mono text-[10px] text-[var(--color-text-muted)]">{{ snip.width }}×{{ snip.height }}</p>
                   </div>
                   <div class="flex flex-1 items-center px-2">
-                    <span v-if="snip.snapFrame === 'laptop'" class="rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
-                    <span v-else-if="snip.snapFrame === 'phone'" class="rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
+                    <span v-if="snip.snapFrame === 'laptop'" class="rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Desktop</span>
+                    <span v-else-if="snip.snapFrame === 'tablet'" class="rounded bg-teal-500/20 px-1 py-px text-[9px] font-medium text-teal-400">Tablet</span>
+                    <span v-else-if="snip.snapFrame === 'phone'" class="rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Mobile</span>
                   </div>
                   <button
                     class="ml-auto shrink-0 rounded p-0.5 opacity-0 transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
@@ -93,8 +94,9 @@
                 <p class="font-mono text-[10px] text-[var(--color-text-muted)]">{{ snip.width }}×{{ snip.height }}</p>
               </div>
               <div class="flex flex-1 items-center px-2">
-                <span v-if="snip.snapFrame === 'laptop'" class="rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Laptop</span>
-                <span v-else-if="snip.snapFrame === 'phone'" class="rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Phone</span>
+                <span v-if="snip.snapFrame === 'laptop'" class="rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Desktop</span>
+                <span v-else-if="snip.snapFrame === 'tablet'" class="rounded bg-teal-500/20 px-1 py-px text-[9px] font-medium text-teal-400">Tablet</span>
+                <span v-else-if="snip.snapFrame === 'phone'" class="rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Mobile</span>
               </div>
               <button
                 class="ml-auto shrink-0 rounded p-0.5 opacity-0 transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
