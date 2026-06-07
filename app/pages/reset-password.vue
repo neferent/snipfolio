@@ -87,10 +87,17 @@ const error = ref('')
 const ready = ref(false)
 const done = ref(false)
 
-onMounted(() => {
+onMounted(async () => {
   const supabase = useSupabaseClient()
+  // If arriving from /auth/confirm, session is already set
+  const { data } = await supabase.auth.getSession()
+  if (data.session) {
+    ready.value = true
+    return
+  }
+  // If arriving directly from email with hash token
   supabase.auth.onAuthStateChange((event) => {
-    if (event === 'PASSWORD_RECOVERY') {
+    if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
       ready.value = true
     }
   })
