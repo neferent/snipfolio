@@ -4,7 +4,6 @@ let _authListenerRegistered = false
 
 function useSupabaseAuth() {
   const store = useAuthStore()
-  const supabase = useSupabaseClient()
 
   async function loadProfile(_userId: string) {
     const token = store.token
@@ -20,6 +19,8 @@ function useSupabaseAuth() {
   }
 
   async function signIn(email: string, password: string) {
+    const supabase = useSupabaseClient()
+    if (!supabase) throw new Error('Supabase is not configured')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     if (data.user) {
@@ -30,6 +31,8 @@ function useSupabaseAuth() {
   }
 
   async function signUp(email: string, password: string) {
+    const supabase = useSupabaseClient()
+    if (!supabase) throw new Error('Supabase is not configured')
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
     if (data.user && data.session) {
@@ -42,12 +45,12 @@ function useSupabaseAuth() {
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    const supabase = useSupabaseClient()
+    if (supabase) await supabase.auth.signOut()
     store.clear()
     await navigateTo('/')
   }
 
-  // Re-fetch profile from DB and update the store — use this when flags may have changed
   async function refreshProfile() {
     const userId = store.user?.id
     if (!userId || store.isGuest) return
@@ -55,6 +58,9 @@ function useSupabaseAuth() {
   }
 
   async function restoreSession() {
+    const supabase = useSupabaseClient()
+    if (!supabase) return
+
     const { data } = await supabase.auth.getSession()
     if (data.session?.user) {
       store.setUser({
@@ -65,7 +71,6 @@ function useSupabaseAuth() {
       await loadProfile(data.session.user.id)
     }
 
-    // Register the auth state listener exactly once for the lifetime of the app
     if (!_authListenerRegistered) {
       _authListenerRegistered = true
       supabase.auth.onAuthStateChange(async (_event, session) => {
