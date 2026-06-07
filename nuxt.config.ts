@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@pinia/nuxt'],
+  modules: ['@pinia/nuxt', '@vercel/speed-insights'],
 
   components: [{ path: '~/components', pathPrefix: false }],
 
