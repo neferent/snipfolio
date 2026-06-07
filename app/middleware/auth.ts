@@ -4,9 +4,9 @@ export default defineNuxtRouteMiddleware((to) => {
   if (import.meta.server) return
 
   const authStore = useAuthStore()
-  const publicRoutes = ['/']
+  const publicRoutes = ['/', '/login']
 
   if (!authStore.isAuthenticated && !publicRoutes.includes(to.path)) {
-    return navigateTo('/')
+    return navigateTo('/login')
   }
 })

@@ -7,6 +7,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      title: 'Snipfolio',
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
@@ -29,6 +30,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    supabaseServiceKey: process.env.NUXT_SUPABASE_SERVICE_KEY ?? '',
     public: {
       authMode: process.env.NUXT_PUBLIC_AUTH_MODE ?? 'local',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL ?? '',

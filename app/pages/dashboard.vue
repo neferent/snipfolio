@@ -38,7 +38,7 @@
           <h2 class="text-sm font-medium text-[var(--color-text)]">Your Projects</h2>
           <button
             class="flex h-8 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium text-[#111316] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-            @click="showNew = true"
+            @click="onNewProject"
           >
             <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -148,6 +148,28 @@
       </template>
     </AppModal>
 
+    <!-- Pro upsell modal -->
+    <AppModal :open="showProUpsell" title="Upgrade to Pro" @close="showProUpsell = false">
+      <p class="text-sm text-[var(--color-text-muted)]">
+        Free accounts are limited to <strong class="text-[var(--color-text)]">1 project</strong>.
+        Upgrade to Pro for unlimited projects and watermark-free exports.
+      </p>
+      <template #footer>
+        <button
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
+          @click="showProUpsell = false"
+        >
+          Not now
+        </button>
+        <button
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[#111316] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+          @click="showProUpsell = false"
+        >
+          Go Pro — coming soon
+        </button>
+      </template>
+    </AppModal>
+
     <!-- Delete confirm -->
     <AppModal :open="!!deleteTarget" title="Delete project?" @close="deleteTarget = null">
       <p class="text-sm text-[var(--color-text-muted)]">
@@ -172,10 +194,12 @@
 </template>
 
 <script setup lang="ts">
+useHead({ title: 'Dashboard — Snipfolio' })
 import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
 import { useAuth } from '~/composables/useAuth'
 import { useProject } from '~/composables/useProject'
+import { usePlan } from '~/composables/usePlan'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -183,9 +207,11 @@ const authStore = useAuthStore()
 const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
 const { fetchProjects, createProject: createProjectFn, deleteProject, loadPreview } = useProject()
+const { canCreateProject } = usePlan()
 
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)
+const showProUpsell = ref(false)
 const newName = ref('')
 const nameInput = ref<HTMLInputElement>()
 const deleteTarget = ref<{ id: string; name: string } | null>(null)
@@ -209,6 +235,14 @@ onMounted(async () => {
   await fetchProjects()
   loading.value = false
 })
+
+function onNewProject() {
+  if (!canCreateProject()) {
+    showProUpsell.value = true
+  } else {
+    showNew.value = true
+  }
+}
 
 async function createProject() {
   if (!newName.value.trim()) return

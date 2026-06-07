@@ -2,7 +2,6 @@ import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
 import { useSourcesStore } from '~/stores/sources'
-import { useAuthStore } from '~/stores/auth'
 import type { Composition, Snip } from '~/types'
 
 function sanitizeFilename(name: string) {
@@ -26,7 +25,6 @@ export function useExport() {
   const snipsStore = useSnipsStore()
   const compositionsStore = useCompositionsStore()
   const sourcesStore = useSourcesStore()
-  const authStore = useAuthStore()
 
   function buildSourceImagesMap(): Map<string, HTMLImageElement> {
     const map = new Map<string, HTMLImageElement>()
@@ -36,26 +34,26 @@ export function useExport() {
     return map
   }
 
-  function renderComposition(composition: Composition): HTMLCanvasElement {
+  function renderComposition(composition: Composition, watermark = true): HTMLCanvasElement {
     const canvas = document.createElement('canvas')
     render(canvas, {
       composition,
       snips: snipsStore.snips,
       sourceImages: buildSourceImagesMap(),
-      watermark: authStore.isGuest,
+      watermark,
     })
     return canvas
   }
 
-  function exportComposition(composition: Composition) {
-    const canvas = renderComposition(composition)
+  function exportComposition(composition: Composition, watermark = true) {
+    const canvas = renderComposition(composition, watermark)
     const name = `snipfolio_${sanitizeFilename(composition.name)}.png`
     downloadCanvas(canvas, name)
   }
 
-  function exportAllCompositions() {
+  function exportAllCompositions(watermark = true) {
     compositionsStore.compositions.forEach((comp, i) => {
-      setTimeout(() => exportComposition(comp), i * 200)
+      setTimeout(() => exportComposition(comp, watermark), i * 200)
     })
   }
 

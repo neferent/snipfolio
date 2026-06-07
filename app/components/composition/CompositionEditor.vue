@@ -111,6 +111,13 @@
         </div>
       </aside>
     </div>
+
+    <!-- Export picker modal (non-Pro users) -->
+    <ExportPickerModal
+      :open="showExportModal"
+      :preselect-id="comp?.id"
+      @close="showExportModal = false"
+    />
   </div>
 </template>
 
@@ -119,14 +126,20 @@ import { Upload } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
 import { useCompositions } from '~/composables/useCompositions'
 import { useExport } from '~/composables/useExport'
+import { useAuthStore } from '~/stores/auth'
+import { usePlan } from '~/composables/usePlan'
 import { isFreeformType, isCollageConfig } from '~/types'
 import type { CollageCompositionConfig, FreeformCompositionConfig, BackgroundConfig } from '~/types'
 
 const props = defineProps<{ compositionId: string }>()
 
 const compositionsStore = useCompositionsStore()
+const authStore = useAuthStore()
+const { canExportClean } = usePlan()
 const { updateComposition } = useCompositions()
 const { exportComposition } = useExport()
+
+const showExportModal = ref(false)
 
 const comp = computed(() => compositionsStore.compositions.find((c) => c.id === props.compositionId))
 const isFreeform = computed(() => comp.value ? isFreeformType(comp.value.type) : false)
@@ -170,7 +183,14 @@ function updateName(name: string) {
   updateComposition(comp.value.id, { name })
 }
 
-function doExport() {
-  if (comp.value) exportComposition(comp.value)
+async function doExport() {
+  if (!comp.value) return
+  const projectId = comp.value.projectId
+  const clean = await canExportClean(projectId)
+  if (authStore.isPro || clean) {
+    exportComposition(comp.value, false)
+  } else {
+    showExportModal.value = true
+  }
 }
 </script>

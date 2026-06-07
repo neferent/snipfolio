@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./marketing.css";
 
 /* ─── Brand palette ──────────────────────────────────────────────────────── */
 
@@ -58,6 +59,7 @@
 
   --sf-border:         rgba(255, 255, 255, 0.06);
   --sf-border-emphasis: rgba(255, 255, 255, 0.12);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
 
   --sf-text-primary:   #e2e6ea;
   --sf-text-muted:     #6b7280;

@@ -43,6 +43,8 @@ definePageMeta({ middleware: 'auth' })
 const route = useRoute()
 const compositionsStore = useCompositionsStore()
 const projectStore = useProjectStore()
+
+useHead({ title: computed(() => projectStore.current ? `Compose — ${projectStore.current.name} — Snipfolio` : 'Snipfolio') })
 const { loadProject } = useProject()
 
 const projectId = computed(() => route.params.id as string)

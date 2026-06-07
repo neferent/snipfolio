@@ -1,0 +1,170 @@
+/* Marketing surface styles
+ *
+ * Scoped to .marketing -- never affects the app UI.
+ *
+ * The app's html root is 14px. These rules use px / vw so they are
+ * independent of that base. Non-layered CSS always beats Tailwind's
+ * @layer utilities, so these values win even when Tailwind text-*
+ * classes are present on the same element.
+ */
+
+/* ── Scoped tokens ───────────────────────────────────────────────────── */
+
+.marketing {
+  font-size: 16px;
+  line-height: 1.6;
+
+  /* Mockup frame colours */
+  --mk-frame-body:          #1a1f26;
+  --mk-frame-bezel:         #0f1115;
+  --mk-frame-darker:        #0a0c0f;
+  --mk-frame-border:        rgba(255, 255, 255, 0.15);
+  --mk-frame-border-strong: rgba(255, 255, 255, 0.2);
+
+  /* Snip indicator colours */
+  --mk-snap-border:         #10b981;
+  --mk-selection-border:    rgba(239, 68, 68, 0.6);
+
+  /* Marketing border variants */
+  --mk-border-accent:        rgba(142, 158, 173, 0.3);
+  --mk-border-accent-dashed: rgba(142, 158, 173, 0.35);
+}
+
+/* ── Headings ────────────────────────────────────────────────────────── */
+
+.marketing h1 {
+  font-size: clamp(32px, 5.5vw, 58px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.marketing h2 {
+  font-size: clamp(24px, 4vw, 38px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.marketing h3 {
+  font-size: 19px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+
+/* ── Body text ───────────────────────────────────────────────────────── */
+
+.marketing p {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* ── Compact zones: nav, footer, captions ─────────────────────────────  */
+
+.marketing .marketing-sm {
+  font-size: 14px;
+}
+
+/* ── Mockup scale text (miniature UI representations) ────────────────── */
+
+.marketing .mock-caption { font-size: 10px; }
+.marketing .mock-label   { font-size: 9px; }
+.marketing .mock-chip    { font-size: 7px; }
+
+/* ── FAQ ─────────────────────────────────────────────────────────────── */
+
+.marketing details summary {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.marketing details > div {
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+/* ── Feature cards ───────────────────────────────────────────────────── */
+
+.marketing .feature-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.marketing .feature-body {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* ── Step eyebrows ───────────────────────────────────────────────────── */
+
+.marketing .eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Pricing ─────────────────────────────────────────────────────────── */
+
+.marketing .plan-name       { font-size: 13px; }
+.marketing .plan-price      { font-size: 30px; letter-spacing: -0.02em; }
+.marketing .plan-price-unit { font-size: 16px; letter-spacing: 0; }
+.marketing .plan-note       { font-size: 12px; }
+.marketing .plan-feature    { font-size: 14px; }
+
+/* ── CTA buttons ─────────────────────────────────────────────────────── */
+
+.marketing .btn-primary,
+.marketing .btn-ghost {
+  font-size: 15px;
+}
+
+/* ── Pull-quote / problem section ────────────────────────────────────── */
+
+.marketing .pullquote        { font-size: 18px; line-height: 1.65; }
+.marketing .pullquote-answer { font-size: 17px; line-height: 1.65; }
+
+/* ── Card surface utilities ──────────────────────────────────────────── */
+
+/* surface-3 bg + subtle border (feature cards, pricing cards) */
+.mk-card {
+  background: var(--color-surface-3);
+  border: 0.5px solid var(--color-border-subtle);
+}
+
+/* surface-2 bg + default border (use-case cards, FAQ items) */
+.mk-card-2 {
+  background: var(--color-surface-2);
+  border: 0.5px solid var(--color-border);
+}
+
+/* surface-3 bg + accent border (Pro plan card) */
+.mk-card-accent {
+  background: var(--color-surface-3);
+  border: 0.5px solid var(--mk-border-accent);
+}
+
+/* strong border only (ghost buttons, mockup wrappers) */
+.mk-border { border: 0.5px solid var(--color-border-strong); }
+
+/* dashed accent border (drop zone) */
+.mk-border-dashed { border: 1.5px dashed var(--mk-border-accent-dashed); }
+
+/* ── Mockup frame utilities ───────────────────────────────────────────  */
+
+.mk-frame-body   { background: var(--mk-frame-body); border: 2px solid var(--mk-frame-border); }
+.mk-frame-bezel  { background: var(--mk-frame-bezel); }
+.mk-frame-base   { background: var(--mk-frame-body); border: 2px solid var(--mk-frame-border); border-top: none; }
+
+/* step 3 variant (slightly darker) */
+.mk-frame-body-dark  { background: var(--mk-frame-bezel); border: 2px solid var(--mk-frame-border-strong); }
+.mk-frame-bezel-dark { background: var(--mk-frame-darker); }
+.mk-frame-base-dark  { background: var(--mk-frame-body); border: 2px solid var(--mk-frame-border-strong); border-top: none; }
+
+/* ── Snip selection mockup ────────────────────────────────────────────  */
+
+.mk-snip-desktop   { border: 1.5px solid var(--mk-snap-border); }
+.mk-snip-free      { border: 1.5px solid var(--color-info); }
+.mk-selection-box  { border: 1.5px dashed var(--mk-selection-border); }

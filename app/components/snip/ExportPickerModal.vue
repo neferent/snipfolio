@@ -3,7 +3,6 @@
     <div class="flex gap-4" style="min-height: 340px">
       <!-- Left: composition list with checkboxes -->
       <div class="flex w-56 shrink-0 flex-col gap-1">
-        <!-- Select all toggle -->
         <label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-white/5">
           <input
             type="checkbox"
@@ -64,15 +63,65 @@
       </div>
     </div>
 
+    <!-- Tier upsell banner -->
+    <div v-if="!authStore.isPro" class="mt-4 rounded-lg px-4 py-3" style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.08)">
+      <!-- Guest -->
+      <template v-if="authStore.isGuest">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
+            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark. Sign in for 1-Day Access or Pro.</span>
+          </div>
+          <NuxtLink
+            to="/"
+            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10"
+            style="border:0.5px solid rgba(255,255,255,0.14)"
+            @click="$emit('close')"
+          >
+            Sign in
+          </NuxtLink>
+        </div>
+      </template>
+
+      <!-- Account with active day access -->
+      <template v-else-if="dayAccessExpiry">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium" style="background:rgba(74,222,128,0.12);color:#4ade80">
+            <span class="size-1.5 rounded-full bg-green-400" />
+            1-Day Access active — expires {{ formatExpiry(dayAccessExpiry) }}
+          </span>
+        </div>
+      </template>
+
+      <!-- Account without access -->
+      <template v-else>
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
+            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark.</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10"
+              style="border:0.5px solid rgba(255,255,255,0.14);color:#e2e6ea"
+              title="Lemon Squeezy checkout — coming soon"
+              @click="onBuyDayAccess"
+            >
+              1-Day Access — $2.40
+            </button>
+            <button
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition"
+              style="background:rgba(142,158,173,0.15);border:0.5px solid rgba(142,158,173,0.3);color:#8e9ead"
+              @click="onGoPro"
+            >
+              Go Pro
+            </button>
+          </div>
+        </div>
+      </template>
+    </div>
+
     <template #footer>
-      <button
-        v-if="authStore.isGuest"
-        class="mr-auto flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] opacity-50 transition hover:opacity-80"
-        @click="signOut"
-      >
-        <Sparkles class="size-3 shrink-0" />
-        Sign in to export without watermarks
-      </button>
       <button
         class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
         @click="$emit('close')"
@@ -86,39 +135,66 @@
         @click="exportSelected"
       >
         Export {{ selected.size > 0 ? selected.size : '' }} composition{{ selected.size === 1 ? '' : 's' }}
+        <span v-if="!authStore.isPro && !dayAccessExpiry" class="ml-1.5 opacity-60">(watermarked)</span>
       </button>
     </template>
   </AppModal>
 </template>
 
 <script setup lang="ts">
-import { Sparkles } from 'lucide-vue-next'
+import { Droplets } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
+import { useProjectStore } from '~/stores/project'
 import { useAuthStore } from '~/stores/auth'
-import { useAuth } from '~/composables/useAuth'
+import { usePlan } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
 import type { Composition } from '~/types'
 
-defineProps<{ open: boolean }>()
+const props = defineProps<{
+  open: boolean
+  preselectId?: string
+}>()
 const emit = defineEmits<{ close: [] }>()
 
 const compositionsStore = useCompositionsStore()
+const projectStore = useProjectStore()
 const authStore = useAuthStore()
-const { signOut } = useAuth()
+const { getDayAccessExpiry } = usePlan()
 const { exportComposition } = useExport()
 
 const compositions = computed(() => compositionsStore.ordered)
 
 const selected = ref<Set<string>>(new Set())
 const previewComp = ref<Composition | null>(null)
+const dayAccessExpiry = ref<Date | null>(null)
 
 const allSelected = computed(() => compositions.value.length > 0 && selected.value.size === compositions.value.length)
 const someSelected = computed(() => selected.value.size > 0)
+
+// Load day access state whenever the modal opens
+watch(() => props.open, async (v) => {
+  if (!v) return
+  const projectId = projectStore.current?.id
+  if (projectId && !authStore.isGuest && !authStore.isPro) {
+    dayAccessExpiry.value = await getDayAccessExpiry(projectId)
+  } else {
+    dayAccessExpiry.value = null
+  }
+}, { immediate: true })
 
 watch(() => compositions.value, (list) => {
   if (!previewComp.value && list.length > 0) previewComp.value = list[0]!
 }, { immediate: true })
 
+// Auto-select preselectId when provided
+watch([() => props.preselectId, () => compositions.value], ([id, list]) => {
+  if (id && list.some((c) => c.id === id)) {
+    selected.value = new Set([id])
+    previewComp.value = list.find((c) => c.id === id) ?? previewComp.value
+  }
+}, { immediate: true })
+
+// Prune deleted compositions from selection
 watch(() => compositions.value, (list) => {
   const next = new Set<string>()
   for (const id of selected.value) {
@@ -143,10 +219,24 @@ function toggleAll() {
 }
 
 function exportSelected() {
+  const watermark = !authStore.isPro && !dayAccessExpiry.value
   const toExport = compositions.value.filter((c) => selected.value.has(c.id))
   toExport.forEach((comp, i) => {
-    setTimeout(() => exportComposition(comp), i * 200)
+    setTimeout(() => exportComposition(comp, watermark), i * 200)
   })
   emit('close')
+}
+
+function onBuyDayAccess() {
+  // Lemon Squeezy checkout — coming soon
+  alert('Payment integration coming soon!')
+}
+
+function onGoPro() {
+  alert('Pro subscription coming soon!')
+}
+
+function formatExpiry(date: Date): string {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 </script>
