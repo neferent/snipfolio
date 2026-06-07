@@ -1,3 +1,4 @@
+import { computeJustifiedLayout, partitionIntoRows } from '~/utils/justifiedLayout'
 import { drawPhoneFrame } from '~/components/frames/PhoneFrame'
 import { drawTabletFrame } from '~/components/frames/TabletFrame'
 import { drawBrowserFrame, browserToolbarHeight } from '~/components/frames/BrowserFrame'
@@ -81,7 +82,8 @@ function renderFreeform(
     const content = extractSnip(snip, snipSource)
     drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor)
     if (slot.caption) {
-      drawCaption(ctx, slot.caption, slot.x, slot.y, slot.width, slot.height)
+      const scr = getFrameScreenBounds(slot.deviceFrame, slot.x, slot.y, slot.width, slot.height)
+      drawCaption(ctx, slot.caption, scr.x, scr.y, scr.w, scr.h, scr.r)
     }
   }
 
@@ -395,6 +397,66 @@ function drawFramedContent(
 }
 
 // --- Caption ---
+
+interface ScreenBounds { x: number; y: number; w: number; h: number; r: number }
+
+function getFrameScreenBounds(
+  frame: DeviceFrame,
+  slotX: number,
+  slotY: number,
+  slotW: number,
+  slotH: number,
+): ScreenBounds {
+  if (frame === 'phone') {
+    // SVG_W=772.5, SVG_H=1600; SCR_X=34.05, SCR_Y=30.12, SCR_W=709.65, SCR_H=1539.77
+    return {
+      x: slotX + (34.05 / 772.5) * slotW,
+      y: slotY + (30.12 / 1600) * slotH,
+      w: (709.65 / 772.5) * slotW,
+      h: (1539.77 / 1600) * slotH,
+      r: (111.08 / 772.5) * slotW,
+    }
+  }
+  if (frame === 'tablet') {
+    // SVG_W=2449.87, SVG_H=1877.1; SCR_X=79.14, SCR_Y=80.08, SCR_W=2298.56, SCR_H=1723.03
+    return {
+      x: slotX + (79.14 / 2449.87) * slotW,
+      y: slotY + (80.08 / 1877.1) * slotH,
+      w: (2298.56 / 2449.87) * slotW,
+      h: (1723.03 / 1877.1) * slotH,
+      r: (45.46 / 2449.87) * slotW,
+    }
+  }
+  if (frame === 'laptop') {
+    // SVG_W=3809.99, SVG_H=2300; SCR_X=387.63, SCR_Y=59.07, SCR_W=3034.7, SCR_H=1964.07
+    return {
+      x: slotX + (387.63 / 3809.99) * slotW,
+      y: slotY + (59.07 / 2300) * slotH,
+      w: (3034.7 / 3809.99) * slotW,
+      h: (1964.07 / 2300) * slotH,
+      r: 0,
+    }
+  }
+  return { x: slotX, y: slotY, w: slotW, h: slotH, r: 0 }
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      current = candidate
+    } else {
+      if (current) lines.push(current)
+      current = word
+    }
+  }
+  if (current) lines.push(current)
+  return lines.length ? lines : ['']
+}
+
 function drawCaption(
   ctx: CanvasRenderingContext2D,
   cap: CaptionConfig,
@@ -402,128 +464,50 @@ function drawCaption(
   y: number,
   w: number,
   h: number,
+  cornerRadius = 0,
 ) {
   const fontSize = cap.size
   const padding = fontSize * 0.6
-  const bgH = fontSize + padding * 2
-
-  const bgY = cap.position === 'top' ? y : y + h - bgH
-  ctx.save()
-  ctx.fillStyle = `rgba(0,0,0,${cap.bgOpacity})`
-  ctx.fillRect(x, bgY, w, bgH)
-
+  const lineHeight = fontSize * 1.35
   const weight = cap.fontWeight ?? 'normal'
   const family = cap.fontFamily ?? 'system-ui, sans-serif'
   const align = cap.align ?? 'center'
 
-  ctx.fillStyle = cap.color
+  ctx.save()
+
+  // Set font before measuring so word-wrap is accurate
   ctx.font = `${weight} ${fontSize}px ${family}`
+  const lines = wrapText(ctx, cap.text, w - padding * 2)
+  const bgH = lines.length * lineHeight + padding * 2
+
+  const bgY = cap.position === 'top' ? y : y + h - bgH
+
+  // Clip to screen content area so background respects rounded frame corners
+  ctx.beginPath()
+  if (cornerRadius > 0) {
+    ctx.roundRect(x, y, w, h, cornerRadius)
+  } else {
+    ctx.rect(x, y, w, h)
+  }
+  ctx.clip()
+
+  ctx.fillStyle = `rgba(0,0,0,${cap.bgOpacity})`
+  ctx.fillRect(x, bgY, w, bgH)
+
+  ctx.fillStyle = cap.color
   ctx.textAlign = align
   ctx.textBaseline = 'middle'
 
   const textX = align === 'left' ? x + padding : align === 'right' ? x + w - padding : x + w / 2
-  ctx.fillText(cap.text, textX, bgY + bgH / 2)
+  lines.forEach((line, i) => {
+    const lineY = bgY + padding + lineHeight * (i + 0.5)
+    ctx.fillText(line, textX, lineY)
+  })
+
   ctx.restore()
 }
 
-// --- Justified grid layout ---
-function computeJustifiedLayout(
-  W: number,
-  H: number,
-  gap: number,
-  aspects: number[],
-  areas: number[],
-): Array<{ x: number; y: number; w: number; h: number }> {
-  const pad = gap
-  const iW = W - pad * 2
-  const iH = H - pad * 2
-  const n = aspects.length
-
-  if (n === 0) return []
-  if (n === 1) return [{ x: pad, y: pad, w: iW, h: iH }]
-
-  const order = [...Array(n).keys()].sort((a, b) => areas[b]! - areas[a]!)
-  const sortedAspects = order.map((i) => aspects[i]!)
-
-  let bestRows: number[][] = []
-  let bestScore = Infinity
-
-  for (let R = 1; R <= n; R++) {
-    const rows = partitionIntoRows(sortedAspects, R)
-    const totalH =
-      rows.reduce((s, row) => {
-        const sumA = row.reduce((a, j) => a + sortedAspects[j]!, 0)
-        return s + (iW - gap * (row.length - 1)) / sumA
-      }, 0) +
-      gap * (rows.length - 1)
-
-    const score = totalH > iH ? totalH / iH : iH / totalH
-    if (score < bestScore) {
-      bestScore = score
-      bestRows = rows
-    }
-  }
-
-  const naturalH = bestRows.map((row) => {
-    const sumA = row.reduce((s, j) => s + sortedAspects[j]!, 0)
-    return (iW - gap * (row.length - 1)) / sumA
-  })
-
-  const totalNatH = naturalH.reduce((s, h) => s + h, 0) + gap * (bestRows.length - 1)
-  const vScale = iH / totalNatH
-
-  const rects: Array<{ x: number; y: number; w: number; h: number }> = new Array(n)
-
-  let yAcc = pad
-  for (let r = 0; r < bestRows.length; r++) {
-    const row = bestRows[r]!
-    const rowH = naturalH[r]! * vScale
-    const rowHInt = r < bestRows.length - 1 ? Math.round(rowH) : pad + iH - yAcc
-
-    const sumA = row.reduce((s, j) => s + sortedAspects[j]!, 0)
-    const rowGaps = gap * (row.length - 1)
-
-    let xAcc = pad
-    for (let c = 0; c < row.length; c++) {
-      const j = row[c]!
-      const wFloat = (sortedAspects[j]! / sumA) * (iW - rowGaps)
-      const wInt = c < row.length - 1 ? Math.round(wFloat) : pad + iW - xAcc
-      rects[order[j]!] = { x: xAcc, y: yAcc, w: wInt, h: rowHInt }
-      xAcc += wInt + gap
-    }
-    yAcc += rowHInt + gap
-  }
-
-  return rects
-}
-
-function partitionIntoRows(aspects: number[], R: number): number[][] {
-  const n = aspects.length
-  if (R >= n) return aspects.map((_, i) => [i])
-  if (R === 1) return [aspects.map((_, i) => i)]
-
-  const target = aspects.reduce((s, a) => s + a, 0) / R
-  const rows: number[][] = []
-  let row: number[] = []
-  let rowSum = 0
-
-  for (let i = 0; i < n; i++) {
-    row.push(i)
-    rowSum += aspects[i]!
-
-    const rowsLeft = R - rows.length - 1
-    const itemsLeft = n - i - 1
-
-    if (rowsLeft > 0 && itemsLeft >= rowsLeft && rowSum >= target) {
-      rows.push([...row])
-      row = []
-      rowSum = 0
-    }
-  }
-
-  if (row.length > 0) rows.push(row)
-  return rows
-}
+// computeJustifiedLayout and partitionIntoRows live in ~/utils/justifiedLayout.ts
 
 // --- Helpers ---
 function extractSnip(snip: Snip, source: HTMLImageElement): HTMLCanvasElement {
