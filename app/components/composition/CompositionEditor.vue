@@ -52,6 +52,13 @@
             @update:model-value="updateCollageProp('background', $event)"
           />
 
+          <!-- Platform presets -->
+          <PlatformPresets
+            :current-w="comp.config.outputWidth"
+            :current-h="comp.config.outputHeight"
+            @select="setOutputSize"
+          />
+
           <!-- Output size -->
           <div class="space-y-2">
             <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Output size</label>
