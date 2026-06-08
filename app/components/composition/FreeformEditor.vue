@@ -266,6 +266,13 @@
       <div class="flex-1 overflow-y-auto p-4 space-y-5">
         <BackgroundControls :model-value="config.background" @update:model-value="updateBackground" />
 
+        <!-- Platform presets -->
+        <PlatformPresets
+          :current-w="config.outputWidth"
+          :current-h="config.outputHeight"
+          @select="setOutputSize"
+        />
+
         <!-- Output size -->
         <div class="space-y-2">
           <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Output size</label>
