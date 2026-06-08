@@ -2,9 +2,5 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  <Toaster theme="dark" rich-colors />
+  <Toaster position="bottom-right" theme="dark" rich-colors />
 </template>
-
-<script setup lang="ts">
-import { Toaster } from 'vue-sonner'
-</script>

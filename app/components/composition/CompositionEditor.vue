@@ -125,19 +125,13 @@
 import { Upload } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
 import { useCompositions } from '~/composables/useCompositions'
-import { useExport } from '~/composables/useExport'
-import { useAuthStore } from '~/stores/auth'
-import { usePlan } from '~/composables/usePlan'
 import { isFreeformType, isCollageConfig } from '~/types'
 import type { CollageCompositionConfig, FreeformCompositionConfig, BackgroundConfig } from '~/types'
 
 const props = defineProps<{ compositionId: string }>()
 
 const compositionsStore = useCompositionsStore()
-const authStore = useAuthStore()
-const { canExportClean } = usePlan()
 const { updateComposition } = useCompositions()
-const { exportComposition } = useExport()
 
 const showExportModal = ref(false)
 
@@ -183,14 +177,7 @@ function updateName(name: string) {
   updateComposition(comp.value.id, { name })
 }
 
-async function doExport() {
-  if (!comp.value) return
-  const projectId = comp.value.projectId
-  const clean = await canExportClean(projectId)
-  if (authStore.isPro || clean) {
-    exportComposition(comp.value, false)
-  } else {
-    showExportModal.value = true
-  }
+function doExport() {
+  showExportModal.value = true
 }
 </script>

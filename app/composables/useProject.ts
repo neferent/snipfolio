@@ -18,7 +18,7 @@ export function useProject() {
   const authStore = useAuthStore()
   const config = useRuntimeConfig()
 
-  const isSupabase = config.public.authMode === 'supabase'
+  const isSupabase = config.public.authMode === 'supabase' && !authStore.isGuest
 
   // --- Local in-memory persistence (dev mode) ---
   const LOCAL_KEY = 'snipfolio_projects'
@@ -44,7 +44,7 @@ export function useProject() {
       projectStore.setProjects(projects)
       return projects
     }
-    const sb = useSupabaseClient()
+    const sb = useSupabaseClient()!!
     const { data, error } = await sb
       .from('projects')
       .select('*')
@@ -72,7 +72,7 @@ export function useProject() {
       projectStore.setProjects(projects)
       return project
     }
-    const sb = useSupabaseClient()
+    const sb = useSupabaseClient()!
     const { data, error } = await sb
       .from('projects')
       .insert({ id: project.id, user_id: project.userId, name, created_at: now, updated_at: now })
@@ -89,7 +89,7 @@ export function useProject() {
       projectStore.setProjects(projects)
       return
     }
-    const sb = useSupabaseClient()
+    const sb = useSupabaseClient()!
     const { error } = await sb.from('projects').delete().eq('id', id)
     if (error) throw error
     projectStore.setProjects(projectStore.projects.filter((p) => p.id !== id))
@@ -132,7 +132,7 @@ export function useProject() {
       await restoreImages(id, sources)
       return project
     }
-    const sb = useSupabaseClient()
+    const sb = useSupabaseClient()!
     const [{ data: proj }, { data: snipsData }, { data: compsData }, { data: sourcesData }] =
       await Promise.all([
         sb.from('projects').select('*').eq('id', id).single(),
@@ -178,7 +178,7 @@ export function useProject() {
         saveLocalData(`snipfolio_comps_${project.id}`, compositionsStore.compositions)
         saveLocalData(`snipfolio_sources_${project.id}`, sourcesStore.sources)
       } else {
-        const sb = useSupabaseClient()
+        const sb = useSupabaseClient()!
         await Promise.all([
           sb
             .from('projects')
@@ -198,7 +198,7 @@ export function useProject() {
   // --- Supabase Storage helpers ---
   async function uploadImageToStorage(projectId: string, sourceId: string, src: string): Promise<void> {
     const userId = authStore.user!.id
-    const sb = useSupabaseClient()
+    const sb = useSupabaseClient()!
     const blob = await fetch(src).then((r) => r.blob())
     const path = `${userId}/${projectId}/${sourceId}`
     const { error } = await sb.storage.from('screenshots').upload(path, blob, {
@@ -210,7 +210,7 @@ export function useProject() {
 
   async function downloadImageFromStorage(projectId: string, sourceId: string): Promise<string | null> {
     const userId = authStore.user!.id
-    const sb = useSupabaseClient()
+    const sb = useSupabaseClient()!
     const path = `${userId}/${projectId}/${sourceId}`
     const { data, error } = await sb.storage.from('screenshots').download(path)
     if (error || !data) return null
@@ -223,7 +223,7 @@ export function useProject() {
 
   async function deleteImageFromStorage(projectId: string, sourceId: string): Promise<void> {
     const userId = authStore.user!.id
-    const sb = useSupabaseClient()
+    const sb = useSupabaseClient()!
     const path = `${userId}/${projectId}/${sourceId}`
     await sb.storage.from('screenshots').remove([path])
   }

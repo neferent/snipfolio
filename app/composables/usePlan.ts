@@ -43,7 +43,6 @@ export function usePlan() {
   }
 
   function canCreateProject(): boolean {
-    if (authStore.isGuest) return false
     if (authStore.isPro) return true
     return projectStore.projects.length < 1
   }

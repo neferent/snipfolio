@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'default', middleware: [] })
+definePageMeta({ layout: 'default', middleware: [], ssr: false })
 useHead({ title: 'Sign in -- Snipfolio' })
 
 import { useAuth } from '~/composables/useAuth'

@@ -51,7 +51,7 @@
             {{ previewComp.name }}
           </p>
           <div class="flex flex-1 items-center justify-center overflow-hidden">
-            <CompositionPreview :composition="previewComp" class="max-h-full max-w-full rounded object-contain" />
+            <CompositionPreview :composition="previewComp" :watermark="!authStore.isPro && !dayAccessExpiry" class="max-h-full max-w-full rounded object-contain" />
           </div>
           <p class="mt-2 text-center text-[10px] text-[var(--color-text-muted)]">
             {{ previewComp.config.outputWidth }}×{{ previewComp.config.outputHeight }}px
@@ -150,7 +150,7 @@
         Cancel
       </button>
       <button
-        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40"
+        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40 disabled:cursor-not-allowed"
         style="color:#111316"
         :disabled="selected.size === 0"
         @click="exportSelected"
@@ -170,6 +170,7 @@ import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
 import { useCheckout } from '~/composables/useCheckout'
+import { useAuth } from '~/composables/useAuth'
 import { useSnipsStore } from '~/stores/snips'
 import { getFrameMismatches } from '~/composables/useFrameMismatches'
 import type { Composition } from '~/types'
@@ -187,6 +188,7 @@ const authStore = useAuthStore()
 const { getDayAccessExpiry } = usePlan()
 const { exportComposition } = useExport()
 const { startCheckout, loading: checkoutLoading } = useCheckout()
+const { refreshProfile } = useAuth()
 
 const compositions = computed(() => compositionsStore.ordered)
 
@@ -206,6 +208,7 @@ const someSelected = computed(() => selected.value.size > 0)
 // Load day access state whenever the modal opens
 watch(() => props.open, async (v) => {
   if (!v) return
+  await refreshProfile()
   const projectId = projectStore.current?.id
   if (projectId && !authStore.isGuest && !authStore.isPro) {
     dayAccessExpiry.value = await getDayAccessExpiry(projectId)
