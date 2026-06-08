@@ -27,6 +27,9 @@
     "vue-router": "latest",
     "vue-sonner": "^2.0.9"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@parcel/watcher", "esbuild"]
+  },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^25.9.2",
