@@ -90,7 +90,7 @@ const ready = ref(false)
 const done = ref(false)
 
 onMounted(async () => {
-  const supabase = useSupabaseClient()
+  const supabase = useSupabaseClient()!
   // If arriving from /auth/confirm, session is already set
   const { data } = await supabase.auth.getSession()
   if (data.session) {

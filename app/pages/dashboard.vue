@@ -23,7 +23,7 @@
       <template v-else>
         <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
         <a
-          v-if="authStore.isPro && billingUrl"
+          v-if="authStore.isPro"
           :href="billingUrl"
           target="_blank"
           rel="noopener noreferrer"
@@ -227,7 +227,7 @@ const { startCheckout } = useCheckout()
 const config = useRuntimeConfig()
 const billingUrl = config.public.lsStoreSlug
   ? `https://${config.public.lsStoreSlug}.lemonsqueezy.com/billing`
-  : ''
+  : 'https://app.lemonsqueezy.com/my-orders'
 
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)

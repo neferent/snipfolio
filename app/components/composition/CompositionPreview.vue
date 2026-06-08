@@ -9,17 +9,18 @@ import { useSourcesStore } from '~/stores/sources'
 import { useWatermarkPreview } from '~/composables/useWatermarkPreview'
 import type { Composition } from '~/types'
 
-const props = defineProps<{ composition: Composition }>()
+const props = defineProps<{ composition: Composition; watermark?: boolean }>()
 
 const canvasEl = ref<HTMLCanvasElement>()
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
 const { render } = useCanvasRenderer()
-const { active: watermark } = useWatermarkPreview()
+const { active: watermarkFromStore } = useWatermarkPreview()
+const effectiveWatermark = computed(() => props.watermark ?? watermarkFromStore.value)
 
 onMounted(renderPreview)
 watch(() => props.composition, renderPreview, { deep: true })
-watch(watermark, renderPreview)
+watch(effectiveWatermark, renderPreview)
 
 function renderPreview() {
   if (!canvasEl.value) return
@@ -30,7 +31,7 @@ function renderPreview() {
     composition: props.composition,
     snips: snipsStore.snips,
     sourceImages,
-    watermark: watermark.value,
+    watermark: effectiveWatermark.value,
   })
 }
 </script>

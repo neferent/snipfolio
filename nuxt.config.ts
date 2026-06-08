@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@pinia/nuxt', '@vercel/speed-insights', '@vercel/analytics'],
+  modules: ['@pinia/nuxt', '@vercel/speed-insights', '@vercel/analytics', 'vue-sonner/nuxt'],
 
   components: [{ path: '~/components', pathPrefix: false }],
 
@@ -45,6 +45,14 @@ export default defineNuxtConfig({
       lsDayPassVariantIdTest: process.env.NUXT_PUBLIC_LS_DAY_PASS_VARIANT_ID_TEST ?? '',
       lsStoreSlug: process.env.NUXT_PUBLIC_LS_STORE_SLUG ?? '',
     },
+  },
+
+  // Auth-protected routes are fully client-rendered to avoid hydration mismatches
+  // from auth state (user email, isPro, etc.) being empty during SSR.
+  routeRules: {
+    '/dashboard': { ssr: false },
+    '/project/**': { ssr: false },
+    '/admin': { ssr: false },
   },
 
   typescript: {
