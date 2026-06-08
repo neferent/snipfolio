@@ -41,6 +41,7 @@ export default defineNuxtConfig({
       lsProVariantId: process.env.NUXT_PUBLIC_LS_PRO_VARIANT_ID ?? '',
       lsProEarlyVariantId: process.env.NUXT_PUBLIC_LS_PRO_EARLY_VARIANT_ID ?? '',
       lsDayPassVariantId: process.env.NUXT_PUBLIC_LS_DAY_PASS_VARIANT_ID ?? '',
+      lsDayPassVariantIdTest: process.env.NUXT_PUBLIC_LS_DAY_PASS_VARIANT_ID_TEST ?? '',
     },
   },
 
