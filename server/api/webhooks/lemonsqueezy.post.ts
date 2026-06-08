@@ -42,11 +42,14 @@ export default defineEventHandler(async (event) => {
     const variantId: number | undefined = payload.data?.attributes?.first_order_item?.variant_id
     const userId: string | undefined = payload.meta?.custom_data?.user_id
     const projectId: string | undefined = payload.meta?.custom_data?.project_id
-    const dayPassVariantId = Number(config.public.lsDayPassVariantId)
+    const dayPassVariantIds = [
+      Number(config.public.lsDayPassVariantId),
+      Number(config.public.lsDayPassVariantIdTest),
+    ].filter(Boolean)
 
-    console.log('[webhook] order_created', { variantId, dayPassVariantId, userId, projectId })
+    console.log('[webhook] order_created', { variantId, dayPassVariantIds, userId, projectId })
 
-    if (variantId !== dayPassVariantId || !userId || !projectId) {
+    if (!dayPassVariantIds.includes(variantId as number) || !userId || !projectId) {
       console.log('[webhook] day pass skipped — variant or data mismatch')
       return { ok: true }
     }
