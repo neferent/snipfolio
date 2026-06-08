@@ -42,15 +42,21 @@ export default defineEventHandler(async (event) => {
     const variantId: number | undefined = payload.data?.attributes?.first_order_item?.variant_id
     const userId: string | undefined = payload.meta?.custom_data?.user_id
     const projectId: string | undefined = payload.meta?.custom_data?.project_id
-
     const dayPassVariantId = Number(config.public.lsDayPassVariantId)
-    if (variantId !== dayPassVariantId || !userId || !projectId) return { ok: true }
+
+    console.log('[webhook] order_created', { variantId, dayPassVariantId, userId, projectId })
+
+    if (variantId !== dayPassVariantId || !userId || !projectId) {
+      console.log('[webhook] day pass skipped — variant or data mismatch')
+      return { ok: true }
+    }
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    await sb.from('project_export_access').upsert(
+    const { error } = await sb.from('project_export_access').upsert(
       { user_id: userId, project_id: projectId, expires_at: expiresAt },
       { onConflict: 'user_id,project_id' },
     )
+    if (error) console.error('[webhook] day pass upsert error:', error)
   }
 
   return { ok: true }
