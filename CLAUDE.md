@@ -25,6 +25,19 @@ A Nuxt 4 app for clipping regions ("snips") from a screenshot, then composing th
 | `SnipList.vue` | Left sidebar list of snips |
 | `SnipPanel.vue` | Right sidebar — selected snip properties |
 | `CompositionEditor.vue` | Composition canvas + controls |
+| `FreeformEditor.vue` | Freeform/Laptop/Laptop+Phone canvas — drag, resize, z-order, align |
+| `frames/frameUtils.ts` | Shared frame utilities: `FrameDrawResult` interface, `applyScaledShadow` |
+
+## Tests
+
+Unit tests live in `tests/` and run with Vitest:
+- `stores.test.ts` — Pinia store unit tests (auth, project, snips, compositions, sources)
+- `useCompositions.test.ts` — composition creation logic
+- `useSnips.test.ts` — snip CRUD
+- `usePlan.test.ts` — plan/access checks
+- `justifiedLayout.test.ts`, `packSnips.test.ts` — algorithm tests
+
+Run with `pnpm test`.
 
 ## Snip drawing rules
 

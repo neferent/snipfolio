@@ -1,6 +1,7 @@
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
+import { useProject } from '~/composables/useProject'
 import type { Snip } from '~/types'
 
 export function useSnips() {
@@ -42,7 +43,8 @@ export function useSnips() {
     const canvas = document.createElement('canvas')
     canvas.width = snip.width
     canvas.height = snip.height
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D context unavailable')
     ctx.drawImage(source, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)
     return canvas
   }

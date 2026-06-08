@@ -1,9 +1,6 @@
-export interface FrameDrawResult {
-  screenX: number
-  screenY: number
-  screenWidth: number
-  screenHeight: number
-}
+import { applyScaledShadow } from './frameUtils'
+import type { FrameDrawResult } from './frameUtils'
+export type { FrameDrawResult } from './frameUtils'
 
 // SVG coordinate space (laptop3.svg)
 const SVG_W = 3809.99
@@ -37,42 +34,37 @@ export function drawLaptopFrame(
   ctx.miterLimit = 4
 
   // Shadow pass — full laptop silhouette (lid + base) as one fill so shadow wraps the whole device
-  ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = 30 / Math.min(sx, sy)
-  ctx.shadowOffsetY = 12 / Math.min(sx, sy)
-  ctx.fillStyle = color
-  ctx.beginPath()
-  // lid sub-path
-  ctx.moveTo(439.37, 0)
-  ctx.lineTo(3370.58, 0)
-  ctx.bezierCurveTo(3427.66, 0, 3474.01, 46.34, 3474.01, 103.43)
-  ctx.lineTo(3474.01, 2144.96)
-  ctx.lineTo(335.94, 2144.96)
-  ctx.lineTo(335.94, 103.43)
-  ctx.bezierCurveTo(335.94, 46.35, 382.28, 0, 439.37, 0)
-  ctx.closePath()
-  // base sub-path
-  ctx.moveTo(3809.98, 2144.94)
-  ctx.lineTo(3809.98, 2207.37)
-  ctx.bezierCurveTo(3809.98, 2212.58, 3809.43, 2217.6, 3808.36, 2222.47)
-  ctx.bezierCurveTo(3801.46, 2254.15, 3773.25, 2277.85, 3739.51, 2277.85)
-  ctx.lineTo(3605.98, 2277.85)
-  ctx.lineTo(3588.48, 2300)
-  ctx.lineTo(3363.28, 2300)
-  ctx.lineTo(3345.78, 2277.85)
-  ctx.lineTo(464.21, 2277.85)
-  ctx.lineTo(446.71, 2300)
-  ctx.lineTo(221.51, 2300)
-  ctx.lineTo(204.01, 2277.85)
-  ctx.lineTo(70.48, 2277.85)
-  ctx.bezierCurveTo(36.7, 2277.85, 8.53, 2254.15, 1.63, 2222.47)
-  ctx.bezierCurveTo(0.56, 2217.6, 0.01, 2212.58, 0.01, 2207.37)
-  ctx.lineTo(0.01, 2144.94)
-  ctx.lineTo(3809.99, 2144.94)
-  ctx.closePath()
-  ctx.fill()
-  ctx.restore()
+  applyScaledShadow(ctx, sx, sy, color, () => {
+    ctx.beginPath()
+    // lid sub-path
+    ctx.moveTo(439.37, 0)
+    ctx.lineTo(3370.58, 0)
+    ctx.bezierCurveTo(3427.66, 0, 3474.01, 46.34, 3474.01, 103.43)
+    ctx.lineTo(3474.01, 2144.96)
+    ctx.lineTo(335.94, 2144.96)
+    ctx.lineTo(335.94, 103.43)
+    ctx.bezierCurveTo(335.94, 46.35, 382.28, 0, 439.37, 0)
+    ctx.closePath()
+    // base sub-path
+    ctx.moveTo(3809.98, 2144.94)
+    ctx.lineTo(3809.98, 2207.37)
+    ctx.bezierCurveTo(3809.98, 2212.58, 3809.43, 2217.6, 3808.36, 2222.47)
+    ctx.bezierCurveTo(3801.46, 2254.15, 3773.25, 2277.85, 3739.51, 2277.85)
+    ctx.lineTo(3605.98, 2277.85)
+    ctx.lineTo(3588.48, 2300)
+    ctx.lineTo(3363.28, 2300)
+    ctx.lineTo(3345.78, 2277.85)
+    ctx.lineTo(464.21, 2277.85)
+    ctx.lineTo(446.71, 2300)
+    ctx.lineTo(221.51, 2300)
+    ctx.lineTo(204.01, 2277.85)
+    ctx.lineTo(70.48, 2277.85)
+    ctx.bezierCurveTo(36.7, 2277.85, 8.53, 2254.15, 1.63, 2222.47)
+    ctx.bezierCurveTo(0.56, 2217.6, 0.01, 2212.58, 0.01, 2207.37)
+    ctx.lineTo(0.01, 2144.94)
+    ctx.lineTo(3809.99, 2144.94)
+    ctx.closePath()
+  })
 
   // Base / stand
   ctx.save()

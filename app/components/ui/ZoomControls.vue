@@ -3,16 +3,18 @@
     <button
       class="rounded px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/10 hover:text-[var(--color-text)]"
       title="Fit to width"
+      aria-label="Fit to width"
       @click="$emit('fit-width')"
     >
-      ↔
+      <span aria-hidden="true">↔</span>
     </button>
     <button
       class="rounded px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/10 hover:text-[var(--color-text)]"
       title="Fit to height"
+      aria-label="Fit to height"
       @click="$emit('fit-height')"
     >
-      ↕
+      <span aria-hidden="true">↕</span>
     </button>
     <div class="mx-1 h-4 w-px bg-[var(--color-border)]" />
     <button
@@ -32,19 +34,21 @@
     <button
       class="rounded px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/10 hover:text-[var(--color-text)]"
       :disabled="modelValue <= 0.1"
+      aria-label="Zoom out"
       @click="$emit('update:modelValue', Math.max(0.1, modelValue - 0.1))"
     >
-      −
+      <span aria-hidden="true">−</span>
     </button>
-    <span class="min-w-10 text-center text-xs text-[var(--color-text-muted)]">
+    <span class="min-w-10 text-center text-xs text-[var(--color-text-muted)]" aria-live="polite" aria-atomic="true">
       {{ Math.round(modelValue * 100) }}%
     </span>
     <button
       class="rounded px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/10 hover:text-[var(--color-text)]"
       :disabled="modelValue >= 3"
+      aria-label="Zoom in"
       @click="$emit('update:modelValue', Math.min(3, modelValue + 0.1))"
     >
-      +
+      <span aria-hidden="true">+</span>
     </button>
   </div>
 </template>

@@ -12,8 +12,9 @@
 
       <!-- Label -->
       <div class="space-y-1.5">
-        <label class="text-xs text-[var(--color-text-muted)]">Label</label>
+        <label for="snip-label" class="text-xs text-[var(--color-text-muted)]">Label</label>
         <input
+          id="snip-label"
           :value="snip.label"
           class="w-full"
           @input="updateLabel(($event.target as HTMLInputElement).value)"

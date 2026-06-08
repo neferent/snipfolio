@@ -59,10 +59,11 @@
         class="absolute right-1 top-1 flex size-[18px] items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
         style="background:rgba(0,0,0,0.55);color:#fff;pointer-events:all"
         title="Rotate orientation"
+        aria-label="Rotate orientation"
         @mousedown.stop
         @click.stop="rotateSnip(snip)"
       >
-        <RotateCw class="size-2.5" />
+        <RotateCw class="size-2.5" aria-hidden="true" />
       </button>
 
       <!-- Resize handles (selected only) — 8×8px per spec -->

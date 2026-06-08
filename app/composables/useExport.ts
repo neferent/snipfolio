@@ -63,7 +63,8 @@ export function useExport() {
     const canvas = document.createElement('canvas')
     canvas.width = snip.width
     canvas.height = snip.height
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D context unavailable')
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(loaded.img, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)

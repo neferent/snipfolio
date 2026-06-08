@@ -26,7 +26,10 @@ export default defineEventHandler(async (event) => {
     if (!userId) return { ok: true }
 
     const { error } = await sb.from('profiles').upsert({ id: userId, is_pro: true }, { onConflict: 'id' })
-    if (error) console.error('[webhook] upsert error:', error)
+    if (error) {
+      console.error('[webhook] upsert error:', error)
+      throw createError({ statusCode: 500, message: 'DB error' })
+    }
   }
 
   // Pro subscription cancelled/expired
@@ -34,7 +37,11 @@ export default defineEventHandler(async (event) => {
     const userId: string | undefined = payload.meta?.custom_data?.user_id
     if (!userId) return { ok: true }
 
-    await sb.from('profiles').upsert({ id: userId, is_pro: false }, { onConflict: 'id' })
+    const { error } = await sb.from('profiles').upsert({ id: userId, is_pro: false }, { onConflict: 'id' })
+    if (error) {
+      console.error('[webhook] upsert error:', error)
+      throw createError({ statusCode: 500, message: 'DB error' })
+    }
   }
 
   // Day pass purchase
@@ -59,7 +66,10 @@ export default defineEventHandler(async (event) => {
       { user_id: userId, project_id: projectId, expires_at: expiresAt },
       { onConflict: 'user_id,project_id' },
     )
-    if (error) console.error('[webhook] day pass upsert error:', error)
+    if (error) {
+      console.error('[webhook] day pass upsert error:', error)
+      throw createError({ statusCode: 500, message: 'DB error' })
+    }
   }
 
   return { ok: true }

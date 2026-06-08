@@ -81,29 +81,32 @@
           <button
             class="flex size-7 items-center justify-center rounded bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
             title="Draw snip (click and drag)"
+            aria-label="Draw snip"
+            aria-pressed="true"
           >
-            <Crop class="size-3.5" />
+            <Crop class="size-3.5" aria-hidden="true" />
           </button>
 
           <div class="flex-1" />
 
           <!-- Zoom controls -->
-          <button v-bind="tbBtn()" title="Zoom out" @click="zoom = Math.max(0.05, zoom - 0.1)">
-            <ZoomOut class="size-3.5" />
+          <button v-bind="tbBtn()" title="Zoom out" aria-label="Zoom out" @click="zoom = Math.max(0.05, zoom - 0.1)">
+            <ZoomOut class="size-3.5" aria-hidden="true" />
           </button>
           <input
             class="w-16 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center font-mono text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
+            aria-label="Zoom level"
             :value="zoomLabel"
             @focus="($event.target as HTMLInputElement).select()"
             @keydown.enter.prevent="onSnipZoomCommit($event)"
             @keydown.escape="($event.target as HTMLInputElement).blur()"
             @blur="($event.target as HTMLInputElement).value = zoomLabel"
           />
-          <button v-bind="tbBtn()" title="Zoom in" @click="zoom = Math.min(8, zoom + 0.1)">
-            <ZoomIn class="size-3.5" />
+          <button v-bind="tbBtn()" title="Zoom in" aria-label="Zoom in" @click="zoom = Math.min(8, zoom + 0.1)">
+            <ZoomIn class="size-3.5" aria-hidden="true" />
           </button>
-          <button v-bind="tbBtn()" title="Fit to width (Cmd+0)" @click="fitToWidth">
-            <Maximize2 class="size-3.5" />
+          <button v-bind="tbBtn()" title="Fit to width (Cmd+0)" aria-label="Fit to width" @click="fitToWidth">
+            <Maximize2 class="size-3.5" aria-hidden="true" />
           </button>
         </div>
 
@@ -169,8 +172,9 @@
     <AppModal :open="showAddSource" title="Add source image" @close="showAddSource = false">
       <div class="flex flex-col gap-4">
         <div>
-          <label class="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">Label</label>
+          <label for="add-source-label" class="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">Label</label>
           <input
+            id="add-source-label"
             v-model="newSourceLabel"
             class="w-full"
             placeholder="e.g. Mobile, Desktop"

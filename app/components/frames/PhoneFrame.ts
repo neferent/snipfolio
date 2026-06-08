@@ -1,9 +1,6 @@
-export interface FrameDrawResult {
-  screenX: number
-  screenY: number
-  screenWidth: number
-  screenHeight: number
-}
+import { applyScaledShadow } from './frameUtils'
+import type { FrameDrawResult } from './frameUtils'
+export type { FrameDrawResult } from './frameUtils'
 
 // SVG coordinate space (mobile.svg)
 const SVG_W = 772.5
@@ -54,40 +51,35 @@ export function drawPhoneFrame(
   ctx.miterLimit = 4
 
   // Drop shadow on the body
-  ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = 30 / Math.min(sx, sy)
-  ctx.shadowOffsetY = 12 / Math.min(sx, sy)
-  ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.moveTo(777.74, 497.55)
-  ctx.lineTo(777.74, 687.4)
-  ctx.lineTo(772.5, 687.4)
-  ctx.lineTo(772.5, 1461.25)
-  ctx.bezierCurveTo(772.5, 1537.89, 710.37, 1600, 633.75, 1600)
-  ctx.lineTo(143.97, 1600)
-  ctx.bezierCurveTo(67.35, 1600, 5.23, 1537.89, 5.23, 1461.25)
-  ctx.lineTo(5.23, 726.68)
-  ctx.lineTo(0, 726.68)
-  ctx.lineTo(0, 608.84)
-  ctx.lineTo(5.24, 608.84)
-  ctx.lineTo(5.24, 574.8)
-  ctx.lineTo(0, 574.8)
-  ctx.lineTo(0, 456.96)
-  ctx.lineTo(5.24, 456.96)
-  ctx.lineTo(5.24, 401.97)
-  ctx.lineTo(0, 401.97)
-  ctx.lineTo(0, 328.65)
-  ctx.lineTo(5.24, 328.65)
-  ctx.lineTo(5.24, 138.74)
-  ctx.bezierCurveTo(5.24, 62.11, 67.35, 0, 143.97, 0)
-  ctx.lineTo(633.75, 0)
-  ctx.bezierCurveTo(710.37, 0, 772.5, 62.11, 772.5, 138.74)
-  ctx.lineTo(772.5, 497.55)
-  ctx.lineTo(777.74, 497.55)
-  ctx.closePath()
-  ctx.fill()
-  ctx.restore()
+  applyScaledShadow(ctx, sx, sy, color, () => {
+    ctx.beginPath()
+    ctx.moveTo(777.74, 497.55)
+    ctx.lineTo(777.74, 687.4)
+    ctx.lineTo(772.5, 687.4)
+    ctx.lineTo(772.5, 1461.25)
+    ctx.bezierCurveTo(772.5, 1537.89, 710.37, 1600, 633.75, 1600)
+    ctx.lineTo(143.97, 1600)
+    ctx.bezierCurveTo(67.35, 1600, 5.23, 1537.89, 5.23, 1461.25)
+    ctx.lineTo(5.23, 726.68)
+    ctx.lineTo(0, 726.68)
+    ctx.lineTo(0, 608.84)
+    ctx.lineTo(5.24, 608.84)
+    ctx.lineTo(5.24, 574.8)
+    ctx.lineTo(0, 574.8)
+    ctx.lineTo(0, 456.96)
+    ctx.lineTo(5.24, 456.96)
+    ctx.lineTo(5.24, 401.97)
+    ctx.lineTo(0, 401.97)
+    ctx.lineTo(0, 328.65)
+    ctx.lineTo(5.24, 328.65)
+    ctx.lineTo(5.24, 138.74)
+    ctx.bezierCurveTo(5.24, 62.11, 67.35, 0, 143.97, 0)
+    ctx.lineTo(633.75, 0)
+    ctx.bezierCurveTo(710.37, 0, 772.5, 62.11, 772.5, 138.74)
+    ctx.lineTo(772.5, 497.55)
+    ctx.lineTo(777.74, 497.55)
+    ctx.closePath()
+  })
 
   // Metal frame ring — black, creates the visible bezel around the screen
   ctx.save()

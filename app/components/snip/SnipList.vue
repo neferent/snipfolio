@@ -63,9 +63,10 @@
                   <button
                     class="ml-auto shrink-0 rounded p-0.5 opacity-0 transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
                     title="Delete snip"
+                    aria-label="Delete snip"
                     @click.stop="confirmDelete(snip.id)"
                   >
-                    <X class="size-3.5" />
+                    <X class="size-3.5" aria-hidden="true" />
                   </button>
                 </div>
                 <div v-if="snipsBySource(source.id).length === 0" class="py-2 pl-8 text-[10px] text-[var(--color-text-muted)]">
