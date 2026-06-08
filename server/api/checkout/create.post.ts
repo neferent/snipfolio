@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const baseUrl = process.env.NODE_ENV === 'production'
-    ? 'https://snipfolio.com'
+    ? 'https://snipfol.io'
     : 'http://localhost:3000'
 
   const payload = {
