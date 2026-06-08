@@ -27,6 +27,16 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === 'SOURCEMAP_ERROR') return
+          if (warning.message?.includes('Sourcemap is likely to be incorrect')) return
+          if (warning.code === 'INVALID_ANNOTATION') return
+          warn(warning)
+        },
+      },
+    },
   },
 
   runtimeConfig: {
