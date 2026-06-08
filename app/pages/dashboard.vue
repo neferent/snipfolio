@@ -163,9 +163,9 @@
         </button>
         <button
           class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[#111316] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          @click="showProUpsell = false"
+          @click="startCheckout('pro_early')"
         >
-          Go Pro — coming soon
+          Go Pro — $9.99/mo
         </button>
       </template>
     </AppModal>
@@ -200,6 +200,7 @@ import { useProjectStore } from '~/stores/project'
 import { useAuth } from '~/composables/useAuth'
 import { useProject } from '~/composables/useProject'
 import { usePlan } from '~/composables/usePlan'
+import { useCheckout } from '~/composables/useCheckout'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -208,6 +209,7 @@ const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
 const { fetchProjects, createProject: createProjectFn, deleteProject, loadPreview } = useProject()
 const { canCreateProject } = usePlan()
+const { startCheckout } = useCheckout()
 
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)

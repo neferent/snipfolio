@@ -54,8 +54,7 @@ function useSupabaseAuth() {
   async function sendPasswordReset(email: string) {
     const supabase = useSupabaseClient()
     if (!supabase) throw new Error('Supabase is not configured')
-    console.log('[resetPassword] redirectTo:', 'https://snipfol.io/reset-password')
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: 'https://snipfol.io/reset-password',
     })
     if (error) throw error

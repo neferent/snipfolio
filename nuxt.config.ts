@@ -31,10 +31,16 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     supabaseServiceKey: process.env.NUXT_SUPABASE_SERVICE_KEY ?? '',
+    lsApiKey: process.env.NUXT_LS_API_KEY ?? '',
+    lsWebhookSecret: process.env.NUXT_LS_WEBHOOK_SECRET ?? '',
     public: {
       appEnabled: process.env.NUXT_PUBLIC_APP_ENABLED === 'true',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL ?? '',
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY ?? '',
+      lsStoreId: process.env.NUXT_PUBLIC_LS_STORE_ID ?? '',
+      lsProVariantId: process.env.NUXT_PUBLIC_LS_PRO_VARIANT_ID ?? '',
+      lsProEarlyVariantId: process.env.NUXT_PUBLIC_LS_PRO_EARLY_VARIANT_ID ?? '',
+      lsDayPassVariantId: process.env.NUXT_PUBLIC_LS_DAY_PASS_VARIANT_ID ?? '',
     },
   },
 

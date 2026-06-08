@@ -122,16 +122,17 @@
           </div>
           <div class="flex items-center gap-2">
             <button
-              class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10"
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10 disabled:opacity-40"
               style="border:0.5px solid rgba(255,255,255,0.14);color:#e2e6ea"
-              title="Lemon Squeezy checkout — coming soon"
+              :disabled="checkoutLoading"
               @click="onBuyDayAccess"
             >
-              1-Day Access — $2.40
+              1-Day Access — $4.99
             </button>
             <button
-              class="rounded-[5px] px-3 py-1 text-xs font-medium transition"
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40"
               style="background:rgba(142,158,173,0.15);border:0.5px solid rgba(142,158,173,0.3);color:#8e9ead"
+              :disabled="checkoutLoading"
               @click="onGoPro"
             >
               Go Pro
@@ -168,6 +169,7 @@ import { useProjectStore } from '~/stores/project'
 import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
+import { useCheckout } from '~/composables/useCheckout'
 import { useSnipsStore } from '~/stores/snips'
 import { getFrameMismatches } from '~/composables/useFrameMismatches'
 import type { Composition } from '~/types'
@@ -184,6 +186,7 @@ const projectStore = useProjectStore()
 const authStore = useAuthStore()
 const { getDayAccessExpiry } = usePlan()
 const { exportComposition } = useExport()
+const { startCheckout, loading: checkoutLoading } = useCheckout()
 
 const compositions = computed(() => compositionsStore.ordered)
 
@@ -257,12 +260,12 @@ function exportSelected() {
 }
 
 function onBuyDayAccess() {
-  // Lemon Squeezy checkout — coming soon
-  alert('Payment integration coming soon!')
+  const projectId = projectStore.current?.id
+  if (projectId) startCheckout('day_pass', projectId)
 }
 
 function onGoPro() {
-  alert('Pro subscription coming soon!')
+  startCheckout('pro_early')
 }
 
 function formatExpiry(date: Date): string {
