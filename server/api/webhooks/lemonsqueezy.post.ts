@@ -25,7 +25,8 @@ export default defineEventHandler(async (event) => {
     const userId: string | undefined = payload.meta?.custom_data?.user_id
     if (!userId) return { ok: true }
 
-    await sb.from('profiles').upsert({ id: userId, is_pro: true }, { onConflict: 'id' })
+    const { error } = await sb.from('profiles').upsert({ id: userId, is_pro: true }, { onConflict: 'id' })
+    if (error) console.error('[webhook] upsert error:', error)
   }
 
   // Pro subscription cancelled/expired
