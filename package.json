@@ -24,7 +24,8 @@
     "pinia": "^3.0.4",
     "tailwindcss": "^4.3.0",
     "vue": "latest",
-    "vue-router": "latest"
+    "vue-router": "latest",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",

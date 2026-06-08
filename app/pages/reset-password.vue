@@ -78,6 +78,8 @@
 definePageMeta({ layout: 'default', middleware: [] })
 useHead({ title: 'Reset password — Snipfolio' })
 
+import { toast } from '~/composables/useToast'
+
 const { updatePassword } = useAuth()
 
 const password = ref('')
@@ -113,9 +115,11 @@ async function submit() {
   try {
     await updatePassword(password.value)
     done.value = true
+    toast.success('Password updated')
     setTimeout(() => navigateTo('/dashboard'), 1500)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to update password'
+    toast.error(error.value)
   } finally {
     loading.value = false
   }

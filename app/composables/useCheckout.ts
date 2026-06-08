@@ -13,6 +13,8 @@ export function useCheckout() {
         headers: { Authorization: `Bearer ${authStore.token}` },
         body: { type, projectId },
       })
+      localStorage.setItem('snipfolio_checkout_return', window.location.pathname + window.location.search)
+      localStorage.setItem('snipfolio_checkout_type', type)
       window.location.href = url
     } finally {
       loading.value = false
