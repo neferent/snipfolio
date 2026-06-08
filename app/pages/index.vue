@@ -524,15 +524,23 @@ definePageMeta({ layout: 'landing', middleware: [] })
 const authStore = useAuthStore()
 
 useSeoMeta({
-  title: 'Snipfolio -- Screenshot clipping and composition for developers and designers',
+  title: 'Snipfolio — Screenshot clipping and composition for developers and designers',
   description: 'Clip regions from any screenshot, then compose them into polished exports with device frames, captions, and custom backgrounds. No Figma required.',
   ogTitle: 'Snipfolio',
   ogDescription: 'Clip regions from any screenshot, then compose them into polished exports with device frames, captions, and custom backgrounds.',
   ogType: 'website',
   ogUrl: 'https://snipfolio.com',
+  ogSiteName: 'Snipfolio',
+  ogLocale: 'en_US',
+  ogImage: 'https://snipfolio.com/og-image.png',
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
+  ogImageAlt: 'Snipfolio — screenshot clipping and composition tool',
   twitterCard: 'summary_large_image',
   twitterTitle: 'Snipfolio',
   twitterDescription: 'Clip regions from any screenshot, then compose them into polished exports with device frames, captions, and custom backgrounds.',
+  twitterImage: 'https://snipfolio.com/og-image.png',
+  twitterImageAlt: 'Snipfolio — screenshot clipping and composition tool',
 })
 
 const faq = [
@@ -575,18 +583,37 @@ useHead({
         '@context': 'https://schema.org',
         '@graph': [
           {
+            '@type': 'Organization',
+            '@id': 'https://snipfolio.com/#organization',
+            name: 'Snipfolio',
+            url: 'https://snipfolio.com',
+            logo: {
+              '@type': 'ImageObject',
+              url: 'https://snipfolio.com/icons/logo_48.png',
+              width: 48,
+              height: 48,
+            },
+          },
+          {
             '@type': 'WebSite',
+            '@id': 'https://snipfolio.com/#website',
             name: 'Snipfolio',
             url: 'https://snipfolio.com',
             description: 'Screenshot clipping and composition for developers and designers',
+            inLanguage: 'en-US',
+            publisher: { '@id': 'https://snipfolio.com/#organization' },
           },
           {
             '@type': 'SoftwareApplication',
+            '@id': 'https://snipfolio.com/#app',
             name: 'Snipfolio',
             applicationCategory: 'DesignApplication',
+            applicationSubCategory: 'Screenshot Tool',
             operatingSystem: 'Web',
             url: 'https://snipfolio.com',
+            inLanguage: 'en-US',
             description: 'Clip regions from any screenshot, then compose them into polished exports with device frames, captions, and custom backgrounds.',
+            publisher: { '@id': 'https://snipfolio.com/#organization' },
             offers: [
               {
                 '@type': 'Offer',

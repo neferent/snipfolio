@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Background gradient: slightly lighter center -->
+    <radialGradient id="bg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%"   stop-color="#1e2228"/>
+      <stop offset="100%" stop-color="#111316"/>
+    </radialGradient>
+
+    <!-- Subtle dot grid pattern -->
+    <pattern id="dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#ffffff" fill-opacity="0.04"/>
+    </pattern>
+
+    <!-- Glow for active snip -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Clip paths for snip cards -->
+    <clipPath id="card1clip">
+      <rect x="692" y="108" width="358" height="230" rx="6"/>
+    </clipPath>
+    <clipPath id="card2clip">
+      <rect x="730" y="292" width="358" height="230" rx="6"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── Background ── -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <!-- ── Left-panel accent line ── -->
+  <line x1="148" y1="220" x2="148" y2="410" stroke="#8e9ead" stroke-width="1.5" stroke-opacity="0.35"/>
+
+  <!-- ── Wordmark ── -->
+  <text x="176" y="310"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="76" font-weight="700" letter-spacing="-2"
+    fill="#e2e6ea">Snipfolio</text>
+
+  <!-- ── Tagline ── -->
+  <text x="177" y="362"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="26" font-weight="400" letter-spacing="0"
+    fill="#8e9ead">Screenshot clipping &amp; composition</text>
+
+  <!-- ── Feature pills ── -->
+  <!-- pill 1 -->
+  <rect x="177" y="392" width="160" height="30" rx="15" fill="#1e2228" stroke="#2c3238" stroke-width="1"/>
+  <text x="257" y="412" text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="14" fill="#8e9ead">Device frames</text>
+  <!-- pill 2 -->
+  <rect x="347" y="392" width="130" height="30" rx="15" fill="#1e2228" stroke="#2c3238" stroke-width="1"/>
+  <text x="412" y="412" text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="14" fill="#8e9ead">No Figma</text>
+  <!-- pill 3 -->
+  <rect x="487" y="392" width="130" height="30" rx="15" fill="#1e2228" stroke="#2c3238" stroke-width="1"/>
+  <text x="552" y="412" text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="14" fill="#8e9ead">Free to start</text>
+
+  <!-- ── Domain ── -->
+  <text x="177" y="478"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="18" font-weight="400"
+    fill="#4a5e6e">snipfolio.com</text>
+
+  <!-- ══════════════════════════════════════════
+       Right side — "screenshot with snips" visual
+       ══════════════════════════════════════════ -->
+
+  <!-- ── Screenshot canvas (simulated browser window) ── -->
+  <!-- Browser chrome -->
+  <rect x="664" y="80" width="460" height="470" rx="10" fill="#16191d" stroke="#2c3238" stroke-width="1"/>
+  <!-- browser bar -->
+  <rect x="664" y="80" width="460" height="36" rx="10" fill="#1e2228"/>
+  <rect x="664" y="104" width="460" height="12" fill="#1e2228"/>
+  <!-- traffic lights -->
+  <circle cx="694" cy="98" r="5" fill="#f09595" fill-opacity="0.6"/>
+  <circle cx="712" cy="98" r="5" fill="#ef9f27" fill-opacity="0.6"/>
+  <circle cx="730" cy="98" r="5" fill="#5dcaa5" fill-opacity="0.6"/>
+  <!-- URL bar -->
+  <rect x="760" y="88" width="220" height="20" rx="4" fill="#111316"/>
+  <text x="870" y="102" text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="11" fill="#4a5e6e">app.snipfolio.com</text>
+
+  <!-- Screenshot content area (simulated UI blocks) -->
+  <rect x="676" y="128" width="436" height="410" fill="#0d0f11"/>
+
+  <!-- Fake UI — header bar -->
+  <rect x="676" y="128" width="436" height="40" fill="#111316"/>
+  <rect x="692" y="142" width="60" height="12" rx="3" fill="#2c3238"/>
+  <rect x="992" y="142" width="50" height="12" rx="3" fill="#2c3238"/>
+  <rect x="1050" y="142" width="50" height="12" rx="3" fill="#1e2228" stroke="#2c3238" stroke-width="1"/>
+
+  <!-- Fake UI — main content columns -->
+  <!-- left sidebar -->
+  <rect x="676" y="168" width="80" height="370" fill="#111316"/>
+  <rect x="692" y="180" width="48" height="8" rx="2" fill="#2c3238"/>
+  <rect x="692" y="196" width="48" height="8" rx="2" fill="#1e2228"/>
+  <rect x="692" y="212" width="48" height="8" rx="2" fill="#1e2228"/>
+  <rect x="692" y="228" width="48" height="8" rx="2" fill="#1e2228"/>
+
+  <!-- content area rows -->
+  <rect x="757" y="168" width="260" height="160" fill="#0d0f11"/>
+  <!-- some "image" blocks -->
+  <rect x="765" y="176" width="244" height="144" rx="3" fill="#16191d"/>
+  <!-- inner image pattern -->
+  <rect x="773" y="184" width="100" height="60" rx="2" fill="#1e2228"/>
+  <rect x="881" y="184" width="120" height="60" rx="2" fill="#1e2228"/>
+  <rect x="773" y="252" width="228" height="60" rx="2" fill="#1e2228"/>
+
+  <!-- right panel -->
+  <rect x="1017" y="168" width="95" height="370" fill="#111316"/>
+  <rect x="1025" y="180" width="72" height="8" rx="2" fill="#2c3238"/>
+  <rect x="1025" y="196" width="60" height="8" rx="2" fill="#1e2228"/>
+  <rect x="1025" y="212" width="72" height="6" rx="2" fill="#1e2228"/>
+  <rect x="1025" y="226" width="72" height="24" rx="3" fill="#2c3238"/>
+
+  <!-- second content row -->
+  <rect x="757" y="336" width="260" height="90" fill="#0d0f11"/>
+  <rect x="765" y="344" width="244" height="74" rx="3" fill="#16191d"/>
+  <rect x="773" y="352" width="100" height="58" rx="2" fill="#1e2228"/>
+  <rect x="881" y="352" width="120" height="58" rx="2" fill="#1e2228"/>
+
+  <!-- third content row -->
+  <rect x="757" y="434" width="260" height="104" fill="#0d0f11"/>
+  <rect x="765" y="442" width="244" height="88" rx="3" fill="#16191d"/>
+  <rect x="773" y="450" width="228" height="72" rx="2" fill="#1e2228"/>
+
+  <!-- ── Snip selection box 1 — top area (info blue, "active") ── -->
+  <rect x="764" y="175" width="245" height="146" rx="3"
+    fill="#38bdf8" fill-opacity="0.06"
+    stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="6 3"
+    filter="url(#glow)"/>
+  <!-- resize handles -->
+  <rect x="759" y="170" width="8" height="8" rx="1" fill="#38bdf8"/>
+  <rect x="997" y="170" width="8" height="8" rx="1" fill="#38bdf8"/>
+  <rect x="759" y="312" width="8" height="8" rx="1" fill="#38bdf8"/>
+  <rect x="997" y="312" width="8" height="8" rx="1" fill="#38bdf8"/>
+  <!-- label pill -->
+  <rect x="760" y="155" width="66" height="18" rx="4" fill="#38bdf8"/>
+  <text x="793" y="167" text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="11" font-weight="600" fill="#0d0f11">Desktop</text>
+
+  <!-- ── Snip selection box 2 — bottom area (accent, "secondary") ── -->
+  <rect x="764" y="342" width="245" height="188" rx="3"
+    fill="#8e9ead" fill-opacity="0.05"
+    stroke="#8e9ead" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <!-- resize handles -->
+  <rect x="759" y="337" width="8" height="8" rx="1" fill="#8e9ead" fill-opacity="0.7"/>
+  <rect x="997" y="337" width="8" height="8" rx="1" fill="#8e9ead" fill-opacity="0.7"/>
+  <rect x="759" y="522" width="8" height="8" rx="1" fill="#8e9ead" fill-opacity="0.7"/>
+  <rect x="997" y="522" width="8" height="8" rx="1" fill="#8e9ead" fill-opacity="0.7"/>
+
+  <!-- ── Divider between left text and right visual ── -->
+  <line x1="638" y1="80" x2="638" y2="550" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.06"/>
+
+</svg>
