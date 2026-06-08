@@ -4,25 +4,27 @@
     <div class="text-sm text-[var(--color-text-muted)]">
       Your purchase was successful. Enjoy Snipfolio.
     </div>
-    <button
-      class="mt-4 rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-      @click="goToDashboard"
-    >
-      Go to dashboard
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { toast } from '~/composables/useToast'
+
 definePageMeta({ layout: 'default', middleware: [] })
 
 const { refreshProfile } = useAuth()
 
 onMounted(async () => {
-  await refreshProfile()
-})
+  const returnTo = localStorage.getItem('snipfolio_checkout_return') ?? '/dashboard'
+  const checkoutType = localStorage.getItem('snipfolio_checkout_type') ?? ''
+  localStorage.removeItem('snipfolio_checkout_return')
+  localStorage.removeItem('snipfolio_checkout_type')
 
-async function goToDashboard() {
-  await navigateTo('/dashboard')
-}
+  await refreshProfile()
+
+  const label = checkoutType === 'day_pass' ? 'Day pass activated!' : 'Pro activated!'
+  toast.success(label, { description: 'Enjoy watermark-free exports.' })
+
+  await navigateTo(returnTo)
+})
 </script>

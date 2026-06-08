@@ -22,6 +22,19 @@
       </template>
       <template v-else>
         <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
+        <a
+          v-if="authStore.isPro && billingUrl"
+          :href="billingUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
+          style="border:0.5px solid rgba(255,255,255,0.12)"
+        >
+          Manage subscription
+          <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
         <button
           class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
           style="border:0.5px solid rgba(255,255,255,0.12)"
@@ -210,6 +223,11 @@ const { signOut: authSignOut } = useAuth()
 const { fetchProjects, createProject: createProjectFn, deleteProject, loadPreview } = useProject()
 const { canCreateProject } = usePlan()
 const { startCheckout } = useCheckout()
+
+const config = useRuntimeConfig()
+const billingUrl = config.public.lsStoreSlug
+  ? `https://${config.public.lsStoreSlug}.lemonsqueezy.com/billing`
+  : ''
 
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)

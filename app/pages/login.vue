@@ -164,6 +164,7 @@ useHead({ title: 'Sign in -- Snipfolio' })
 
 import { useAuth } from '~/composables/useAuth'
 import { useAuthStore } from '~/stores/auth'
+import { toast } from '~/composables/useToast'
 
 const { signIn: authSignIn, signUp: authSignUp, continueAsGuest, sendPasswordReset } = useAuth()
 const authStore = useAuthStore()
@@ -200,8 +201,10 @@ async function submitForgotPassword() {
   try {
     await sendPasswordReset(email.value)
     message.value = 'Check your email for a reset link.'
+    toast.success('Reset link sent', { description: 'Check your email for instructions.' })
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to send reset email'
+    toast.error(error.value)
   } finally {
     loading.value = false
   }
@@ -225,6 +228,7 @@ async function submit() {
     }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : isSignUp.value ? 'Sign up failed' : 'Sign in failed'
+    toast.error(error.value)
   } finally {
     loading.value = false
   }
