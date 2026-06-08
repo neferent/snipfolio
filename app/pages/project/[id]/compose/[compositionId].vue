@@ -25,8 +25,16 @@
     <div class="relative min-h-0 flex-1">
       <Transition name="fade">
         <CompositionEditor v-if="composition" :composition-id="compositionId" />
-        <div v-else-if="!loading" class="flex h-full items-center justify-center text-sm text-[var(--color-text-muted)]">
-          Composition not found
+        <div v-else-if="!loading" class="flex h-full flex-col items-center justify-center gap-3 text-center">
+          <p class="text-sm text-[var(--color-text-muted)]">
+            {{ loadError ? 'Failed to load project.' : 'Composition not found.' }}
+          </p>
+          <NuxtLink
+            :to="`/project/${projectId}`"
+            class="text-xs text-[var(--color-accent)] hover:underline"
+          >
+            ← Back to project
+          </NuxtLink>
         </div>
       </Transition>
     </div>
@@ -53,11 +61,18 @@ const composition = computed(() =>
   compositionsStore.compositions.find((c) => c.id === compositionId.value),
 )
 const loading = ref(true)
+const loadError = ref(false)
 
 onMounted(async () => {
-  if (!projectStore.current) {
-    await loadProject(projectId.value)
+  try {
+    if (!projectStore.current) {
+      await loadProject(projectId.value)
+    }
+  } catch (e) {
+    console.error('[compose] failed to load:', e)
+    loadError.value = true
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 })
 </script>

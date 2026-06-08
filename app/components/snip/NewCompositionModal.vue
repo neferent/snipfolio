@@ -4,8 +4,9 @@
       <!-- Left: form controls -->
       <div class="w-64 shrink-0 space-y-4">
         <div class="space-y-1.5">
-          <label class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
+          <label for="new-composition-name" class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
           <input
+            id="new-composition-name"
             v-model="name"
             class="w-full"
             placeholder="My composition"

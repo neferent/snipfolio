@@ -1,9 +1,6 @@
-export interface FrameDrawResult {
-  screenX: number
-  screenY: number
-  screenWidth: number
-  screenHeight: number
-}
+import { applyScaledShadow } from './frameUtils'
+import type { FrameDrawResult } from './frameUtils'
+export type { FrameDrawResult } from './frameUtils'
 
 // SVG coordinate space (tablet SVG)
 const SVG_W = 2449.87
@@ -53,36 +50,31 @@ export function drawTabletFrame(
   ctx.miterLimit = 4
 
   // Drop shadow — full body silhouette
-  ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = 30 / Math.min(sx, sy)
-  ctx.shadowOffsetY = 12 / Math.min(sx, sy)
-  ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.moveTo(2449.87, 125.97)
-  ctx.lineTo(2449.87, 1756.84)
-  ctx.bezierCurveTo(2449.87, 1823.26, 2396.02, 1877.1, 2329.6, 1877.1)
-  ctx.lineTo(127.89, 1877.1)
-  ctx.bezierCurveTo(61.47, 1877.1, 7.63, 1823.26, 7.63, 1756.84)
-  ctx.lineTo(7.63, 230.62)
-  ctx.lineTo(0, 230.62)
-  ctx.lineTo(0, 127.57)
-  ctx.lineTo(7.63, 127.57)
-  ctx.lineTo(7.63, 125.97)
-  ctx.bezierCurveTo(7.63, 59.55, 61.47, 5.7, 127.89, 5.7)
-  ctx.lineTo(172.33, 5.7)
-  ctx.lineTo(172.33, 0)
-  ctx.lineTo(260.08, 0)
-  ctx.lineTo(260.08, 5.7)
-  ctx.lineTo(278.44, 5.7)
-  ctx.lineTo(278.44, 0)
-  ctx.lineTo(364.15, 0)
-  ctx.lineTo(364.15, 5.7)
-  ctx.lineTo(2329.6, 5.7)
-  ctx.bezierCurveTo(2396.02, 5.7, 2449.87, 59.55, 2449.87, 125.97)
-  ctx.closePath()
-  ctx.fill()
-  ctx.restore()
+  applyScaledShadow(ctx, sx, sy, color, () => {
+    ctx.beginPath()
+    ctx.moveTo(2449.87, 125.97)
+    ctx.lineTo(2449.87, 1756.84)
+    ctx.bezierCurveTo(2449.87, 1823.26, 2396.02, 1877.1, 2329.6, 1877.1)
+    ctx.lineTo(127.89, 1877.1)
+    ctx.bezierCurveTo(61.47, 1877.1, 7.63, 1823.26, 7.63, 1756.84)
+    ctx.lineTo(7.63, 230.62)
+    ctx.lineTo(0, 230.62)
+    ctx.lineTo(0, 127.57)
+    ctx.lineTo(7.63, 127.57)
+    ctx.lineTo(7.63, 125.97)
+    ctx.bezierCurveTo(7.63, 59.55, 61.47, 5.7, 127.89, 5.7)
+    ctx.lineTo(172.33, 5.7)
+    ctx.lineTo(172.33, 0)
+    ctx.lineTo(260.08, 0)
+    ctx.lineTo(260.08, 5.7)
+    ctx.lineTo(278.44, 5.7)
+    ctx.lineTo(278.44, 0)
+    ctx.lineTo(364.15, 0)
+    ctx.lineTo(364.15, 5.7)
+    ctx.lineTo(2329.6, 5.7)
+    ctx.bezierCurveTo(2396.02, 5.7, 2449.87, 59.55, 2449.87, 125.97)
+    ctx.closePath()
+  })
 
   // Outer body
   ctx.save()

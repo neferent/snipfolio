@@ -26,7 +26,8 @@ export function useCanvasRenderer() {
   function render(canvas: HTMLCanvasElement, input: RenderInput) {
     const { composition, snips, sourceImages, backgroundImage, watermark = false } = input
     const cfg = composition.config
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D context unavailable')
     canvas.width = cfg.outputWidth
     canvas.height = cfg.outputHeight
     ctx.imageSmoothingEnabled = true
@@ -514,7 +515,8 @@ function extractSnip(snip: Snip, source: HTMLImageElement): HTMLCanvasElement {
   const c = document.createElement('canvas')
   c.width = snip.width
   c.height = snip.height
-  const ctx = c.getContext('2d')!
+  const ctx = c.getContext('2d')
+  if (!ctx) throw new Error('Canvas 2D context unavailable')
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(source, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)

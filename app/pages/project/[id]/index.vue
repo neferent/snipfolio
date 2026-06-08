@@ -25,7 +25,19 @@
     <!-- relative + flex-1 gives SnipTool's absolute inset-0 a defined bounding box -->
     <div class="relative min-h-0 flex-1">
       <Transition name="fade">
-        <SnipTool v-if="!loading" />
+        <SnipTool v-if="!loading && !loadError" />
+        <div
+          v-else-if="loadError"
+          class="flex h-full flex-col items-center justify-center gap-3 text-center"
+        >
+          <p class="text-sm text-[var(--color-text-muted)]">Failed to load project.</p>
+          <NuxtLink
+            to="/dashboard"
+            class="text-xs text-[var(--color-accent)] hover:underline"
+          >
+            ← Back to Dashboard
+          </NuxtLink>
+        </div>
       </Transition>
     </div>
   </div>
@@ -45,10 +57,17 @@ const { loadProject, scheduleSave } = useProject()
 
 const projectId = computed(() => route.params.id as string)
 const loading = ref(true)
+const loadError = ref(false)
 
 onMounted(async () => {
-  await loadProject(projectId.value)
-  loading.value = false
+  try {
+    await loadProject(projectId.value)
+  } catch (e) {
+    console.error('[project] failed to load:', e)
+    loadError.value = true
+  } finally {
+    loading.value = false
+  }
 })
 
 let renameTimer: ReturnType<typeof setTimeout> | null = null

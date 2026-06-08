@@ -1,6 +1,7 @@
 import { useCompositionsStore } from '~/stores/compositions'
 import { useProjectStore } from '~/stores/project'
 import { useSnipsStore } from '~/stores/snips'
+import { useProject } from '~/composables/useProject'
 import type {
   Composition,
   CompositionType,

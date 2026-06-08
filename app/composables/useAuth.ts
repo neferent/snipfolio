@@ -1,4 +1,5 @@
 import { useAuthStore } from '~/stores/auth'
+import { toast } from '~/composables/useToast'
 
 let _authListenerRegistered = false
 
@@ -15,6 +16,7 @@ function useSupabaseAuth() {
       store.setProfile(profile.isPro, profile.isAdmin)
     } catch (e) {
       console.warn('[loadProfile] error:', e)
+      toast.error('Could not load your profile. Some features may be unavailable — try refreshing.')
     }
   }
 

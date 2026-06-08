@@ -10,9 +10,18 @@ describe('usePlan.canCreateProject', () => {
     setActivePinia(createPinia())
   })
 
-  it('returns false for guests', () => {
+  it('returns true for guests with no projects (same limit as free tier)', () => {
     const auth = useAuthStore()
     auth.isGuest = true
+    const { canCreateProject } = usePlan()
+    expect(canCreateProject()).toBe(true)
+  })
+
+  it('returns false for guests who already have a project (same limit as free tier)', () => {
+    const auth = useAuthStore()
+    auth.isGuest = true
+    const projects = useProjectStore()
+    projects.setProjects([{ id: '1' } as Project])
     const { canCreateProject } = usePlan()
     expect(canCreateProject()).toBe(false)
   })

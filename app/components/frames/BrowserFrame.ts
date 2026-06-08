@@ -1,9 +1,5 @@
-export interface FrameDrawResult {
-  screenX: number
-  screenY: number
-  screenWidth: number
-  screenHeight: number
-}
+import type { FrameDrawResult } from './frameUtils'
+export type { FrameDrawResult } from './frameUtils'
 
 // SVG coordinate space (browser.svg)
 const SVG_W = 1757.49

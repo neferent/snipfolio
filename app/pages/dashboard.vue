@@ -134,8 +134,9 @@
     <AppModal :open="showNew" title="New Project" @close="showNew = false">
       <div class="space-y-3">
         <div class="space-y-1.5">
-          <label class="text-xs font-medium text-[var(--color-text-muted)]">Project name</label>
+          <label for="new-project-name" class="text-xs font-medium text-[var(--color-text-muted)]">Project name</label>
           <input
+            id="new-project-name"
             ref="nameInput"
             v-model="newName"
             class="w-full"
@@ -245,15 +246,22 @@ watch(showNew, (v) => {
 watch(projects, (list) => {
   for (const p of list) {
     if (previews.value[p.id]) continue
-    loadPreview(p.id).then((thumb) => {
-      if (thumb) previews.value = { ...previews.value, [p.id]: thumb }
-    })
+    loadPreview(p.id)
+      .then((thumb) => {
+        if (thumb) previews.value = { ...previews.value, [p.id]: thumb }
+      })
+      .catch(() => {})
   }
 })
 
 onMounted(async () => {
-  await fetchProjects()
-  loading.value = false
+  try {
+    await fetchProjects()
+  } catch (e) {
+    console.error('[dashboard] failed to load projects:', e)
+  } finally {
+    loading.value = false
+  }
 })
 
 function onNewProject() {
