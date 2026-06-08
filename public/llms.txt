@@ -1,0 +1,43 @@
+# Snipfolio
+
+> Screenshot clipping and composition for developers and designers.
+
+Snipfolio is a web app for clipping rectangular regions ("snips") from screenshots and composing them into polished, export-ready images with device frames, captions, and custom backgrounds. It is designed for developers and designers who need clean screenshot exports for documentation, app stores, marketing sites, and presentations — without needing Figma or another design tool.
+
+## Core workflow
+
+1. Drop a PNG or JPEG screenshot into the app.
+2. Draw crop regions ("snips") on the image. Snips snap to desktop (3:2) or mobile (9:16) aspect ratios for perfect device frame alignment.
+3. Compose one or more snips into a layout — choose a background, add a device frame (desktop, mobile, or browser chrome), and write optional captions.
+4. Export the finished composition as a PNG.
+
+## Key features
+
+- Visual drag-to-crop tool with aspect-ratio snapping
+- Device frames: laptop, phone, browser chrome (SVG overlays matched to crop ratios)
+- Single and auto-collage composition layouts
+- Custom backgrounds
+- Optional captions per snip
+- Works without an account (no uploads; data stays in the browser tab)
+- Cloud save for signed-in users (compositions persist across sessions)
+
+## Pricing
+
+- **Free**: Core snipping and composition with watermarked exports
+- **Day Pass** ($4.99, one-time): 24-hour full access with no watermarks
+- **Pro** ($9.99/mo): No watermarks, unlimited saved compositions, and access to Pro-only features
+
+## Target audience
+
+- Developers writing README files, docs, or changelogs who need polished screenshots
+- Designers preparing app store screenshots or marketing assets
+- Product teams creating feature announcements
+
+## Technology
+
+Web application built with Nuxt 4, Vue 3, and Tailwind CSS. Works in any modern browser. No installation required.
+
+## Contact
+
+- Website: https://snipfolio.com
+- Sign up / login: https://snipfolio.com/login
