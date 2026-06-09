@@ -2,7 +2,7 @@
   <div class="space-y-4">
     <!-- Type selector -->
     <div class="space-y-1.5">
-      <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Background</label>
+      <label class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Background</label>
       <div class="grid grid-cols-2 gap-1">
         <button
           v-for="t in types"
@@ -54,9 +54,9 @@
       </div>
 
       <div class="space-y-1.5">
-        <label class="flex items-center justify-between" style="font-size:12px;color:#6b7280">
+        <label class="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]">
           Angle
-          <span style="font-family:var(--font-mono);color:#8e9ead">{{ modelValue.gradientAngle }}°</span>
+          <span class="font-mono text-[var(--color-accent)]">{{ modelValue.gradientAngle }}°</span>
         </label>
         <input
           type="range"
@@ -75,7 +75,7 @@
         <label class="text-xs text-[var(--color-text-muted)]">Image</label>
 
         <!-- Preview -->
-        <div v-if="modelValue.imageDataUrl" class="relative overflow-hidden rounded-[6px]" style="aspect-ratio:16/9">
+        <div v-if="modelValue.imageDataUrl" class="relative aspect-video overflow-hidden rounded-[6px]">
           <img :src="modelValue.imageDataUrl" class="h-full w-full object-cover" />
           <button
             class="absolute right-1.5 top-1.5 rounded-[4px] bg-black/60 px-1.5 py-0.5 text-[10px] text-white transition hover:bg-black/80"
@@ -88,11 +88,11 @@
         <!-- Upload dropzone -->
         <label
           class="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[6px] py-4 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-          style="border:1px dashed rgba(255,255,255,0.12)"
+          class="border border-dashed border-[var(--color-border-strong)]"
         >
           <Upload class="size-4" />
           <span>{{ modelValue.imageDataUrl ? 'Replace image' : 'Upload image' }}</span>
-          <span style="font-size:10px;color:#4a5e6e">JPG, PNG, WebP</span>
+          <span class="text-[10px] text-[var(--color-text-faint)]">JPG, PNG, WebP</span>
           <input type="file" accept="image/*" class="sr-only" @change="onImageFile" />
         </label>
       </div>
@@ -106,10 +106,10 @@
     </template>
 
     <!-- Noise overlay (all types) -->
-    <div class="space-y-1" style="border-top:0.5px solid rgba(255,255,255,0.06);padding-top:12px">
-      <label class="flex items-center justify-between" style="font-size:12px;color:#6b7280">
+    <div class="space-y-1 border-t-subtle pt-3">
+      <label class="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]">
         Noise
-        <span style="font-family:var(--font-mono);color:#8e9ead">{{ Math.round((modelValue.noiseOpacity ?? 0) * 100) }}%</span>
+        <span class="font-mono text-[var(--color-accent)]">{{ Math.round((modelValue.noiseOpacity ?? 0) * 100) }}%</span>
       </label>
       <input
         type="range"

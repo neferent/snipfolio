@@ -32,8 +32,8 @@
               @click="type = t.value"
             >
               <component :is="t.icon" class="size-5 text-[var(--color-text-muted)]" />
-              <div class="mt-2 font-medium" style="font-size:13px;color:#e2e6ea">{{ t.label }}</div>
-              <div class="leading-tight" style="font-size:12px;color:#6b7280;margin-top:2px">{{ t.hint }}</div>
+              <div class="mt-2 text-xs font-medium text-[var(--color-text)]">{{ t.label }}</div>
+              <div class="mt-[2px] text-[12px] leading-tight text-[var(--color-text-muted)]">{{ t.hint }}</div>
             </button>
           </div>
         </div>
@@ -130,7 +130,7 @@
       <!-- Right: live preview -->
       <div class="flex min-w-0 flex-1 flex-col gap-1.5">
         <label class="text-xs font-medium text-[var(--color-text-muted)]">Preview</label>
-        <div class="flex-1 overflow-hidden rounded-lg border border-[var(--color-border)]" style="min-height: 260px">
+        <div class="flex-1 min-h-[260px] overflow-hidden rounded-lg border border-[var(--color-border)]">
           <CompositionCanvas v-if="previewComposition" :composition="previewComposition" />
           <div v-else class="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
             {{ previewHint }}
@@ -148,7 +148,7 @@
       </button>
       <button
         class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-        style="color:#111316"
+        class="text-[var(--color-on-accent)]"
         :disabled="!canCreate"
         @click="create"
       >

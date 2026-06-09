@@ -2,8 +2,8 @@
   <div class="absolute inset-0 flex">
     <!-- Left sidebar: slot list (z-order) + add snips -->
     <aside class="flex w-56 shrink-0 flex-col overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
-      <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
-        <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Layers</h2>
+      <div class="px-4 py-3" class="border-b-subtle">
+        <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Layers</h2>
       </div>
 
       <div class="flex-1 overflow-y-auto">
@@ -55,7 +55,7 @@
               v-if="frameMismatches.some(m => m.slotId === slot.id)"
               class="mismatch-tip shrink-0"
             >
-              <CircleAlert class="size-3" style="color:#fbbf24" />
+              <CircleAlert class="size-3 text-amber-400" />
               <span class="mismatch-tip-label">Frame will appear distorted</span>
             </span>
 
@@ -140,29 +140,30 @@
           <div
             v-if="frameMismatches.length > 0 && !mismatchDismissed"
             class="pointer-events-auto absolute bottom-4 right-4 z-20 max-w-[240px]"
-            style="border-radius:8px;border:1px solid rgba(251,191,36,0.3);background:rgba(18,20,24,0.92);backdrop-filter:blur(8px);padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,0.4)"
+            class="rounded-lg px-[12px] py-[10px] backdrop-blur-sm bg-[rgba(18,20,24,0.92)] shadow-[0_4px_16px_rgba(0,0,0,0.4)] [border:1px_solid_rgba(251,191,36,0.3)]"
           >
             <div class="flex items-center justify-between gap-3 mb-1.5">
-              <span style="font-size:11px;font-weight:600;color:#fbbf24;letter-spacing:0.04em">Frame mismatch</span>
+              <span class="text-[12px] font-semibold tracking-[0.04em] text-amber-400">Frame mismatch</span>
               <button
-                style="color:rgba(251,191,36,0.5);line-height:1;flex-shrink:0"
+                class="shrink-0 leading-none [color:rgba(251,191,36,0.5)]"
                 class="transition hover:text-[#fbbf24]"
                 @click="mismatchDismissed = true"
               >
                 <X class="size-3" />
               </button>
             </div>
-            <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px">
+            <ul class="m-0 flex list-none flex-col gap-[3px] p-0">
               <li
                 v-for="m in frameMismatches"
                 :key="m.slotId"
-                style="font-size:11px;color:rgba(251,191,36,0.7);line-height:1.4"
+                class="text-[12px] leading-[1.4]"
+                class="[color:rgba(251,191,36,0.7)]"
               >
-                <span style="color:rgba(251,191,36,0.4)">{{ m.frameName }}</span>
+                <span class="[color:rgba(251,191,36,0.4)]">{{ m.frameName }}</span>
                 {{ m.snipLabel }}
               </li>
             </ul>
-            <p style="font-size:10px;color:rgba(251,191,36,0.4);margin-top:6px;line-height:1.4">
+            <p class="mt-[6px] text-[10px] leading-[1.4] [color:rgba(251,191,36,0.4)]">
               Frame will appear distorted
             </p>
           </div>
@@ -215,10 +216,10 @@
     <aside class="flex w-64 shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
       <!-- Selected slot controls -->
       <template v-if="selectedSlot">
-        <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
-          <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Slot</h2>
+        <div class="px-4 py-3" class="border-b-subtle">
+          <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Slot</h2>
         </div>
-        <div class="p-4 space-y-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+        <div class="p-4 space-y-3" class="border-b-subtle">
           <div class="space-y-2">
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Frame</label>
             <div class="grid grid-cols-2 gap-1.5">
@@ -249,7 +250,7 @@
             </div>
           </div>
 
-          <div style="border-top:0.5px solid rgba(255,255,255,0.06);padding-top:12px">
+          <div class="border-t-subtle pt-3">
             <CaptionControls
               label="Caption"
               :model-value="selectedSlot.caption"
@@ -259,8 +260,8 @@
         </div>
       </template>
 
-      <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
-        <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Settings</h2>
+      <div class="px-4 py-3" class="border-b-subtle">
+        <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Settings</h2>
       </div>
 
       <div class="flex-1 overflow-y-auto p-4 space-y-5">
@@ -275,15 +276,15 @@
 
         <!-- Output size -->
         <div class="space-y-2">
-          <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Output size</label>
+          <label class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Output size</label>
           <div class="grid grid-cols-2 gap-1.5">
             <button
               v-for="preset in sizePresets"
               :key="preset.label"
-              class="flex h-[30px] items-center justify-center px-3 transition"
+              class="flex h-[30px] items-center justify-center px-3 font-mono text-[12px] transition"
               :style="config.outputWidth === preset.w && config.outputHeight === preset.h
-                ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500;font-family:var(--font-mono);font-size:12px'
-                : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280;font-family:var(--font-mono);font-size:12px'"
+                ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
+                : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
               @click="setOutputSize(preset.w, preset.h)"
             >
               {{ preset.label }}
@@ -294,7 +295,7 @@
               type="number"
               :value="config.outputWidth"
               class="w-full"
-              style="font-family:var(--font-mono)"
+              class="font-mono"
               placeholder="Width"
               @change="setOutputSize(Number(($event.target as HTMLInputElement).value), config.outputHeight)"
             />
@@ -303,7 +304,7 @@
               type="number"
               :value="config.outputHeight"
               class="w-full"
-              style="font-family:var(--font-mono)"
+              class="font-mono"
               placeholder="Height"
               @change="setOutputSize(config.outputWidth, Number(($event.target as HTMLInputElement).value))"
             />
@@ -323,7 +324,7 @@
         <!-- Export -->
         <button
           class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          style="color:#111316"
+          class="text-[var(--color-on-accent)]"
           @click="$emit('export')"
         >
           <Upload class="size-4" />

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
     <!-- Header -->
-    <header class="flex h-12 shrink-0 items-center gap-3 border-b px-6" style="background:#16191d;border-color:rgba(255,255,255,0.06)">
+    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-6">
       <svg class="size-6 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <rect width="24" height="24" rx="6" ry="6" fill="#8e9ead"/>
         <rect x="4" y="3.91" width="8.5" height="12" rx="1.25" ry="1.25" fill="#373d43"/>
@@ -9,7 +9,7 @@
         <rect x="14.05" y="11.91" width="6" height="8" rx="1.25" ry="1.25" fill="#565f69"/>
       </svg>
       <span class="text-sm font-medium text-[var(--color-text)]">snipfol<span class="text-[var(--color-accent)]">.io</span></span>
-      <span class="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider" style="background:rgba(239,68,68,0.15);color:#f87171">Admin</span>
+      <span class="rounded bg-red-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-red-400">Admin</span>
       <div class="flex-1" />
       <NuxtLink to="/dashboard" class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">
         Dashboard
@@ -21,14 +21,14 @@
 
         <!-- Loading / error -->
         <div v-if="loading" class="py-12 text-center text-sm text-[var(--color-text-muted)]">Loading users…</div>
-        <div v-else-if="loadError" class="rounded-lg px-4 py-3 text-sm text-red-400" style="background:rgba(239,68,68,0.1)">{{ loadError }}</div>
+        <div v-else-if="loadError" class="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">{{ loadError }}</div>
 
         <template v-else>
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-medium text-[var(--color-text)]">Users ({{ users.length }})</h2>
             <button
               class="flex h-7 items-center gap-1.5 rounded-[5px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5"
-              style="border:0.5px solid rgba(255,255,255,0.1)"
+              class="[border:0.5px_solid_rgba(255,255,255,0.1)]"
               @click="reload"
             >
               <RefreshCw class="size-3" />
@@ -37,10 +37,10 @@
           </div>
 
           <!-- Users table -->
-          <div class="overflow-hidden rounded-xl" style="border:0.5px solid rgba(255,255,255,0.08)">
+          <div class="overflow-hidden rounded-xl border-faint">
             <table class="w-full text-xs">
               <thead>
-                <tr style="background:#1a1e24;border-bottom:0.5px solid rgba(255,255,255,0.08)">
+                <tr class="border-b-faint bg-[#1a1e24]">
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Email</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Tier</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Projects</th>
@@ -52,13 +52,12 @@
                 <tr
                   v-for="user in users"
                   :key="user.id"
-                  class="border-t"
-                  style="border-color:rgba(255,255,255,0.05)"
+                  class="border-t border-[rgba(255,255,255,0.05)]"
                 >
                   <!-- Email -->
                   <td class="px-4 py-3 text-[var(--color-text)]">
                     {{ user.email || '(no email)' }}
-                    <span v-if="user.isAdmin" class="ml-1.5 rounded px-1 py-0.5 text-[10px]" style="background:rgba(239,68,68,0.15);color:#f87171">admin</span>
+                    <span v-if="user.isAdmin" class="ml-1.5 rounded bg-red-500/15 px-1 py-0.5 text-[10px] text-red-400">admin</span>
                   </td>
 
                   <!-- Tier badge + toggle -->
@@ -74,7 +73,7 @@
                       </span>
                       <button
                         class="rounded px-2 py-0.5 text-[10px] transition"
-                        style="border:0.5px solid rgba(255,255,255,0.1);color:#8e9ead"
+                        class="text-[var(--color-accent)] [border:0.5px_solid_rgba(255,255,255,0.1)]"
                         :disabled="busyUser === user.id"
                         @click="togglePro(user)"
                       >
@@ -117,7 +116,7 @@
                     <button
                       v-if="user.id !== authStore.user?.id"
                       class="rounded-[5px] px-2.5 py-1 text-[11px] text-red-400 transition hover:bg-red-500/15"
-                      style="border:0.5px solid rgba(239,68,68,0.25)"
+                      class="[border:0.5px_solid_rgba(239,68,68,0.25)]"
                       :disabled="busyUser === user.id"
                       @click="confirmReset(user)"
                     >

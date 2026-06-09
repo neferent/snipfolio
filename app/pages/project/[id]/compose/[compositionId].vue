@@ -1,21 +1,18 @@
 <template>
   <div class="flex flex-1 flex-col overflow-hidden">
     <!-- Top toolbar -->
-    <header class="flex h-12 shrink-0 items-center gap-2 px-4" style="background:#16191d;border-bottom:0.5px solid rgba(255,255,255,0.06)">
+    <header class="flex h-12 shrink-0 items-center gap-2 border-b-subtle bg-[var(--color-surface-2)] px-4">
       <NuxtLink
         :to="`/project/${projectId}`"
-        class="flex items-center gap-1.5 transition"
-        style="font-size:13px;color:#6b7280"
-        @mouseenter="($event.currentTarget as HTMLElement).style.color='#e2e6ea'"
-        @mouseleave="($event.currentTarget as HTMLElement).style.color='#6b7280'"
+        class="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
       >
         <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
         Projects
       </NuxtLink>
-      <span style="color:#4a5e6e;font-size:13px"> / </span>
-      <span class="font-medium text-[var(--color-text)]" style="font-size:13px">
+      <span class="text-xs text-[var(--color-text-faint)]"> / </span>
+      <span class="text-xs font-medium text-[var(--color-text)]">
         {{ composition?.name ?? 'Composition' }}
       </span>
       <div class="flex-1" />

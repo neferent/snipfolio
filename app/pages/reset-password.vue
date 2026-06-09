@@ -13,7 +13,7 @@
         </h1>
       </div>
 
-      <div class="p-6" style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.12);border-radius:16px">
+      <div class="p-6 bg-[var(--color-surface-3)] border-strong rounded-2xl">
         <h2 class="mb-5 text-sm font-medium text-[var(--color-text)]">Set new password</h2>
 
         <div v-if="!ready" class="text-center text-xs text-[var(--color-text-muted)]">
@@ -59,8 +59,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
-            style="color:#111316"
+            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
           >
             <svg v-if="loading" class="mr-2 size-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

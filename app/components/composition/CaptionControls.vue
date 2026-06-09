@@ -2,11 +2,10 @@
   <div class="space-y-3">
     <!-- Header row -->
     <div class="flex items-center justify-between py-1">
-      <span style="font-size:13px;color:#e2e6ea">{{ label }}</span>
+      <span class="text-xs text-[var(--color-text)]">{{ label }}</span>
       <button
-        class="transition"
+        class="font-mono text-[12px] transition"
         :class="enabled ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'"
-        style="font-family:var(--font-mono);font-size:12px"
         @click="toggleEnabled"
       >
         {{ enabled ? 'On' : 'Off' }}
@@ -118,9 +117,9 @@
 
       <!-- Bg opacity -->
       <div class="space-y-1">
-        <label class="flex items-center justify-between" style="font-size:12px;color:#6b7280">
+        <label class="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]">
           Bg opacity
-          <span style="font-family:var(--font-mono);color:#8e9ead">{{ Math.round(modelValue.bgOpacity * 100) }}%</span>
+          <span class="font-mono text-[var(--color-accent)]">{{ Math.round(modelValue.bgOpacity * 100) }}%</span>
         </label>
         <input
           type="range"

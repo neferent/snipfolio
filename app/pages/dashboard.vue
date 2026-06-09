@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
     <!-- Header -->
-    <header class="flex h-12 shrink-0 items-center gap-3 border-b px-6" style="background:#16191d;border-color:rgba(255,255,255,0.06)">
+    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-6">
       <svg class="size-6 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <rect width="24" height="24" rx="6" ry="6" fill="#8e9ead"/>
         <rect x="4" y="3.91" width="8.5" height="12" rx="1.25" ry="1.25" fill="#373d43"/>
@@ -15,7 +15,7 @@
         <NuxtLink
           to="/"
           class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-          style="border:0.5px solid rgba(255,255,255,0.12)"
+          class="border-strong"
         >
           Sign in
         </NuxtLink>
@@ -28,7 +28,7 @@
           target="_blank"
           rel="noopener noreferrer"
           class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-          style="border:0.5px solid rgba(255,255,255,0.12)"
+          class="border-strong"
         >
           Manage subscription
           <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -37,7 +37,7 @@
         </a>
         <button
           class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-          style="border:0.5px solid rgba(255,255,255,0.12)"
+          class="border-strong"
           @click="signOut"
         >
           Sign out
@@ -50,7 +50,7 @@
         <div class="mb-6 flex items-center justify-between">
           <h2 class="text-sm font-medium text-[var(--color-text)]">Your Projects</h2>
           <button
-            class="flex h-8 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium text-[#111316] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+            class="flex h-8 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
             @click="onNewProject"
           >
             <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -66,8 +66,7 @@
             <div
               v-for="i in 3"
               :key="i"
-              class="animate-pulse rounded-xl p-4"
-              style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.06);border-radius:12px"
+              class="animate-pulse rounded-xl border-subtle bg-[var(--color-surface-3)] p-4"
             >
               <div class="mb-3 h-32 rounded-lg bg-white/5" />
               <div class="h-3 w-3/4 rounded bg-white/5" />
@@ -80,10 +79,7 @@
             <div
               v-for="project in projects"
               :key="project.id"
-              class="group relative cursor-pointer rounded-xl p-4 transition-all"
-              style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.06);border-radius:12px"
-              @mouseenter="($event.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.12)'"
-              @mouseleave="($event.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.06)'"
+              class="group relative cursor-pointer rounded-xl border-subtle bg-[var(--color-surface-3)] p-4 transition-all hover:[border-color:rgba(255,255,255,0.12)]"
               @click="openProject(project.id)"
             >
               <!-- Thumbnail preview -->
@@ -153,7 +149,7 @@
           Cancel
         </button>
         <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[#111316] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
           :disabled="!newName.trim()"
           @click="createProject"
         >
@@ -176,7 +172,7 @@
           Not now
         </button>
         <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[#111316] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
           @click="startCheckout('pro_early')"
         >
           Go Pro — $9.99/mo

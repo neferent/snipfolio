@@ -25,8 +25,9 @@
 
   /* Accent */
   --color-accent:       #8e9ead;
-  --color-accent-hover: #4a5e6e;   /* darker on hover, not lighter */
+  --color-accent-hover: #4a5e6e;
   --color-accent-dim:   rgba(142, 158, 173, 0.12);
+  --color-on-accent:    #111316;
 
   /* Status */
   --color-danger:  #f09595;
@@ -37,6 +38,8 @@
   /* Typography */
   --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --text-xs: 13px;
+  --text-sm: 14px;
 
   /* Radius */
   --radius-sm:  4px;
@@ -72,6 +75,32 @@
   --sf-success-tint:   rgba(93, 202, 165, 0.12);
   --sf-danger-tint:    rgba(240, 149, 149, 0.12);
   --sf-warning-tint:   rgba(239, 159, 39, 0.12);
+}
+
+/* ─── Half-pixel border utilities ────────────────────────────────────────── */
+
+@utility border-b-subtle {
+  border-bottom: 0.5px solid var(--sf-border);
+}
+
+@utility border-t-subtle {
+  border-top: 0.5px solid var(--sf-border);
+}
+
+@utility border-subtle {
+  border: 0.5px solid var(--sf-border);
+}
+
+@utility border-strong {
+  border: 0.5px solid var(--color-border-strong);
+}
+
+@utility border-b-faint {
+  border-bottom: 0.5px solid var(--color-border-subtle);
+}
+
+@utility border-t-faint {
+  border-top: 0.5px solid var(--color-border-subtle);
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */

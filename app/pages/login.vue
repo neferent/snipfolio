@@ -18,7 +18,7 @@
       </div>
 
       <!-- Sign in / Sign up / Forgot password form -->
-      <div class="p-6" style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.12);border-radius:16px">
+      <div class="p-6 bg-[var(--color-surface-3)] border-strong rounded-2xl">
         <div class="mb-5 flex items-center justify-between">
           <h2 class="text-sm font-medium text-[var(--color-text)]">
             {{ isForgotPassword ? 'Reset password' : isSignUp ? 'Create account' : 'Sign in' }}
@@ -66,8 +66,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
-            style="color:#111316"
+            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
           >
             <svg v-if="loading" class="mr-2 size-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -124,8 +123,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
-            style="color:#111316"
+            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
           >
             <svg v-if="loading" class="mr-2 size-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -144,7 +142,7 @@
 
       <button
         class="mt-4 flex h-9 w-full items-center justify-center rounded-[6px] text-sm text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-        style="border:0.5px solid rgba(255,255,255,0.12)"
+        class="border-strong"
         @click="continueAsGuest"
       >
         Continue without an account

@@ -5,13 +5,13 @@
       class="flex w-full items-center justify-between py-1 transition"
       @click="open = !open"
     >
-      <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e;cursor:pointer">
+      <label class="cursor-pointer text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
         Platform presets
-        <span v-if="!isPro" style="margin-left:5px;font-size:9px;letter-spacing:0.06em;color:#8e9ead;background:rgba(142,158,173,0.12);border:0.5px solid rgba(142,158,173,0.25);border-radius:4px;padding:1px 5px;vertical-align:middle">PRO</span>
+        <span v-if="!isPro" class="ml-[5px] rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] align-middle text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]">PRO</span>
       </label>
       <ChevronDown
         class="size-3.5 shrink-0 transition-transform"
-        style="color:#4a5e6e"
+        class="text-[var(--color-text-faint)]"
         :style="open ? 'transform:rotate(180deg)' : ''"
       />
     </button>
@@ -22,7 +22,7 @@
         <button
           v-for="platform in PLATFORM_PRESETS"
           :key="platform.id"
-          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition"
+          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition"
           :style="selectedPlatformId === platform.id
             ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
             : 'border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
@@ -38,7 +38,7 @@
         <button
           v-for="size in selectedPlatform.sizes"
           :key="size.label"
-          class="relative flex h-[28px] items-center gap-1.5 rounded-md px-2.5 text-[11px] transition"
+          class="relative flex h-[28px] items-center gap-1.5 rounded-md px-2.5 text-xs transition"
           :style="isActive(size)
             ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
             : 'border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
@@ -46,7 +46,7 @@
         >
           <Lock v-if="!isPro" class="size-2.5 shrink-0 opacity-50" />
           {{ size.label }}
-          <span class="font-mono opacity-40" style="font-size:10px">{{ size.w }}×{{ size.h }}</span>
+          <span class="font-mono text-[10px] opacity-40">{{ size.w }}×{{ size.h }}</span>
         </button>
       </div>
 
@@ -54,14 +54,14 @@
       <div
         v-if="!isPro"
         class="rounded-lg px-3 py-2.5"
-        style="background:#1a1e25;border:0.5px solid rgba(142,158,173,0.2)"
+        class="bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]"
       >
-        <p class="text-[11px] text-[var(--color-text-muted)] mb-2">
+        <p class="mb-2 text-xs text-[var(--color-text-muted)]">
           Platform presets are a Pro feature.
         </p>
         <button
-          class="flex h-7 w-full items-center justify-center rounded-md text-[11px] font-medium transition"
-          style="background:rgba(142,158,173,0.15);border:0.5px solid rgba(142,158,173,0.3);color:#8e9ead"
+          class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition"
+          class="bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
           :disabled="checkoutLoading"
           @click="startCheckout('pro_early')"
         >
