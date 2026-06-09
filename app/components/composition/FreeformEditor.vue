@@ -2,7 +2,7 @@
   <div class="absolute inset-0 flex">
     <!-- Left sidebar: slot list (z-order) + add snips -->
     <aside class="flex w-56 shrink-0 flex-col overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
-      <div class="px-4 py-3" class="border-b-subtle">
+      <div class="px-4 py-3 border-b-subtle">
         <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Layers</h2>
       </div>
 
@@ -139,14 +139,12 @@
         <Transition name="mismatch-fade">
           <div
             v-if="frameMismatches.length > 0 && !mismatchDismissed"
-            class="pointer-events-auto absolute bottom-4 right-4 z-20 max-w-[240px]"
-            class="rounded-lg px-[12px] py-[10px] backdrop-blur-sm bg-[rgba(18,20,24,0.92)] shadow-[0_4px_16px_rgba(0,0,0,0.4)] [border:1px_solid_rgba(251,191,36,0.3)]"
+            class="pointer-events-auto absolute bottom-4 right-4 z-20 max-w-[240px] rounded-lg px-[12px] py-[10px] backdrop-blur-sm bg-[rgba(18,20,24,0.92)] shadow-[0_4px_16px_rgba(0,0,0,0.4)] [border:1px_solid_rgba(251,191,36,0.3)]"
           >
             <div class="flex items-center justify-between gap-3 mb-1.5">
               <span class="text-[12px] font-semibold tracking-[0.04em] text-amber-400">Frame mismatch</span>
               <button
-                class="shrink-0 leading-none [color:rgba(251,191,36,0.5)]"
-                class="transition hover:text-[#fbbf24]"
+                class="shrink-0 leading-none [color:rgba(251,191,36,0.5)] transition hover:text-[#fbbf24]"
                 @click="mismatchDismissed = true"
               >
                 <X class="size-3" />
@@ -156,8 +154,7 @@
               <li
                 v-for="m in frameMismatches"
                 :key="m.slotId"
-                class="text-[12px] leading-[1.4]"
-                class="[color:rgba(251,191,36,0.7)]"
+                class="text-[12px] leading-[1.4] [color:rgba(251,191,36,0.7)]"
               >
                 <span class="[color:rgba(251,191,36,0.4)]">{{ m.frameName }}</span>
                 {{ m.snipLabel }}
@@ -216,10 +213,10 @@
     <aside class="flex w-64 shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
       <!-- Selected slot controls -->
       <template v-if="selectedSlot">
-        <div class="px-4 py-3" class="border-b-subtle">
+        <div class="px-4 py-3 border-b-subtle">
           <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Slot</h2>
         </div>
-        <div class="p-4 space-y-3" class="border-b-subtle">
+        <div class="p-4 space-y-3 border-b-subtle">
           <div class="space-y-2">
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Frame</label>
             <div class="grid grid-cols-2 gap-1.5">
@@ -260,7 +257,7 @@
         </div>
       </template>
 
-      <div class="px-4 py-3" class="border-b-subtle">
+      <div class="px-4 py-3 border-b-subtle">
         <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Settings</h2>
       </div>
 
@@ -294,8 +291,7 @@
             <input
               type="number"
               :value="config.outputWidth"
-              class="w-full"
-              class="font-mono"
+              class="w-full font-mono"
               placeholder="Width"
               @change="setOutputSize(Number(($event.target as HTMLInputElement).value), config.outputHeight)"
             />
@@ -303,8 +299,7 @@
             <input
               type="number"
               :value="config.outputHeight"
-              class="w-full"
-              class="font-mono"
+              class="w-full font-mono"
               placeholder="Height"
               @change="setOutputSize(config.outputWidth, Number(($event.target as HTMLInputElement).value))"
             />
@@ -323,8 +318,7 @@
 
         <!-- Export -->
         <button
-          class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          class="text-[var(--color-on-accent)]"
+          class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
           @click="$emit('export')"
         >
           <Upload class="size-4" />

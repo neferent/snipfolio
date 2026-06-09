@@ -14,8 +14,7 @@
         <span class="text-xs text-[var(--color-text-muted)]">Guest</span>
         <NuxtLink
           to="/"
-          class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-          class="border-strong"
+          class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
         >
           Sign in
         </NuxtLink>
@@ -27,8 +26,7 @@
           :href="billingUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-          class="border-strong"
+          class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
         >
           Manage subscription
           <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -36,8 +34,7 @@
           </svg>
         </a>
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-          class="border-strong"
+          class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
           @click="signOut"
         >
           Sign out

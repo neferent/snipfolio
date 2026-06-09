@@ -66,16 +66,14 @@
     <!-- Frame mismatch warning -->
     <div
       v-if="exportMismatches.length > 0"
-      class="mt-4 rounded-lg px-4 py-3"
-      class="bg-[rgba(251,191,36,0.05)] [border:0.5px_solid_rgba(251,191,36,0.25)]"
+      class="mt-4 rounded-lg px-4 py-3 bg-[rgba(251,191,36,0.05)] [border:0.5px_solid_rgba(251,191,36,0.25)]"
     >
       <p class="mb-[5px] text-[12px] font-semibold tracking-[0.04em] text-amber-400">Frame mismatch</p>
       <ul class="m-0 flex list-none flex-col gap-[3px] p-0">
         <li
           v-for="m in exportMismatches"
           :key="m.slotId"
-          class="text-[12px]"
-          class="[color:rgba(251,191,36,0.7)]"
+          class="text-[12px] [color:rgba(251,191,36,0.7)]"
         >
           <span class="[color:rgba(251,191,36,0.4)]">{{ m.frameName }}</span>
           {{ m.snipLabel }}<span v-if="exportMismatches.length > 1 && m.compName" class="[color:rgba(251,191,36,0.35)]"> · {{ m.compName }}</span>
@@ -95,8 +93,7 @@
           </div>
           <NuxtLink
             to="/"
-            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10"
-            class="border-strong"
+            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10 border-strong"
             @click="$emit('close')"
           >
             Sign in
@@ -123,16 +120,14 @@
           </div>
           <div class="flex items-center gap-2">
             <button
-              class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10 disabled:opacity-40"
-              class="border-strong text-[var(--color-text)]"
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10 disabled:opacity-40 border-strong text-[var(--color-text)]"
               :disabled="checkoutLoading"
               @click="onBuyDayAccess"
             >
               1-Day Access — $4.99
             </button>
             <button
-              class="rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40"
-              class="bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40 bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
               :disabled="checkoutLoading"
               @click="onGoPro"
             >

@@ -10,8 +10,7 @@
         <span v-if="!isPro" class="ml-[5px] rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] align-middle text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]">PRO</span>
       </label>
       <ChevronDown
-        class="size-3.5 shrink-0 transition-transform"
-        class="text-[var(--color-text-faint)]"
+        class="size-3.5 shrink-0 transition-transform text-[var(--color-text-faint)]"
         :style="open ? 'transform:rotate(180deg)' : ''"
       />
     </button>
@@ -53,15 +52,13 @@
       <!-- Pro upsell (non-pro users) -->
       <div
         v-if="!isPro"
-        class="rounded-lg px-3 py-2.5"
-        class="bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]"
+        class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]"
       >
         <p class="mb-2 text-xs text-[var(--color-text-muted)]">
           Platform presets are a Pro feature.
         </p>
         <button
-          class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition"
-          class="bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
+          class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
           :disabled="checkoutLoading"
           @click="startCheckout('pro_early')"
         >

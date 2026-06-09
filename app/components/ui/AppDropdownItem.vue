@@ -1,8 +1,7 @@
 <template>
   <MenuItem v-slot="{ active }" :disabled="disabled">
     <button
-      class="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors"
-      class="rounded-[5px]"
+      class="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors rounded-[5px]"
       :style="[
         active && !danger ? 'background:rgba(142,158,173,0.12);color:#e2e6ea' : '',
         active && danger  ? 'background:rgba(240,149,149,0.12);color:#f09595' : '',

@@ -13,7 +13,7 @@
     <div v-else-if="comp && !isFreeform" class="absolute inset-0 flex">
       <!-- Left sidebar: gap + caption controls -->
       <aside class="flex w-64 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
-        <div class="px-4 py-3" class="border-b-subtle">
+        <div class="px-4 py-3 border-b-subtle">
           <h2 class="truncate text-sm font-medium text-[var(--color-text)]">
             {{ comp.name }}
           </h2>
@@ -40,7 +40,7 @@
 
       <!-- Right sidebar: bg + output + export -->
       <aside class="flex w-64 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
-        <div class="px-4 py-3" class="border-b-subtle">
+        <div class="px-4 py-3 border-b-subtle">
           <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
             Settings
           </h2>
@@ -79,8 +79,7 @@
               <input
                 type="number"
                 :value="comp.config.outputWidth"
-                class="w-full"
-                class="font-mono"
+                class="w-full font-mono"
                 placeholder="Width"
                 @change="setOutputSize(Number(($event.target as HTMLInputElement).value), comp!.config.outputHeight)"
               />
@@ -88,8 +87,7 @@
               <input
                 type="number"
                 :value="comp.config.outputHeight"
-                class="w-full"
-                class="font-mono"
+                class="w-full font-mono"
                 placeholder="Height"
                 @change="setOutputSize(comp!.config.outputWidth, Number(($event.target as HTMLInputElement).value))"
               />
@@ -108,8 +106,7 @@
 
           <!-- Export -->
           <button
-            class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-            class="text-[var(--color-on-accent)]"
+            class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
             @click="doExport"
           >
             <Upload class="size-4" />

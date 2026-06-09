@@ -4,9 +4,8 @@
     <div
       v-for="snip in snips"
       :key="snip.id"
-      class="group absolute cursor-move"
+      class="group absolute cursor-move [pointer-events:all]"
       :style="overlayStyle(snip)"
-      class="[pointer-events:all]"
       @mousedown.stop="startMove($event, snip)"
     >
       <!-- Fill + border as single element -->
@@ -33,8 +32,7 @@
 
       <!-- Label badge — top-left, bottom-right radius only -->
       <div
-        class="absolute left-0 top-0 max-w-[80%] truncate px-1.5 py-0.5"
-        class="bg-[var(--color-accent)] text-[var(--color-on-accent)] text-[10px] font-medium font-mono [border-radius:0_0_4px_0]"
+        class="absolute left-0 top-0 max-w-[80%] truncate px-1.5 py-0.5 bg-[var(--color-accent)] text-[var(--color-on-accent)] text-[10px] font-medium font-mono [border-radius:0_0_4px_0]"
       >
         {{ snip.label }}
       </div>
@@ -56,8 +54,7 @@
       <!-- Rotate button — top-right, hover only, phone/tablet only -->
       <button
         v-if="snip.snapFrame === 'phone' || snip.snapFrame === 'tablet'"
-        class="absolute right-1 top-1 flex size-[18px] items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
-        class="bg-black/55 text-white [pointer-events:all]"
+        class="absolute right-1 top-1 flex size-[18px] items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100 bg-black/55 text-white [pointer-events:all]"
         title="Rotate orientation"
         aria-label="Rotate orientation"
         @mousedown.stop
@@ -97,8 +94,7 @@
       </div>
 
       <div
-        class="absolute -bottom-6 left-0 whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-[10px]"
-        class="bg-[var(--color-surface-3)] text-[var(--color-accent)] font-mono border-strong"
+        class="absolute -bottom-6 left-0 whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-[10px] bg-[var(--color-surface-3)] text-[var(--color-accent)] font-mono border-strong"
       >
         {{ Math.round(drawRect.w) }} × {{ Math.round(drawRect.h) }}
       </div>

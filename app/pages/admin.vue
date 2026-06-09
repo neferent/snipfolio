@@ -27,8 +27,7 @@
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-medium text-[var(--color-text)]">Users ({{ users.length }})</h2>
             <button
-              class="flex h-7 items-center gap-1.5 rounded-[5px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5"
-              class="[border:0.5px_solid_rgba(255,255,255,0.1)]"
+              class="flex h-7 items-center gap-1.5 rounded-[5px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 [border:0.5px_solid_rgba(255,255,255,0.1)]"
               @click="reload"
             >
               <RefreshCw class="size-3" />
@@ -72,8 +71,7 @@
                         {{ user.isPro ? 'Pro' : 'Account' }}
                       </span>
                       <button
-                        class="rounded px-2 py-0.5 text-[10px] transition"
-                        class="text-[var(--color-accent)] [border:0.5px_solid_rgba(255,255,255,0.1)]"
+                        class="rounded px-2 py-0.5 text-[10px] transition text-[var(--color-accent)] [border:0.5px_solid_rgba(255,255,255,0.1)]"
                         :disabled="busyUser === user.id"
                         @click="togglePro(user)"
                       >
@@ -115,8 +113,7 @@
                   <td class="px-4 py-3">
                     <button
                       v-if="user.id !== authStore.user?.id"
-                      class="rounded-[5px] px-2.5 py-1 text-[11px] text-red-400 transition hover:bg-red-500/15"
-                      class="[border:0.5px_solid_rgba(239,68,68,0.25)]"
+                      class="rounded-[5px] px-2.5 py-1 text-[11px] text-red-400 transition hover:bg-red-500/15 [border:0.5px_solid_rgba(239,68,68,0.25)]"
                       :disabled="busyUser === user.id"
                       @click="confirmReset(user)"
                     >

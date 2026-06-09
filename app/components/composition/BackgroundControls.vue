@@ -87,8 +87,7 @@
 
         <!-- Upload dropzone -->
         <label
-          class="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[6px] py-4 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-          class="border border-dashed border-[var(--color-border-strong)]"
+          class="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[6px] py-4 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] border border-dashed border-[var(--color-border-strong)]"
         >
           <Upload class="size-4" />
           <span>{{ modelValue.imageDataUrl ? 'Replace image' : 'Upload image' }}</span>

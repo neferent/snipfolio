@@ -147,8 +147,7 @@
         Cancel
       </button>
       <button
-        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-        class="text-[var(--color-on-accent)]"
+        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50 text-[var(--color-on-accent)]"
         :disabled="!canCreate"
         @click="create"
       >

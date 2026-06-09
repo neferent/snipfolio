@@ -141,8 +141,7 @@
       </div>
 
       <button
-        class="mt-4 flex h-9 w-full items-center justify-center rounded-[6px] text-sm text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-        class="border-strong"
+        class="mt-4 flex h-9 w-full items-center justify-center rounded-[6px] text-sm text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
         @click="continueAsGuest"
       >
         Continue without an account

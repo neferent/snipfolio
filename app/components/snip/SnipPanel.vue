@@ -56,8 +56,7 @@
       <!-- Actions -->
       <div class="pt-2 space-y-2">
         <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          class="text-[var(--color-on-accent)]"
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
           @click="createCompositionFromSnip"
         >
           Create composition
