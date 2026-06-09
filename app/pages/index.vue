@@ -503,7 +503,7 @@
           <p class="marketing-sm mt-1.5 text-[var(--color-text-muted)]">Screenshot clipping and composition</p>
         </div>
         <nav class="flex flex-wrap gap-x-6 gap-y-2" aria-label="Footer navigation">
-          <a href="#pricing" class="marketing-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Pricing</a>
+          <NuxtLink to="/pricing" class="marketing-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Pricing</NuxtLink>
           <a href="#faq" class="marketing-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">FAQ</a>
           <NuxtLink to="/login" class="marketing-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Sign in</NuxtLink>
         </nav>
