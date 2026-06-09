@@ -20,11 +20,11 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@pinia/nuxt', '@vercel/speed-insights', '@vercel/analytics', 'vue-sonner/nuxt'],
+  modules: ['@pinia/nuxt', '@vercel/speed-insights', '@vercel/analytics'],
 
   components: [{ path: '~/components', pathPrefix: false }],
 
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', 'vue-sonner/style.css'],
 
   vite: {
     plugins: [tailwindcss()],

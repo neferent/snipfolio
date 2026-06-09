@@ -306,7 +306,8 @@
               :key="feature.title"
               class="mk-card rounded-xl p-5"
             >
-              <component :is="feature.icon" class="mb-3 size-6 text-[var(--color-accent)]" :stroke-width="1.5" />
+              <!-- eslint-disable-next-line vue/no-v-html -->
+              <svg class="mb-3 size-6 text-[var(--color-accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="feature.icon" />
               <h3 class="feature-title mb-1.5">{{ feature.title }}</h3>
               <p class="feature-body text-[var(--color-text-muted)]">{{ feature.body }}</p>
             </div>
@@ -516,7 +517,6 @@
 </template>
 
 <script setup lang="ts">
-import { Crop, Layers, LayoutDashboard, Palette, Type, ArrowUpFromLine } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({ layout: 'landing', middleware: [] })
@@ -660,32 +660,32 @@ useHead({
 
 const features = [
   {
-    icon: Crop,
+    icon: `<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>`,
     title: 'Frame matching',
     body: 'Snaps crops to desktop and mobile aspect ratios so the device frame fits without stretching.',
   },
   {
-    icon: Layers,
+    icon: `<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>`,
     title: 'Multiple snips per screenshot',
     body: 'Draw as many crop regions as you need and organize them in the sidebar.',
   },
   {
-    icon: LayoutDashboard,
+    icon: `<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>`,
     title: 'Composition layouts',
     body: 'Single snips or auto-arranged grids Snipfolio spaces and scales them for you.',
   },
   {
-    icon: Palette,
+    icon: `<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>`,
     title: 'Custom backgrounds',
     body: 'Solid colors, gradients, or your own image.',
   },
   {
-    icon: Type,
+    icon: `<path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/>`,
     title: 'Captions',
     body: 'Add a label under any snip inside the composition.',
   },
   {
-    icon: ArrowUpFromLine,
+    icon: `<path d="m18 9-6-6-6 6"/><path d="M12 3v14"/><path d="M5 21h14"/>`,
     title: 'PNG export',
     body: 'One click. No watermark on paid plans.',
   },
