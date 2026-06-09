@@ -1,7 +1,10 @@
 <template>
   <div class="absolute inset-0 flex">
     <!-- Left sidebar: slot list (z-order) + add snips -->
-    <aside class="flex w-56 shrink-0 flex-col overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
+    <aside
+      class="relative flex shrink-0 flex-col overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
+      :style="{ width: leftWidth + 'px' }"
+    >
       <div class="px-4 py-3 border-b-subtle">
         <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Layers</h2>
       </div>
@@ -27,7 +30,7 @@
             </div>
             <div
               draggable="true"
-              class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
+              class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition"
               :class="[
                 selectedSlotId === slot.id
                   ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
@@ -86,7 +89,7 @@
           <div
             v-for="snip in availableSnips"
             :key="snip.id"
-            class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs text-[var(--color-text)] transition hover:bg-white/5"
+            class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-text)] transition hover:bg-white/5"
             @click="addSnip(snip)"
           >
             <SnipThumbnail :snip="snip" class="size-7 shrink-0 rounded" />
@@ -101,6 +104,12 @@
           </p>
         </div>
       </div>
+
+      <!-- Left drag handle -->
+      <div
+        class="absolute inset-y-0 right-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+        @mousedown="startLeftResize"
+      />
     </aside>
 
     <!-- Center: toolbar + artboard -->
@@ -210,7 +219,10 @@
     </div><!-- end center column -->
 
     <!-- Right sidebar: slot properties + background + output + export -->
-    <aside class="flex w-64 shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
+    <aside
+      class="relative flex shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
+      :style="{ width: rightWidth + 'px' }"
+    >
       <!-- Selected slot controls -->
       <template v-if="selectedSlot">
         <div class="px-4 py-3 border-b-subtle">
@@ -325,12 +337,22 @@
           Export PNG
         </button>
       </div>
+
+      <!-- Right drag handle -->
+      <div
+        class="absolute inset-y-0 left-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+        @mousedown="startRightResize"
+      />
     </aside>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Upload, GripVertical, X, Plus, CircleAlert } from 'lucide-vue-next'
+import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const { width: leftWidth, startResize: startLeftResize } = useResizablePanel(224, { side: 'right', min: 150, max: 480 })
+const { width: rightWidth, startResize: startRightResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
 import { getFrameMismatches } from '~/composables/useFrameMismatches'
 import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'

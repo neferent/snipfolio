@@ -32,7 +32,7 @@
               @click="type = t.value"
             >
               <component :is="t.icon" class="size-5 text-[var(--color-text-muted)]" />
-              <div class="mt-2 text-xs font-medium text-[var(--color-text)]">{{ t.label }}</div>
+              <div class="mt-2 text-sm font-medium text-[var(--color-text)]">{{ t.label }}</div>
               <div class="mt-[2px] text-[12px] leading-tight text-[var(--color-text-muted)]">{{ t.hint }}</div>
             </button>
           </div>

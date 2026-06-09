@@ -11,7 +11,7 @@
             :indeterminate="someSelected && !allSelected"
             @change="toggleAll"
           />
-          <span class="text-xs font-medium text-[var(--color-text-muted)]">
+          <span class="text-sm font-medium text-[var(--color-text-muted)]">
             {{ allSelected ? 'Deselect all' : 'Select all' }}
           </span>
         </label>
@@ -32,7 +32,7 @@
             @change="toggleOne(comp.id)"
           />
           <div class="min-w-0 flex-1">
-            <p class="truncate text-xs text-[var(--color-text)]">{{ comp.name }}</p>
+            <p class="truncate text-sm text-[var(--color-text)]">{{ comp.name }}</p>
             <p class="text-[10px] text-[var(--color-text-muted)]">
               {{ comp.config.outputWidth }}×{{ comp.config.outputHeight }} · {{ comp.type }}
             </p>
@@ -47,7 +47,7 @@
       <!-- Right: preview -->
       <div class="flex min-w-0 flex-1 flex-col rounded-lg bg-[var(--color-surface)] p-3">
         <template v-if="previewComp">
-          <p class="mb-2 truncate text-xs font-medium text-[var(--color-text-muted)]">
+          <p class="mb-2 truncate text-sm font-medium text-[var(--color-text-muted)]">
             {{ previewComp.name }}
           </p>
           <div class="flex flex-1 items-center justify-center overflow-hidden">

@@ -1,5 +1,8 @@
 <template>
-  <aside class="flex w-64 flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
+  <aside
+    class="relative flex shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
+    :style="{ width: width + 'px' }"
+  >
     <div class="px-4 py-3 border-b-subtle">
       <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
         Snip Properties
@@ -75,11 +78,20 @@
         Select a snip to edit its properties
       </p>
     </div>
+
+    <!-- Drag handle -->
+    <div
+      class="absolute inset-y-0 left-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+      @mousedown="startResize"
+    />
   </aside>
 </template>
 
 <script setup lang="ts">
 import { useSnipsStore } from '~/stores/snips'
+import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const { width, startResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
 import { useSnips } from '~/composables/useSnips'
 import { useCompositions } from '~/composables/useCompositions'
 import { useExport } from '~/composables/useExport'

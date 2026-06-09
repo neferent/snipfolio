@@ -1,5 +1,8 @@
 <template>
-  <aside class="flex w-56 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
+  <aside
+    class="relative flex shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
+    :style="{ width: width + 'px' }"
+  >
     <div class="flex-1 overflow-y-auto">
 
       <!-- Snips section -->
@@ -168,12 +171,21 @@
 
     <!-- New composition modal -->
     <NewCompositionModal :open="showNewComp" @close="showNewComp = false" />
+
+    <!-- Drag handle -->
+    <div
+      class="absolute inset-y-0 right-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+      @mousedown="startResize"
+    />
   </aside>
 </template>
 
 <script setup lang="ts">
 import { ChevronDown, X, Plus } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
+import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const { width, startResize } = useResizablePanel(224, { side: 'right', min: 150, max: 480 })
 import { useCompositionsStore } from '~/stores/compositions'
 import { useSourcesStore } from '~/stores/sources'
 

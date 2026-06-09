@@ -12,7 +12,10 @@
     <!-- Auto-collage type -->
     <div v-else-if="comp && !isFreeform" class="absolute inset-0 flex">
       <!-- Left sidebar: gap + caption controls -->
-      <aside class="flex w-64 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
+      <aside
+        class="relative flex shrink-0 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
+        :style="{ width: leftWidth + 'px' }"
+      >
         <div class="px-4 py-3 border-b-subtle">
           <h2 class="truncate text-sm font-medium text-[var(--color-text)]">
             {{ comp.name }}
@@ -31,6 +34,12 @@
             @update:model-value="updateCollageProp('globalCaption', $event)"
           />
         </div>
+
+        <!-- Left drag handle -->
+        <div
+          class="absolute inset-y-0 right-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+          @mousedown="startLeftResize"
+        />
       </aside>
 
       <!-- Center: canvas preview -->
@@ -39,7 +48,10 @@
       </div>
 
       <!-- Right sidebar: bg + output + export -->
-      <aside class="flex w-64 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
+      <aside
+        class="relative flex shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
+        :style="{ width: rightWidth + 'px' }"
+      >
         <div class="px-4 py-3 border-b-subtle">
           <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
             Settings
@@ -113,6 +125,12 @@
             Export PNG
           </button>
         </div>
+
+        <!-- Right drag handle -->
+        <div
+          class="absolute inset-y-0 left-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+          @mousedown="startRightResize"
+        />
       </aside>
     </div>
 
@@ -127,6 +145,10 @@
 
 <script setup lang="ts">
 import { Upload } from 'lucide-vue-next'
+import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const { width: leftWidth, startResize: startLeftResize } = useResizablePanel(256, { side: 'right', min: 180, max: 480 })
+const { width: rightWidth, startResize: startRightResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
 import { useCompositionsStore } from '~/stores/compositions'
 import { useCompositions } from '~/composables/useCompositions'
 import { isFreeformType, isCollageConfig } from '~/types'
