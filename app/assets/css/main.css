@@ -27,7 +27,7 @@
 
   /* Text */
   --color-text:       #e2e6ea;
-  --color-text-muted: #6b7280;
+  --color-text-muted: #838d99;
   --color-text-faint: #4a5e6e;
 
   /* Accent */
@@ -72,7 +72,7 @@
   --color-border-subtle: rgba(255, 255, 255, 0.08);
 
   --sf-text-primary:   #e2e6ea;
-  --sf-text-muted:     #6b7280;
+  --sf-text-muted:     #838d99;
   --sf-text-accent:    #8e9ead;
 
   --sf-success:        #5dcaa5;
