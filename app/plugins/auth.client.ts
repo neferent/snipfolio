@@ -1,5 +1,6 @@
 import { useAuth } from '~/composables/useAuth'
 import { useAuthStore } from '~/stores/auth'
+import { initSupabaseClient } from '~/composables/useSupabaseClient'
 
 // Runs once on the client before any page mounts.
 // Populates the auth store (user, token, isPro, isAdmin) from the existing session,
@@ -7,6 +8,7 @@ import { useAuthStore } from '~/stores/auth'
 // (The auth middleware skips during Vue hydration to prevent VDom mismatches, so
 // this plugin handles the initial-load redirect instead.)
 export default defineNuxtPlugin(async () => {
+  await initSupabaseClient()
   const { restoreSession } = useAuth()
   await restoreSession()
 
