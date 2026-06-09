@@ -1,5 +1,8 @@
 <template>
-  <aside class="flex w-56 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
+  <aside
+    class="relative flex shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
+    :style="{ width: width + 'px' }"
+  >
     <div class="flex-1 overflow-y-auto">
 
       <!-- Snips section -->
@@ -52,7 +55,7 @@
                 >
                   <SnipThumbnail :snip="snip" class="size-9 shrink-0 rounded" />
                   <div class="min-w-0">
-                    <p class="truncate text-xs font-medium">{{ snip.label }}</p>
+                    <p class="truncate text-sm font-medium">{{ snip.label }}</p>
                     <p class="font-mono text-[10px] text-[var(--color-text-muted)]">{{ snip.width }}×{{ snip.height }}</p>
                   </div>
                   <div class="flex flex-1 items-center px-2">
@@ -91,7 +94,7 @@
             >
               <SnipThumbnail :snip="snip" class="size-9 shrink-0 rounded" />
               <div class="min-w-0">
-                <p class="truncate text-xs font-medium">{{ snip.label }}</p>
+                <p class="truncate text-sm font-medium">{{ snip.label }}</p>
                 <p class="font-mono text-[10px] text-[var(--color-text-muted)]">{{ snip.width }}×{{ snip.height }}</p>
               </div>
               <div class="flex flex-1 items-center px-2">
@@ -107,7 +110,7 @@
                 <X class="size-3.5" />
               </button>
             </div>
-            <div v-if="allSnips.length === 0" class="px-3 py-4 text-center text-xs text-[var(--color-text-muted)]">
+            <div v-if="allSnips.length === 0" class="px-3 py-4 text-center text-sm text-[var(--color-text-muted)]">
               Draw on the screenshot to create snips
             </div>
           </template>
@@ -129,8 +132,7 @@
             <span class="inline-flex items-center justify-center rounded bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ compositions.length }}</span>
           </button>
           <button
-            class="ml-auto flex items-center gap-0.5 rounded-[4px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-            style="color:#111316"
+            class="ml-auto flex items-center gap-0.5 rounded-[4px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
             title="New composition"
             @click.stop="showNewComp = true"
           >
@@ -146,11 +148,11 @@
               class="flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/5"
               :class="$route.params.compositionId === comp.id ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'text-[var(--color-text)]'"
             >
-              <div class="shrink-0 overflow-hidden rounded border border-[var(--color-border)]" style="width:52px;height:32px;">
+              <div class="h-[32px] w-[52px] shrink-0 overflow-hidden rounded border border-[var(--color-border)]">
                 <CompositionPreview :composition="comp" class="h-full w-full" />
               </div>
               <div class="min-w-0 flex-1">
-                <p class="truncate text-xs font-medium leading-tight">{{ comp.name }}</p>
+                <p class="truncate text-sm font-medium leading-tight">{{ comp.name }}</p>
                 <p class="mt-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
                   {{ comp.config.outputWidth }}×{{ comp.config.outputHeight }} · {{ comp.type }}
                 </p>
@@ -158,7 +160,7 @@
             </NuxtLink>
           </div>
 
-          <div v-if="compositions.length === 0" class="px-4 py-6 text-center text-xs text-[var(--color-text-muted)]">
+          <div v-if="compositions.length === 0" class="px-4 py-6 text-center text-sm text-[var(--color-text-muted)]">
             <p class="mb-1">No compositions yet.</p>
             <p class="text-[10px]">Click <strong>New</strong> to create one.</p>
           </div>
@@ -169,12 +171,21 @@
 
     <!-- New composition modal -->
     <NewCompositionModal :open="showNewComp" @close="showNewComp = false" />
+
+    <!-- Drag handle -->
+    <div
+      class="absolute inset-y-0 right-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+      @mousedown="startResize"
+    />
   </aside>
 </template>
 
 <script setup lang="ts">
 import { ChevronDown, X, Plus } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
+import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const { width, startResize } = useResizablePanel(224, { side: 'right', min: 150, max: 480 })
 import { useCompositionsStore } from '~/stores/compositions'
 import { useSourcesStore } from '~/stores/sources'
 

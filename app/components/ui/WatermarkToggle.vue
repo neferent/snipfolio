@@ -13,21 +13,18 @@
 
     <div
       v-if="hidden"
-      class="rounded-xl px-4 py-3 text-center text-xs"
-      style="background:rgba(22,25,29,0.97);border:0.5px solid rgba(255,255,255,0.1);max-width:300px"
+      class="max-w-[300px] rounded-xl border-strong bg-[var(--color-surface-2)] px-4 py-3 text-center text-xs"
     >
       <p class="text-[var(--color-text)]">Your export will still include a watermark.</p>
       <p class="mt-0.5 text-[var(--color-text-muted)]">Remove it permanently:</p>
       <div class="mt-3 flex justify-center gap-2">
         <button
-          class="flex h-7 items-center rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium transition hover:bg-[var(--color-accent-hover)]"
-          style="color:#111316"
+          class="flex h-7 items-center rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
         >
           Subscribe
         </button>
         <button
-          class="flex h-7 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
-          style="border:0.5px solid rgba(255,255,255,0.12)"
+          class="flex h-7 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
         >
           Pay per export
         </button>

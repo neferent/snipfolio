@@ -63,8 +63,7 @@
           <AppDropdown align="right">
             <template #trigger>
               <button
-                class="flex h-7 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-2.5 text-xs font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-                style="color:#111316"
+                class="flex h-7 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-2.5 text-xs font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
               >
                 Export
                 <ArrowUpFromLine class="size-3.5" />
@@ -197,8 +196,7 @@
           Cancel
         </button>
         <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40"
-          style="color:#111316"
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40 text-[var(--color-on-accent)]"
           :disabled="!pendingFile || !newSourceLabel.trim()"
           @click="commitAddSource"
         >

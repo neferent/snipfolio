@@ -12,8 +12,11 @@
     <!-- Auto-collage type -->
     <div v-else-if="comp && !isFreeform" class="absolute inset-0 flex">
       <!-- Left sidebar: gap + caption controls -->
-      <aside class="flex w-64 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-2)]">
-        <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
+      <aside
+        class="relative flex shrink-0 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
+        :style="{ width: leftWidth + 'px' }"
+      >
+        <div class="px-4 py-3 border-b-subtle">
           <h2 class="truncate text-sm font-medium text-[var(--color-text)]">
             {{ comp.name }}
           </h2>
@@ -31,6 +34,12 @@
             @update:model-value="updateCollageProp('globalCaption', $event)"
           />
         </div>
+
+        <!-- Left drag handle -->
+        <div
+          class="absolute inset-y-0 right-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+          @mousedown="startLeftResize"
+        />
       </aside>
 
       <!-- Center: canvas preview -->
@@ -39,9 +48,12 @@
       </div>
 
       <!-- Right sidebar: bg + output + export -->
-      <aside class="flex w-64 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
-        <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
-          <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">
+      <aside
+        class="relative flex shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
+        :style="{ width: rightWidth + 'px' }"
+      >
+        <div class="px-4 py-3 border-b-subtle">
+          <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
             Settings
           </h2>
         </div>
@@ -61,15 +73,15 @@
 
           <!-- Output size -->
           <div class="space-y-2">
-            <label style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">Output size</label>
+            <label class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Output size</label>
             <div class="grid grid-cols-2 gap-1.5">
               <button
                 v-for="preset in sizePresets"
                 :key="preset.label"
-                class="flex h-[30px] items-center justify-center px-3 transition"
+                class="flex h-[30px] items-center justify-center px-3 font-mono text-[12px] transition"
                 :style="comp.config.outputWidth === preset.w && comp.config.outputHeight === preset.h
-                  ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500;font-family:var(--font-mono);font-size:12px'
-                  : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280;font-family:var(--font-mono);font-size:12px'"
+                  ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
+                  : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
                 @click="setOutputSize(preset.w, preset.h)"
               >
                 {{ preset.label }}
@@ -79,8 +91,7 @@
               <input
                 type="number"
                 :value="comp.config.outputWidth"
-                class="w-full"
-                style="font-family:var(--font-mono)"
+                class="w-full font-mono"
                 placeholder="Width"
                 @change="setOutputSize(Number(($event.target as HTMLInputElement).value), comp!.config.outputHeight)"
               />
@@ -88,8 +99,7 @@
               <input
                 type="number"
                 :value="comp.config.outputHeight"
-                class="w-full"
-                style="font-family:var(--font-mono)"
+                class="w-full font-mono"
                 placeholder="Height"
                 @change="setOutputSize(comp!.config.outputWidth, Number(($event.target as HTMLInputElement).value))"
               />
@@ -108,14 +118,19 @@
 
           <!-- Export -->
           <button
-            class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-            style="color:#111316"
+            class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
             @click="doExport"
           >
             <Upload class="size-4" />
             Export PNG
           </button>
         </div>
+
+        <!-- Right drag handle -->
+        <div
+          class="absolute inset-y-0 left-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+          @mousedown="startRightResize"
+        />
       </aside>
     </div>
 
@@ -130,6 +145,10 @@
 
 <script setup lang="ts">
 import { Upload } from 'lucide-vue-next'
+import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const { width: leftWidth, startResize: startLeftResize } = useResizablePanel(256, { side: 'right', min: 180, max: 480 })
+const { width: rightWidth, startResize: startRightResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
 import { useCompositionsStore } from '~/stores/compositions'
 import { useCompositions } from '~/composables/useCompositions'
 import { isFreeformType, isCollageConfig } from '~/types'

@@ -10,7 +10,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0" style="background:rgba(0,0,0,0.6)" />
+        <div class="fixed inset-0 bg-black/60" />
       </TransitionChild>
 
       <div class="fixed inset-0 overflow-y-auto">
@@ -25,13 +25,12 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel
-              class="relative w-full"
-              :style="{ maxWidth: maxWidth ?? '520px', background: '#1e2228', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '16px' }"
+              class="relative w-full bg-[var(--color-surface-3)] border-strong rounded-2xl"
+              :style="{ maxWidth: maxWidth ?? '520px' }"
             >
               <div
                 v-if="title"
-                class="flex items-center justify-between px-6 py-4"
-                style="border-bottom:0.5px solid rgba(255,255,255,0.08)"
+                class="flex items-center justify-between px-6 py-4 border-b-faint"
               >
                 <DialogTitle class="text-sm font-medium text-[var(--color-text)]">
                   {{ title }}
@@ -51,8 +50,7 @@
 
               <div
                 v-if="hasFooter"
-                class="flex justify-end gap-2 px-6 py-4"
-                style="border-top:0.5px solid rgba(255,255,255,0.08)"
+                class="flex justify-end gap-2 px-6 py-4 border-t-faint"
               >
                 <slot name="footer" />
               </div>

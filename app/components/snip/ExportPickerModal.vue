@@ -1,6 +1,6 @@
 <template>
   <AppModal :open="open" title="Export compositions" max-width="780px" @close="$emit('close')">
-    <div class="flex gap-4" style="min-height: 340px">
+    <div class="flex gap-4 min-h-[340px]">
       <!-- Left: composition list with checkboxes -->
       <div class="flex w-56 shrink-0 flex-col gap-1">
         <label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-white/5">
@@ -11,7 +11,7 @@
             :indeterminate="someSelected && !allSelected"
             @change="toggleAll"
           />
-          <span class="text-xs font-medium text-[var(--color-text-muted)]">
+          <span class="text-sm font-medium text-[var(--color-text-muted)]">
             {{ allSelected ? 'Deselect all' : 'Select all' }}
           </span>
         </label>
@@ -32,7 +32,7 @@
             @change="toggleOne(comp.id)"
           />
           <div class="min-w-0 flex-1">
-            <p class="truncate text-xs text-[var(--color-text)]">{{ comp.name }}</p>
+            <p class="truncate text-sm text-[var(--color-text)]">{{ comp.name }}</p>
             <p class="text-[10px] text-[var(--color-text-muted)]">
               {{ comp.config.outputWidth }}×{{ comp.config.outputHeight }} · {{ comp.type }}
             </p>
@@ -47,7 +47,7 @@
       <!-- Right: preview -->
       <div class="flex min-w-0 flex-1 flex-col rounded-lg bg-[var(--color-surface)] p-3">
         <template v-if="previewComp">
-          <p class="mb-2 truncate text-xs font-medium text-[var(--color-text-muted)]">
+          <p class="mb-2 truncate text-sm font-medium text-[var(--color-text-muted)]">
             {{ previewComp.name }}
           </p>
           <div class="flex flex-1 items-center justify-center overflow-hidden">
@@ -66,25 +66,24 @@
     <!-- Frame mismatch warning -->
     <div
       v-if="exportMismatches.length > 0"
-      class="mt-4 rounded-lg px-4 py-3"
-      style="background:rgba(251,191,36,0.05);border:0.5px solid rgba(251,191,36,0.25)"
+      class="mt-4 rounded-lg px-4 py-3 bg-[rgba(251,191,36,0.05)] [border:0.5px_solid_rgba(251,191,36,0.25)]"
     >
-      <p style="font-size:11px;font-weight:600;color:#fbbf24;margin-bottom:5px;letter-spacing:0.04em">Frame mismatch</p>
-      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px">
+      <p class="mb-[5px] text-[12px] font-semibold tracking-[0.04em] text-amber-400">Frame mismatch</p>
+      <ul class="m-0 flex list-none flex-col gap-[3px] p-0">
         <li
           v-for="m in exportMismatches"
           :key="m.slotId"
-          style="font-size:11px;color:rgba(251,191,36,0.7)"
+          class="text-[12px] [color:rgba(251,191,36,0.7)]"
         >
-          <span style="color:rgba(251,191,36,0.4)">{{ m.frameName }}</span>
-          {{ m.snipLabel }}<span v-if="exportMismatches.length > 1 && m.compName" style="color:rgba(251,191,36,0.35)"> · {{ m.compName }}</span>
+          <span class="[color:rgba(251,191,36,0.4)]">{{ m.frameName }}</span>
+          {{ m.snipLabel }}<span v-if="exportMismatches.length > 1 && m.compName" class="[color:rgba(251,191,36,0.35)]"> · {{ m.compName }}</span>
         </li>
       </ul>
-      <p style="font-size:10px;color:rgba(251,191,36,0.4);margin-top:5px">Frame will appear distorted</p>
+      <p class="mt-[5px] text-[10px] [color:rgba(251,191,36,0.4)]">Frame will appear distorted</p>
     </div>
 
     <!-- Tier upsell banner -->
-    <div v-if="!authStore.isPro" class="mt-4 rounded-lg px-4 py-3" style="background:#1e2228;border:0.5px solid rgba(255,255,255,0.08)">
+    <div v-if="!authStore.isPro" class="mt-4 rounded-lg bg-[var(--color-surface-3)] border-faint px-4 py-3">
       <!-- Guest -->
       <template v-if="authStore.isGuest">
         <div class="flex items-center justify-between gap-3">
@@ -94,8 +93,7 @@
           </div>
           <NuxtLink
             to="/"
-            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10"
-            style="border:0.5px solid rgba(255,255,255,0.14)"
+            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10 border-strong"
             @click="$emit('close')"
           >
             Sign in
@@ -106,7 +104,7 @@
       <!-- Account with active day access -->
       <template v-else-if="dayAccessExpiry">
         <div class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium" style="background:rgba(74,222,128,0.12);color:#4ade80">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-green-400/12 px-2.5 py-0.5 text-[11px] font-medium text-green-400">
             <span class="size-1.5 rounded-full bg-green-400" />
             1-Day Access active — expires {{ formatExpiry(dayAccessExpiry) }}
           </span>
@@ -122,16 +120,14 @@
           </div>
           <div class="flex items-center gap-2">
             <button
-              class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10 disabled:opacity-40"
-              style="border:0.5px solid rgba(255,255,255,0.14);color:#e2e6ea"
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10 disabled:opacity-40 border-strong text-[var(--color-text)]"
               :disabled="checkoutLoading"
               @click="onBuyDayAccess"
             >
               1-Day Access — $4.99
             </button>
             <button
-              class="rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40"
-              style="background:rgba(142,158,173,0.15);border:0.5px solid rgba(142,158,173,0.3);color:#8e9ead"
+              class="rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40 bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
               :disabled="checkoutLoading"
               @click="onGoPro"
             >
@@ -150,8 +146,7 @@
         Cancel
       </button>
       <button
-        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40 disabled:cursor-not-allowed"
-        style="color:#111316"
+        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="selected.size === 0"
         @click="exportSelected"
       >

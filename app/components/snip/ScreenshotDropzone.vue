@@ -13,10 +13,9 @@
   >
     <ImageIcon class="mb-3 size-10 text-[var(--color-text-muted)]" :stroke-width="1.5" />
     <p class="mb-1 text-sm font-medium text-[var(--color-text)]">Drop your screenshot here</p>
-    <p class="text-xs text-[var(--color-text-muted)]" style="margin-top:4px">PNG, JPG, or WebP</p>
+    <p class="mt-1 text-xs text-[var(--color-text-muted)]">PNG, JPG, or WebP</p>
     <button
-      class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text)] transition hover:bg-white/5"
-      style="margin-top:16px;border:0.5px solid rgba(255,255,255,0.12)"
+      class="mt-4 flex h-8 items-center rounded-[6px] border-strong px-4 text-sm text-[var(--color-text)] transition hover:bg-white/5"
       @click="fileInput?.click()"
     >
       Choose file

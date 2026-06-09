@@ -1,7 +1,10 @@
 <template>
-  <aside class="flex w-64 flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-2)]">
-    <div class="px-4 py-3" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
-      <h2 style="font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#4a5e6e">
+  <aside
+    class="relative flex shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
+    :style="{ width: width + 'px' }"
+  >
+    <div class="px-4 py-3 border-b-subtle">
+      <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
         Snip Properties
       </h2>
     </div>
@@ -56,8 +59,7 @@
       <!-- Actions -->
       <div class="pt-2 space-y-2">
         <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          style="color:#111316"
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
           @click="createCompositionFromSnip"
         >
           Create composition
@@ -76,11 +78,20 @@
         Select a snip to edit its properties
       </p>
     </div>
+
+    <!-- Drag handle -->
+    <div
+      class="absolute inset-y-0 left-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
+      @mousedown="startResize"
+    />
   </aside>
 </template>
 
 <script setup lang="ts">
 import { useSnipsStore } from '~/stores/snips'
+import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const { width, startResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
 import { useSnips } from '~/composables/useSnips'
 import { useCompositions } from '~/composables/useCompositions'
 import { useExport } from '~/composables/useExport'

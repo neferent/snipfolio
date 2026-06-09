@@ -4,7 +4,7 @@
     <header class="flex items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-2">
       <NuxtLink
         to="/dashboard"
-        class="shrink-0 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+        class="shrink-0 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
       >
         ← Dashboard
       </NuxtLink>
@@ -33,7 +33,7 @@
           <p class="text-sm text-[var(--color-text-muted)]">Failed to load project.</p>
           <NuxtLink
             to="/dashboard"
-            class="text-xs text-[var(--color-accent)] hover:underline"
+            class="text-sm text-[var(--color-accent)] hover:underline"
           >
             ← Back to Dashboard
           </NuxtLink>
