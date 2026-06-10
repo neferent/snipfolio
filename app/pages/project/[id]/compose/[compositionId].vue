@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-1 flex-col overflow-hidden">
+    <div class="h-1 shrink-0 bg-[#a78bfa]" />
     <!-- Top toolbar -->
     <header class="flex h-12 shrink-0 items-center gap-2 border-b-subtle bg-[var(--color-surface-2)] px-4">
       <NuxtLink
@@ -9,11 +10,14 @@
         <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Projects
+        Snips
       </NuxtLink>
       <span class="text-xs text-[var(--color-text-faint)]"> / </span>
       <span class="text-xs font-medium text-[var(--color-text)]">
         {{ composition?.name ?? 'Composition' }}
+      </span>
+      <span class="rounded-full bg-[#a78bfa]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#a78bfa]">
+        Compose
       </span>
       <div class="flex-1" />
       <SaveStatus :status="projectStore.saveStatus" />

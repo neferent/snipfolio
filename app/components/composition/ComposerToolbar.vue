@@ -55,7 +55,7 @@
       <ZoomOut class="size-3.5" aria-hidden="true" />
     </button>
     <input
-      class="w-16 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center font-mono text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
+      class="!h-7 w-16 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center font-mono text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
       aria-label="Zoom level"
       :value="zoomLabel"
       @focus="($event.target as HTMLInputElement).select()"

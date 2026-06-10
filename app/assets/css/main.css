@@ -210,6 +210,13 @@ input.bg-transparent:focus {
   border-color: transparent;
 }
 
+/* Match the base rule's specificity so the border-color override above actually wins */
+input.bg-transparent:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]),
+input.bg-transparent:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):hover:not(:focus),
+input.bg-transparent:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):focus {
+  border-color: transparent;
+}
+
 /* ─── Global range slider ────────────────────────────────────────────────── */
 
 input[type="range"] {

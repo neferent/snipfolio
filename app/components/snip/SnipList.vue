@@ -3,12 +3,18 @@
     class="relative flex shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
     :style="{ width: width + 'px' }"
   >
+    <div class="flex h-10 shrink-0 items-center px-4 border-b-subtle">
+      <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
+        Library
+      </h2>
+    </div>
+
     <div class="flex-1 overflow-y-auto">
 
       <!-- Snips section -->
       <div class="border-b border-[var(--color-border)]">
         <button
-          class="flex w-full items-center gap-1.5 px-3 py-2.5 text-left transition hover:bg-white/5"
+          class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 text-left transition hover:bg-white/5"
           @click="snipsOpen = !snipsOpen"
         >
           <ChevronDown
@@ -119,7 +125,7 @@
 
       <!-- Compositions section -->
       <div>
-        <div class="flex w-full items-center gap-1.5 px-3 py-2.5 transition hover:bg-white/5">
+        <div class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 transition hover:bg-white/5">
           <button
             class="flex flex-1 items-center gap-1.5 text-left"
             @click="compositionsOpen = !compositionsOpen"

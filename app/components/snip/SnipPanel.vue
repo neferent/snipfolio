@@ -3,7 +3,7 @@
     class="relative flex shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
     :style="{ width: width + 'px' }"
   >
-    <div class="px-4 py-3 border-b-subtle">
+    <div class="flex h-10 shrink-0 items-center px-4 border-b-subtle">
       <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
         Snip Properties
       </h2>

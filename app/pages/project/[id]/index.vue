@@ -1,7 +1,8 @@
 <template>
   <div class="flex flex-1 flex-col overflow-hidden">
+    <div class="h-1 shrink-0 bg-[#38bdf8]" />
     <!-- Top toolbar -->
-    <header class="flex items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-2">
+    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4">
       <NuxtLink
         to="/dashboard"
         class="shrink-0 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
@@ -11,13 +12,22 @@
 
       <div class="mx-2 h-4 w-px bg-[var(--color-border)]" />
 
+      <span class="shrink-0 rounded-full bg-[#38bdf8]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#38bdf8]">
+        Snips
+      </span>
+
       <!-- Editable project name -->
-      <input
-        :value="projectStore.current?.name ?? ''"
-        class="flex-1 bg-transparent text-sm font-medium text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-muted)]"
-        placeholder="Untitled project"
-        @input="debouncedRename(($event.target as HTMLInputElement).value)"
-      />
+      <div class="group relative flex items-center">
+        <input
+          :value="projectStore.current?.name ?? ''"
+          class="appearance-none truncate rounded bg-transparent pr-6 text-sm font-medium text-[var(--color-text)] outline-none transition hover:bg-[var(--color-surface-3)] focus:bg-[var(--color-surface-3)] placeholder:text-[var(--color-text-muted)]"
+          placeholder="Untitled project"
+          @input="debouncedRename(($event.target as HTMLInputElement).value)"
+        />
+        <Pencil class="pointer-events-none absolute right-2 size-3 text-[var(--color-text-muted)] opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100" />
+      </div>
+
+      <div class="flex-1" />
 
       <SaveStatus :status="projectStore.saveStatus" />
     </header>
@@ -44,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { Pencil } from 'lucide-vue-next'
 import { useProjectStore } from '~/stores/project'
 import { useProject } from '~/composables/useProject'
 

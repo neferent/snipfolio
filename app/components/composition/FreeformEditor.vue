@@ -5,7 +5,7 @@
       class="relative flex shrink-0 flex-col overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
       :style="{ width: leftWidth + 'px' }"
     >
-      <div class="px-4 py-3 border-b-subtle">
+      <div class="flex h-10 shrink-0 items-center px-4 border-b-subtle">
         <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Layers</h2>
       </div>
 
@@ -225,7 +225,7 @@
     >
       <!-- Selected slot controls -->
       <template v-if="selectedSlot">
-        <div class="px-4 py-3 border-b-subtle">
+        <div class="flex h-10 shrink-0 items-center px-4 border-b-subtle">
           <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Slot</h2>
         </div>
         <div class="p-4 space-y-3 border-b-subtle">
@@ -269,7 +269,7 @@
         </div>
       </template>
 
-      <div class="px-4 py-3 border-b-subtle">
+      <div class="flex h-10 shrink-0 items-center px-4 border-b-subtle">
         <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Settings</h2>
       </div>
 
