@@ -273,6 +273,17 @@ export function useProject() {
     }
   }
 
+  function deleteSourceRecord(projectId: string, sourceId: string) {
+    if (!import.meta.client) return
+    if (isSupabase) {
+      const sb = useSupabaseClient()!
+      sb.from('source_images').delete().eq('id', sourceId).eq('project_id', projectId).then(() => {})
+    } else {
+      const sources = loadLocalData<SourceImage[]>(`snipfolio_sources_${projectId}`, [])
+      saveLocalData(`snipfolio_sources_${projectId}`, sources.filter((s) => s.id !== sourceId))
+    }
+  }
+
   async function restoreImages(projectId: string, sources: SourceImage[]) {
     if (!import.meta.client) return
     if (isSupabase) {
@@ -323,7 +334,7 @@ export function useProject() {
     }
   }
 
-  return { fetchProjects, createProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, savePreview, loadPreview }
+  return { fetchProjects, createProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, deleteSourceRecord, savePreview, loadPreview }
 }
 
 // --- Row mappers ---

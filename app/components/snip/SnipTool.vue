@@ -4,7 +4,15 @@
     <div v-if="sources.length === 0" class="flex flex-1 items-center justify-center">
       <div class="flex flex-col items-center gap-3">
         <p class="text-sm text-[var(--color-text-muted)]">Drop a screenshot to get started</p>
-        <ScreenshotDropzone @loaded="(img, src, filename) => onFirstImageLoaded(img, src, filename)" />
+        <ScreenshotDropzone
+          @loaded="(img, src, filename) => onFirstImageLoaded(img, src, filename)"
+        />
+        <button
+          class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+          @click="showUrlCapture = true"
+        >
+          Or capture from a URL
+        </button>
       </div>
     </div>
 
@@ -17,61 +25,55 @@
       <div class="flex min-w-0 flex-1 flex-col">
         <!-- Source tab bar -->
         <div class="flex shrink-0 items-center gap-1 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1.5">
-          <div
-            v-for="source in sources"
-            :key="source.id"
-            class="group flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors"
-            :class="
-              source.id === activeSourceId
-                ? 'bg-[var(--color-accent)]/15 text-[var(--color-text)]'
-                : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-[var(--color-text)]'
-            "
-            @click="sourcesStore.setActiveSource(source.id)"
-          >
-            <input
-              :value="source.label"
-              class="max-w-28 cursor-pointer truncate bg-transparent font-medium outline-none focus:cursor-text"
-              title="Click to rename"
-              @click.stop
-              @focus="sourcesStore.setActiveSource(source.id); onSourceLabelFocus(source.id)"
-              @blur="onSourceLabelBlur(source.id, $event)"
-              @keydown.stop="onSourceLabelKeydown(source.id, $event)"
-            />
-            <span class="ml-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
-              {{ source.width }}×{{ source.height }}
-            </span>
-            <span
-              class="ml-1 rounded p-0.5 opacity-0 transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
-              role="button"
-              title="Remove source"
-              @click.stop="removeSource(source.id)"
+          <div class="relative min-w-0 flex-1">
+            <div v-if="tabCanScrollLeft" class="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[var(--color-surface-2)] to-transparent z-10" />
+            <div v-if="tabCanScrollRight" class="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-surface-2)] to-transparent z-10" />
+          <div ref="tabScroll" class="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" @wheel.prevent="onTabWheel" @scroll="onTabScroll">
+          <div class="flex items-center gap-1 w-max">
+            <div
+              v-for="source in sources"
+              :key="source.id"
+              class="group flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors"
+              :class="
+                source.id === activeSourceId
+                  ? 'bg-[var(--color-accent)]/15 text-[var(--color-text)]'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-[var(--color-text)]'
+              "
+              @click="sourcesStore.setActiveSource(source.id)"
             >
-              <X class="size-3" />
-            </span>
+              <input
+                :value="source.label"
+                class="max-w-28 cursor-pointer truncate bg-transparent font-medium outline-none focus:cursor-text"
+                title="Click to rename"
+                @click.stop
+                @focus="sourcesStore.setActiveSource(source.id); onSourceLabelFocus(source.id)"
+                @blur="onSourceLabelBlur(source.id, $event)"
+                @keydown.stop="onSourceLabelKeydown(source.id, $event)"
+              />
+              <span class="ml-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
+                {{ source.width }}×{{ source.height }}
+              </span>
+              <span
+                class="ml-1 rounded p-0.5 opacity-0 transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
+                role="button"
+                title="Remove source"
+                @click.stop="removeSource(source.id)"
+              >
+                <X class="size-3" />
+              </span>
+            </div>
+          </div>
+          </div>
           </div>
 
+          <div class="self-stretch w-px bg-[var(--color-border)] shrink-0" />
           <button
-            class="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
+            class="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
             @click="showAddSource = true"
           >
             <Plus class="size-3.5" />
             Add source
           </button>
-
-          <div class="flex-1" />
-
-          <AppDropdown align="right">
-            <template #trigger>
-              <button
-                class="flex h-7 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-2.5 text-xs font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
-              >
-                Export
-                <ArrowUpFromLine class="size-3.5" />
-              </button>
-            </template>
-            <AppDropdownItem @click="showExportPicker = true">Export compositions…</AppDropdownItem>
-            <AppDropdownItem @click="exportAllSnipsRaw">Export all snips (raw)</AppDropdownItem>
-          </AppDropdown>
         </div>
 
         <!-- Viewport toolbar -->
@@ -107,6 +109,17 @@
           <button v-bind="tbBtn()" title="Fit to width (Cmd+0)" aria-label="Fit to width" @click="fitToWidth">
             <Maximize2 class="size-3.5" aria-hidden="true" />
           </button>
+
+          <!-- Export -->
+          <AppDropdown align="right">
+            <template #trigger>
+              <button v-bind="tbBtn()" title="Export" aria-label="Export">
+                <ArrowUpFromLine class="size-3.5" aria-hidden="true" />
+              </button>
+            </template>
+            <AppDropdownItem @click="showExportPicker = true">Export compositions…</AppDropdownItem>
+            <AppDropdownItem @click="exportAllSnipsRaw">Export all snips (raw)</AppDropdownItem>
+          </AppDropdown>
         </div>
 
         <!-- Scrollable source image viewport -->
@@ -167,6 +180,14 @@
     <!-- Export picker modal -->
     <ExportPickerModal :open="showExportPicker" @close="showExportPicker = false" />
 
+    <!-- URL capture modal -->
+    <UrlCaptureModal
+      :open="showUrlCapture"
+      @close="showUrlCapture = false"
+      @loaded="(img, src, filename) => { showUrlCapture = false; showAddSource = false; onFirstImageLoaded(img, src, filename) }"
+      @batch-loaded="(items) => { showUrlCapture = false; showAddSource = false; onBatchLoaded(items) }"
+    />
+
     <!-- Add source modal -->
     <AppModal :open="showAddSource" title="Add source image" @close="showAddSource = false">
       <div class="flex flex-col gap-4">
@@ -183,6 +204,12 @@
         <div>
           <label class="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">Screenshot</label>
           <ScreenshotDropzone @loaded="onPendingImageLoaded" />
+          <button
+            class="mt-2 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+            @click="showUrlCapture = true"
+          >
+            Or capture from a URL
+          </button>
           <p v-if="pendingFile" class="mt-2 text-xs text-emerald-400">
             ✓ {{ pendingFile.filename }} ({{ pendingFile.img.naturalWidth }}×{{ pendingFile.img.naturalHeight }})
           </p>
@@ -222,11 +249,29 @@ const sourcesStore = useSourcesStore()
 const { createSnip, deleteSnip } = useSnips()
 const { exportAllSnipsRaw } = useExport()
 const showExportPicker = ref(false)
-const { saveImage, deleteImage, savePreview, scheduleSave } = useProject()
+const { saveImage, deleteImage, deleteSourceRecord, savePreview, scheduleSave } = useProject()
 
 const viewport = ref<HTMLElement>()
 const imageContainer = ref<HTMLElement>()
 const imgEl = ref<HTMLImageElement>()
+const tabScroll = ref<HTMLElement>()
+const tabCanScrollLeft = ref(false)
+const tabCanScrollRight = ref(false)
+
+function onTabScroll() {
+  const el = tabScroll.value
+  if (!el) return
+  tabCanScrollLeft.value = el.scrollLeft > 0
+  tabCanScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+}
+
+function onTabWheel(e: WheelEvent) {
+  if (tabScroll.value) {
+    tabScroll.value.scrollLeft += e.deltaY + e.deltaX
+    onTabScroll()
+  }
+}
+
 const zoom = ref(1)
 const zoomLabel = computed(() => Math.round(zoom.value * 100) + '%')
 
@@ -241,6 +286,7 @@ function onSnipZoomCommit(e: KeyboardEvent) {
 }
 
 const sources = computed(() => sourcesStore.orderedSources)
+watch(() => sources.value.length, () => nextTick(onTabScroll))
 const activeSourceId = computed(() => sourcesStore.activeSourceId)
 const activeImage = computed(() => sourcesStore.activeImage)
 const isActiveSourceLoading = computed(() => sourcesStore.isActiveSourceLoading)
@@ -274,6 +320,7 @@ function onSourceLabelKeydown(id: string, e: KeyboardEvent) {
 
 // --- Add source modal ---
 const showAddSource = ref(false)
+const showUrlCapture = ref(false)
 const newSourceLabel = ref('')
 const pendingFile = ref<{ img: HTMLImageElement; src: string; filename: string } | null>(null)
 
@@ -334,6 +381,33 @@ function onFirstImageLoaded(img: HTMLImageElement, src: string, filename: string
   nextTick(fitToWidth)
 }
 
+
+function onBatchLoaded(items: Array<{ img: HTMLImageElement; src: string; filename: string }>) {
+  if (!projectStore.current || items.length === 0) return
+  for (let i = 0; i < items.length; i++) {
+    const { img, src, filename } = items[i]
+    const sourceId = crypto.randomUUID()
+    const source: SourceImage = {
+      id: sourceId,
+      projectId: projectStore.current.id,
+      label: filename.replace(/\.[^.]+$/, ''),
+      filename,
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+      sortOrder: i,
+    }
+    sourcesStore.addSource(source)
+    sourcesStore.setLoadedImage(sourceId, img, src)
+    if (i === 0) {
+      sourcesStore.setActiveSource(sourceId)
+      savePreview(projectStore.current.id, img)
+    }
+    saveImage(projectStore.current.id, sourceId, src)
+  }
+  scheduleSave()
+  nextTick(fitToWidth)
+}
+
 function onImageLoaded(sourceId: string, img: HTMLImageElement, src: string) {
   if (!projectStore.current) return
   sourcesStore.setLoadedImage(sourceId, img, src)
@@ -347,7 +421,10 @@ function removeSource(id: string) {
     .filter((s) => s.sourceImageId === id)
     .forEach((s) => snipsStore.removeSnip(s.id))
   sourcesStore.removeSource(id)
-  if (projectStore.current) deleteImage(projectStore.current.id, id)
+  if (projectStore.current) {
+    deleteImage(projectStore.current.id, id)
+    deleteSourceRecord(projectStore.current.id, id)
+  }
   scheduleSave()
 }
 
@@ -486,6 +563,7 @@ function onViewportMiddleDown(e: MouseEvent) {
 let _viewportEl: HTMLElement | null = null
 
 onMounted(() => {
+  nextTick(onTabScroll)
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
   _viewportEl = viewport.value ?? null
