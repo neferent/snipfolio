@@ -123,37 +123,12 @@
       </div>
     </main>
 
-    <!-- New project modal -->
-    <AppModal :open="showNew" title="New Project" @close="showNew = false">
-      <div class="space-y-3">
-        <div class="space-y-1.5">
-          <label for="new-project-name" class="text-xs font-medium text-[var(--color-text-muted)]">Project name</label>
-          <input
-            id="new-project-name"
-            ref="nameInput"
-            v-model="newName"
-            class="w-full"
-            placeholder="My portfolio project"
-            @keydown.enter="createProject"
-          />
-        </div>
-      </div>
-      <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
-          @click="showNew = false"
-        >
-          Cancel
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-          :disabled="!newName.trim()"
-          @click="createProject"
-        >
-          Create
-        </button>
-      </template>
-    </AppModal>
+    <NewProjectModal
+      :open="showNew"
+      @close="showNew = false"
+      @created="onProjectCreated"
+      @composed="onProjectComposed"
+    />
 
     <!-- Pro upsell modal -->
     <AppModal :open="showProUpsell" title="Upgrade to Pro" @close="showProUpsell = false">
@@ -214,7 +189,7 @@ definePageMeta({ middleware: 'auth' })
 const authStore = useAuthStore()
 const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
-const { fetchProjects, createProject: createProjectFn, deleteProject, loadPreview } = useProject()
+const { fetchProjects, deleteProject, loadPreview } = useProject()
 const { canCreateProject } = usePlan()
 const { startCheckout } = useCheckout()
 
@@ -226,15 +201,9 @@ const billingUrl = config.public.lsStoreSlug
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)
 const showProUpsell = ref(false)
-const newName = ref('')
-const nameInput = ref<HTMLInputElement>()
 const deleteTarget = ref<{ id: string; name: string } | null>(null)
 const previews = ref<Record<string, string>>({})
 const loading = ref(true)
-
-watch(showNew, (v) => {
-  if (v) nextTick(() => nameInput.value?.focus())
-})
 
 watch(projects, (list) => {
   for (const p of list) {
@@ -265,12 +234,14 @@ function onNewProject() {
   }
 }
 
-async function createProject() {
-  if (!newName.value.trim()) return
-  const project = await createProjectFn(newName.value.trim())
+async function onProjectCreated(projectId: string) {
   showNew.value = false
-  newName.value = ''
-  await navigateTo(`/project/${project.id}`)
+  await navigateTo(`/project/${projectId}`)
+}
+
+async function onProjectComposed(projectId: string, compositionId: string) {
+  showNew.value = false
+  await navigateTo(`/project/${projectId}/compose/${compositionId}`)
 }
 
 function openProject(id: string) {

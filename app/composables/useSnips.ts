@@ -10,11 +10,11 @@ export function useSnips() {
   const sourcesStore = useSourcesStore()
   const { scheduleSave } = useProject()
 
-  function createSnip(x: number, y: number, width: number, height: number, snapFrame?: 'laptop' | 'phone' | 'tablet' | null): Snip {
+  function createSnip(x: number, y: number, width: number, height: number, snapFrame?: 'laptop' | 'phone' | 'tablet' | null, sourceImageId?: string): Snip {
     const snip: Snip = {
       id: crypto.randomUUID(),
       projectId: projectStore.current!.id,
-      sourceImageId: sourcesStore.activeSourceId ?? 'default',
+      sourceImageId: sourceImageId ?? sourcesStore.activeSourceId ?? 'default',
       label: store.nextLabel(),
       x: Math.round(x),
       y: Math.round(y),

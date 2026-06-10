@@ -161,7 +161,7 @@
 import { Laptop, MonitorSmartphone, LayoutGrid, Layers } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
-import { useCompositions } from '~/composables/useCompositions'
+import { useCompositions, getLaptopLayout, getLaptopPhoneLayout, getFreeformGridLayout } from '~/composables/useCompositions'
 import type { Composition, FreeformCompositionConfig, CollageCompositionConfig } from '~/types'
 
 const props = defineProps<{ open: boolean }>()
@@ -227,19 +227,12 @@ const previewComposition = computed<Composition | null>(() => {
 
   if (type.value === 'laptop') {
     if (!laptopSnipId.value) return null
-    const snip = snipsStore.snips.find((s) => s.id === laptopSnipId.value)
-    // Laptop frame SVG aspect ≈ 1.657
-    const slotH = outputHeight * 0.68
-    const slotW = slotH * (3809.99 / 2300)
     const config: FreeformCompositionConfig = {
       slots: [{
         id: '__preview_slot__',
         snipId: laptopSnipId.value,
         deviceFrame: 'laptop',
-        x: Math.round(outputWidth / 2 - slotW / 2),
-        y: Math.round(outputHeight / 2 - slotH / 2),
-        width: Math.round(slotW),
-        height: Math.round(slotH),
+        ...getLaptopLayout(outputWidth, outputHeight),
       }],
       background: bg.value,
       outputWidth,
@@ -250,29 +243,20 @@ const previewComposition = computed<Composition | null>(() => {
 
   if (type.value === 'laptop+phone') {
     if (!laptopSnipId.value || !phoneSnipId.value) return null
-    const lapH = outputHeight * 0.68
-    const lapW = lapH * (3809.99 / 2300)
-    const phoneH = outputHeight * 0.78
-    const phoneW = phoneH * (772.5 / 1600)
+    const layout = getLaptopPhoneLayout(outputWidth, outputHeight)
     const config: FreeformCompositionConfig = {
       slots: [
         {
           id: '__preview_slot_laptop__',
           snipId: laptopSnipId.value,
           deviceFrame: 'laptop',
-          x: Math.round(outputWidth * 0.38 - lapW / 2),
-          y: Math.round(outputHeight / 2 - lapH / 2),
-          width: Math.round(lapW),
-          height: Math.round(lapH),
+          ...layout.laptop,
         },
         {
           id: '__preview_slot_phone__',
           snipId: phoneSnipId.value,
           deviceFrame: 'phone',
-          x: Math.round(outputWidth * 0.72 - phoneW / 2),
-          y: Math.round(outputHeight / 2 - phoneH / 2),
-          width: Math.round(phoneW),
-          height: Math.round(phoneH),
+          ...layout.phone,
         },
       ],
       background: bg.value,
@@ -297,26 +281,20 @@ const previewComposition = computed<Composition | null>(() => {
 
   // freeform — preview if any snips selected
   if (selectedIds.value.length === 0) return null
-  const cols = Math.ceil(Math.sqrt(selectedIds.value.length))
-  const slots = selectedIds.value.map((snipId, i) => {
-    const col = i % cols
-    const row = Math.floor(i / cols)
-    const cx = (outputWidth / (cols + 1)) * (col + 1)
-    const cy = (outputHeight / (Math.ceil(selectedIds.value.length / cols) + 1)) * (row + 1)
-    const snip = snipsStore.snips.find((s) => s.id === snipId)
-    const aspect = snip ? snip.width / snip.height : 1
-    const h = outputHeight * 0.5
-    const w = h * aspect
-    return {
-      id: `__preview_slot_${i}__`,
-      snipId,
-      deviceFrame: 'none' as const,
-      x: Math.round(cx - w / 2),
-      y: Math.round(cy - h / 2),
-      width: Math.round(w),
-      height: Math.round(h),
-    }
-  })
+  const layout = getFreeformGridLayout(
+    selectedIds.value.map((snipId) => {
+      const snip = snipsStore.snips.find((s) => s.id === snipId)
+      return { width: snip?.width ?? 800, height: snip?.height ?? 600 }
+    }),
+    outputWidth,
+    outputHeight,
+  )
+  const slots = selectedIds.value.map((snipId, i) => ({
+    id: `__preview_slot_${i}__`,
+    snipId,
+    deviceFrame: 'none' as const,
+    ...layout[i]!,
+  }))
   const config: FreeformCompositionConfig = {
     slots,
     background: bg.value,

@@ -1,4 +1,4 @@
-import { applyScaledShadow } from './frameUtils'
+import { applyScaledShadow, drawCoverFromTop } from './frameUtils'
 import type { FrameDrawResult } from './frameUtils'
 export type { FrameDrawResult } from './frameUtils'
 
@@ -136,7 +136,7 @@ export function drawLaptopFrame(
   ctx.bezierCurveTo(3407.82, 59.07, 3422.33, 73.58, 3422.33, 91.48)
   ctx.closePath()
   ctx.clip()
-  ctx.drawImage(imageSource, SCR_X, SCR_Y, SCR_W, SCR_H)
+  drawCoverFromTop(ctx, imageSource, SCR_X, SCR_Y, SCR_W, SCR_H)
   ctx.restore()
 
   // Top notch bar

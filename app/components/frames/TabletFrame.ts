@@ -1,4 +1,4 @@
-import { applyScaledShadow } from './frameUtils'
+import { applyScaledShadow, drawCoverFromTop } from './frameUtils'
 import type { FrameDrawResult } from './frameUtils'
 export type { FrameDrawResult } from './frameUtils'
 
@@ -126,7 +126,7 @@ export function drawTabletFrame(
   ctx.save()
   screenPath(ctx)
   ctx.clip()
-  ctx.drawImage(imageSource, SCR_X - 1, SCR_Y - 1, SCR_W + 2, SCR_H + 2)
+  drawCoverFromTop(ctx, imageSource, SCR_X - 1, SCR_Y - 1, SCR_W + 2, SCR_H + 2)
   ctx.restore()
 
   // Front camera dot

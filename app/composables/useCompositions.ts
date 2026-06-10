@@ -48,26 +48,80 @@ function defaultSlotDimensions(
   return { w: targetW, h: targetH }
 }
 
-function makeSlot(
-  snipId: string,
-  snipW: number,
-  snipH: number,
-  frame: DeviceFrame,
-  x: number,
-  y: number,
+/** Geometry for the "Desktop + Mobile" layout: a laptop frame with a phone overlapping its right edge, centered on the canvas. */
+export function getLaptopPhoneLayout(
   outputW: number,
   outputH: number,
-): FreeformSlotConfig {
-  const { w, h } = defaultSlotDimensions(snipW, snipH, frame, outputW, outputH)
+): { laptop: { x: number; y: number; width: number; height: number }; phone: { x: number; y: number; width: number; height: number } } {
+  // Laptop sized to ~78% of output height (capped to avoid overflow)
+  const laptopAspect = FRAME_ASPECT.laptop!
+  let laptopH = outputH * 0.78
+  let laptopW = laptopH * laptopAspect
+  if (laptopW > outputW * 0.85) {
+    laptopW = outputW * 0.85
+    laptopH = laptopW / laptopAspect
+  }
+
+  // Phone sized to ~86% of output height, overlapping the laptop's right edge
+  const phoneAspect = FRAME_ASPECT.phone!
+  const phoneH = outputH * 0.86
+  const phoneW = phoneH * phoneAspect
+  const overlap = phoneW * 0.4
+
+  // Center the combined bounding box of both frames on the canvas
+  const totalWidth = laptopW + phoneW - overlap
+  const startX = (outputW - totalWidth) / 2
+
   return {
-    id: crypto.randomUUID(),
-    snipId,
-    deviceFrame: frame,
-    x: Math.round(x - w / 2),
-    y: Math.round(y - h / 2),
+    laptop: {
+      x: Math.round(startX),
+      y: Math.round((outputH - laptopH) / 2),
+      width: Math.round(laptopW),
+      height: Math.round(laptopH),
+    },
+    phone: {
+      x: Math.round(startX + laptopW - overlap),
+      y: Math.round((outputH - phoneH) / 2),
+      width: Math.round(phoneW),
+      height: Math.round(phoneH),
+    },
+  }
+}
+
+/** Geometry for the "Desktop" layout: a single laptop frame centered on the canvas. */
+export function getLaptopLayout(
+  outputW: number,
+  outputH: number,
+): { x: number; y: number; width: number; height: number } {
+  const { w, h } = defaultSlotDimensions(0, 0, 'laptop', outputW, outputH)
+  return {
+    x: Math.round((outputW - w) / 2),
+    y: Math.round((outputH - h) / 2),
     width: Math.round(w),
     height: Math.round(h),
   }
+}
+
+/** Geometry for the "Freeform" layout: snips arranged in a centered grid, sized to fit naturally. */
+export function getFreeformGridLayout(
+  snips: { width: number; height: number }[],
+  outputW: number,
+  outputH: number,
+): { x: number; y: number; width: number; height: number }[] {
+  const cols = Math.ceil(Math.sqrt(snips.length))
+  return snips.map((snip, i) => {
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    const cx = (outputW / (cols + 1)) * (col + 1)
+    const cy = (outputH / (Math.ceil(snips.length / cols) + 1)) * (row + 1)
+    const { w, h } = defaultSlotDimensions(snip.width, snip.height, 'none', outputW, outputH)
+    return {
+      x: Math.round(cx - w / 2),
+      y: Math.round(cy - h / 2),
+      width: Math.round(w),
+      height: Math.round(h),
+    }
+  })
 }
 
 export function useCompositions() {
@@ -102,8 +156,12 @@ export function useCompositions() {
     name?: string,
     bg?: Partial<BackgroundConfig>,
   ): Composition {
-    const snip = snipsStore.snips.find((s) => s.id === snipId)
-    const slot = makeSlot(snipId, snip?.width ?? 1920, snip?.height ?? 1080, 'laptop', outputW / 2, outputH / 2, outputW, outputH)
+    const slot: FreeformSlotConfig = {
+      id: crypto.randomUUID(),
+      snipId,
+      deviceFrame: 'laptop',
+      ...getLaptopLayout(outputW, outputH),
+    }
     const config: FreeformCompositionConfig = {
       slots: [slot],
       background: { ...DEFAULT_BACKGROUND, ...bg },
@@ -119,22 +177,18 @@ export function useCompositions() {
     name?: string,
     bg?: Partial<BackgroundConfig>,
   ): Composition {
-    const laptopSnip = snipsStore.snips.find((s) => s.id === laptopSnipId)
-    const phoneSnip = snipsStore.snips.find((s) => s.id === phoneSnipId)
-    // Laptop: left-center at 38% from left
-    const laptopSlot = makeSlot(laptopSnipId, laptopSnip?.width ?? 1920, laptopSnip?.height ?? 1080, 'laptop', outputW * 0.38, outputH / 2, outputW, outputH)
-    // Phone: right-center at 72% from left; phone is taller so 75% of outputH
-    const phoneH = outputH * 0.78
-    const phoneAspect = FRAME_ASPECT.phone!
-    const phoneW = phoneH * phoneAspect
+    const layout = getLaptopPhoneLayout(outputW, outputH)
+    const laptopSlot: FreeformSlotConfig = {
+      id: crypto.randomUUID(),
+      snipId: laptopSnipId,
+      deviceFrame: 'laptop',
+      ...layout.laptop,
+    }
     const phoneSlot: FreeformSlotConfig = {
       id: crypto.randomUUID(),
       snipId: phoneSnipId,
       deviceFrame: 'phone',
-      x: Math.round(outputW * 0.72 - phoneW / 2),
-      y: Math.round(outputH / 2 - phoneH / 2),
-      width: Math.round(phoneW),
-      height: Math.round(phoneH),
+      ...layout.phone,
     }
     const config: FreeformCompositionConfig = {
       slots: [laptopSlot, phoneSlot],
@@ -166,15 +220,20 @@ export function useCompositions() {
     name?: string,
     bg?: Partial<BackgroundConfig>,
   ): Composition {
-    const slots: FreeformSlotConfig[] = snipIds.map((snipId, i) => {
-      const snip = snipsStore.snips.find((s) => s.id === snipId)
-      const cols = Math.ceil(Math.sqrt(snipIds.length))
-      const col = i % cols
-      const row = Math.floor(i / cols)
-      const cx = (outputW / (cols + 1)) * (col + 1)
-      const cy = (outputH / (Math.ceil(snipIds.length / cols) + 1)) * (row + 1)
-      return makeSlot(snipId, snip?.width ?? 800, snip?.height ?? 600, 'none', cx, cy, outputW, outputH)
-    })
+    const layout = getFreeformGridLayout(
+      snipIds.map((snipId) => {
+        const snip = snipsStore.snips.find((s) => s.id === snipId)
+        return { width: snip?.width ?? 800, height: snip?.height ?? 600 }
+      }),
+      outputW,
+      outputH,
+    )
+    const slots: FreeformSlotConfig[] = snipIds.map((snipId, i) => ({
+      id: crypto.randomUUID(),
+      snipId,
+      deviceFrame: 'none',
+      ...layout[i]!,
+    }))
     const config: FreeformCompositionConfig = {
       slots,
       background: { ...DEFAULT_BACKGROUND, ...bg },

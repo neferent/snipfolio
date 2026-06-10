@@ -1,3 +1,4 @@
+import { drawCoverFromTop } from './frameUtils'
 import type { FrameDrawResult } from './frameUtils'
 export type { FrameDrawResult } from './frameUtils'
 
@@ -107,7 +108,7 @@ export function drawBrowserFrame(
   ctx.lineTo(x, contentY)
   ctx.closePath()
   ctx.clip()
-  ctx.drawImage(imageSource, x, contentY, w, contentH)
+  drawCoverFromTop(ctx, imageSource, x, contentY, w, contentH)
   ctx.restore()
 
   return { screenX, screenY, screenWidth, screenHeight }
