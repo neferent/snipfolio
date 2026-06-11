@@ -19,6 +19,15 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '48x48', href: '/icons/logo_48.png' },
         { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/icons/logo_16.png' },
       ],
+      script: [
+        { src: 'https://www.googletagmanager.com/gtag/js?id=G-C3XP5KTPSP', async: true },
+        {
+          innerHTML: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-C3XP5KTPSP');`,
+        },
+      ],
     },
   },
 
