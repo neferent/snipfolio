@@ -23,7 +23,10 @@ onMounted(async () => {
   await refreshProfile()
 
   const label = checkoutType === 'day_pass' ? 'Day pass activated!' : 'Pro activated!'
-  toast.success(label, { description: 'Enjoy watermark-free exports.' })
+  const description = checkoutType === 'day_pass'
+    ? 'Enjoy 24 hours of full Pro access.'
+    : 'Enjoy watermark-free exports.'
+  toast.success(label, { description })
 
   await navigateTo(returnTo)
 })

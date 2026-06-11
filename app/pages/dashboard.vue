@@ -130,20 +130,25 @@
       @composed="onProjectComposed"
     />
 
-    <!-- Pro upsell modal -->
-    <AppModal :open="showProUpsell" title="Upgrade to Pro" @close="showProUpsell = false">
-      <p class="text-sm text-[var(--color-text-muted)]">
+    <!-- Pro upsell / project limit modal -->
+    <AppModal :open="showProUpsell" :title="isPro ? 'Project limit reached' : 'Upgrade to Pro'" @close="showProUpsell = false">
+      <p v-if="isPro" class="text-sm text-[var(--color-text-muted)]">
+        Pro accounts are limited to <strong class="text-[var(--color-text)]">50 projects</strong>.
+        Delete an existing project to create a new one.
+      </p>
+      <p v-else class="text-sm text-[var(--color-text-muted)]">
         Free accounts are limited to <strong class="text-[var(--color-text)]">1 project</strong>.
-        Upgrade to Pro for unlimited projects and watermark-free exports.
+        Upgrade to Pro for up to 50 projects and watermark-free exports.
       </p>
       <template #footer>
         <button
           class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
           @click="showProUpsell = false"
         >
-          Not now
+          {{ isPro ? 'Close' : 'Not now' }}
         </button>
         <button
+          v-if="!isPro"
           class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
           @click="startCheckout('pro_early')"
         >
@@ -190,7 +195,7 @@ const authStore = useAuthStore()
 const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
 const { fetchProjects, deleteProject, loadPreview } = useProject()
-const { canCreateProject } = usePlan()
+const { canCreateProject, isPro } = usePlan()
 const { startCheckout } = useCheckout()
 
 const config = useRuntimeConfig()

@@ -43,7 +43,7 @@
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Email</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Tier</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Projects</th>
-                  <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Day Access</th>
+                  <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Day Pass</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Actions</th>
                 </tr>
               </thead>
@@ -85,28 +85,26 @@
                     {{ user.projectCount }}
                   </td>
 
-                  <!-- Day access list -->
+                  <!-- Day pass -->
                   <td class="px-4 py-3">
-                    <div v-if="user.dayAccess.length === 0" class="text-[var(--color-text-muted)]">none</div>
-                    <div v-for="a in user.dayAccess" :key="a.projectId" class="flex items-center gap-1.5">
-                      <span class="max-w-[140px] truncate text-[var(--color-text)]">{{ a.projectName }}</span>
-                      <span class="text-[var(--color-text-muted)]">until {{ formatTime(a.expiresAt) }}</span>
+                    <div v-if="isDayPassActive(user)" class="flex items-center gap-1.5">
+                      <span class="text-[var(--color-text-muted)]">until {{ formatTime(user.proExpiresAt!) }}</span>
                       <button
                         class="ml-1 rounded px-1.5 py-0.5 text-[10px] text-red-400 transition hover:bg-red-500/10"
-                        @click="revokeAccess(user, a.projectId)"
+                        :disabled="busyUser === user.id"
+                        @click="revokeDayPass(user)"
                       >
                         revoke
                       </button>
                     </div>
-                    <!-- Grant access picker -->
-                    <div v-if="user.projectCount > 0" class="mt-1">
-                      <button
-                        class="text-[10px] text-[var(--color-accent)] opacity-60 transition hover:opacity-100"
-                        @click="openGrantAccess(user)"
-                      >
-                        + Grant access
-                      </button>
-                    </div>
+                    <button
+                      v-else
+                      class="text-[10px] text-[var(--color-accent)] opacity-60 transition hover:opacity-100"
+                      :disabled="busyUser === user.id"
+                      @click="grantDayPass(user)"
+                    >
+                      + Grant 24h
+                    </button>
                   </td>
 
                   <!-- Actions -->
@@ -152,44 +150,6 @@
       </template>
     </AppModal>
 
-    <!-- Grant day access modal -->
-    <AppModal :open="!!grantTarget" title="Grant 1-Day Access" @close="grantTarget = null">
-      <div class="space-y-3">
-        <p class="text-sm text-[var(--color-text-muted)]">
-          Select the project to grant watermark-free exports for 24 hours.
-        </p>
-        <div class="space-y-1">
-          <label
-            v-for="proj in grantTarget?.projects ?? []"
-            :key="proj.id"
-            class="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 transition hover:bg-white/5"
-          >
-            <input
-              type="radio"
-              :value="proj.id"
-              v-model="grantProjectId"
-              class="accent-[var(--color-accent)]"
-            />
-            <span class="text-sm text-[var(--color-text)]">{{ proj.name }}</span>
-          </label>
-        </div>
-      </div>
-      <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
-          @click="grantTarget = null"
-        >
-          Cancel
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[#111316] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-          :disabled="!grantProjectId"
-          @click="doGrantAccess"
-        >
-          Grant 24h access
-        </button>
-      </template>
-    </AppModal>
   </div>
 </template>
 
@@ -203,25 +163,21 @@ definePageMeta({ middleware: 'auth' })
 
 const authStore = useAuthStore()
 
-interface DayAccess { projectId: string; projectName: string; expiresAt: string }
 interface AdminUser {
   id: string
   email: string
   isPro: boolean
   isAdmin: boolean
   projectCount: number
-  dayAccess: DayAccess[]
+  proExpiresAt: string | null
   createdAt: string
 }
-interface GrantTarget { user: AdminUser; projects: { id: string; name: string }[] }
 
 const users = ref<AdminUser[]>([])
 const loading = ref(true)
 const loadError = ref('')
 const busyUser = ref<string | null>(null)
 const resetTarget = ref<AdminUser | null>(null)
-const grantTarget = ref<GrantTarget | null>(null)
-const grantProjectId = ref<string | null>(null)
 
 // Plugin already ran restoreSession before this page mounted — isAdmin is ready
 onMounted(async () => {
@@ -282,56 +238,31 @@ async function doReset() {
   }
 }
 
-async function openGrantAccess(user: AdminUser) {
-  // Fetch this user's projects via the users list (we already have projectCount; fetch names)
-  const sb = await fetchUserProjects(user.id)
-  grantTarget.value = { user, projects: sb }
-  grantProjectId.value = null
+function isDayPassActive(user: AdminUser): boolean {
+  return !!user.proExpiresAt && new Date(user.proExpiresAt) > new Date()
 }
 
-async function fetchUserProjects(userId: string): Promise<{ id: string; name: string }[]> {
-  // Admin API doesn't have a separate projects endpoint — we re-fetch from the users list
-  // and match by user_id. For now, use a lightweight inline approach.
-  const allUsers = await $fetch<AdminUser[]>('/api/admin/users', { headers: authHeaders() })
-  const u = allUsers.find((u) => u.id === userId)
-  // We need project names — add a dedicated endpoint or call supabase directly.
-  // Since we have day access with project names, extract from there as a best-effort,
-  // then prompt for the project ID input if none found.
-  // Instead, add a dedicated endpoint: /api/admin/users/[id]/projects
-  const projects = await $fetch<{ id: string; name: string }[]>(
-    `/api/admin/users/${userId}/projects`,
-    { headers: authHeaders() },
-  ).catch(() => [] as { id: string; name: string }[])
-  return projects
-}
-
-async function doGrantAccess() {
-  if (!grantTarget.value || !grantProjectId.value) return
-  const { user } = grantTarget.value
-  const projectId = grantProjectId.value
+async function grantDayPass(user: AdminUser) {
   busyUser.value = user.id
-  grantTarget.value = null
   try {
-    await $fetch(`/api/admin/projects/${projectId}/access`, {
+    const { expiresAt } = await $fetch<{ expiresAt: string }>(`/api/admin/users/${user.id}/day-pass`, {
       method: 'POST',
       headers: authHeaders(),
-      body: { userId: user.id },
     })
-    await reload()
+    user.proExpiresAt = expiresAt
   } finally {
     busyUser.value = null
   }
 }
 
-async function revokeAccess(user: AdminUser, projectId: string) {
+async function revokeDayPass(user: AdminUser) {
   busyUser.value = user.id
   try {
-    await $fetch(`/api/admin/projects/${projectId}/access`, {
+    await $fetch(`/api/admin/users/${user.id}/day-pass`, {
       method: 'DELETE',
       headers: authHeaders(),
-      body: { userId: user.id },
     })
-    user.dayAccess = user.dayAccess.filter((a) => a.projectId !== projectId)
+    user.proExpiresAt = null
   } finally {
     busyUser.value = null
   }

@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const userId: string | undefined = payload.meta?.custom_data?.user_id
     if (!userId) return { ok: true }
 
-    const { error } = await sb.from('profiles').upsert({ id: userId, is_pro: true }, { onConflict: 'id' })
+    const { error } = await sb.from('profiles').upsert({ id: userId, is_pro: true, pro_expires_at: null }, { onConflict: 'id' })
     if (error) {
       console.error('[webhook] upsert error:', error)
       throw createError({ statusCode: 500, message: 'DB error' })
@@ -44,27 +44,26 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Day pass purchase
+  // Day pass purchase — grants 24h of full Pro access, account-wide
   if (eventName === 'order_created') {
     const variantId: number | undefined = payload.data?.attributes?.first_order_item?.variant_id
     const userId: string | undefined = payload.meta?.custom_data?.user_id
-    const projectId: string | undefined = payload.meta?.custom_data?.project_id
     const dayPassVariantIds = [
       Number(config.public.lsDayPassVariantId),
       Number(config.public.lsDayPassVariantIdTest),
     ].filter(Boolean)
 
-    console.log('[webhook] order_created', { variantId, dayPassVariantIds, userId, projectId })
+    console.log('[webhook] order_created', { variantId, dayPassVariantIds, userId })
 
-    if (!dayPassVariantIds.includes(variantId as number) || !userId || !projectId) {
+    if (!dayPassVariantIds.includes(variantId as number) || !userId) {
       console.log('[webhook] day pass skipped — variant or data mismatch')
       return { ok: true }
     }
 
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    const { error } = await sb.from('project_export_access').upsert(
-      { user_id: userId, project_id: projectId, expires_at: expiresAt },
-      { onConflict: 'user_id,project_id' },
+    const proExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    const { error } = await sb.from('profiles').upsert(
+      { id: userId, pro_expires_at: proExpiresAt },
+      { onConflict: 'id' },
     )
     if (error) {
       console.error('[webhook] day pass upsert error:', error)

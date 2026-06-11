@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   if (userId === adminId) throw createError({ statusCode: 403, message: 'Cannot reset your own account' })
   const sb = useSupabaseAdmin()
 
-  // Delete all projects (cascades to snips, compositions, source_images, project_export_access)
+  // Delete all projects (cascades to snips, compositions, source_images)
   const { error } = await sb.from('projects').delete().eq('user_id', userId)
   if (error) throw createError({ statusCode: 500, message: error.message })
 
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Reset profile flags but keep the account
-  await sb.from('profiles').update({ is_pro: false }).eq('id', userId)
+  await sb.from('profiles').update({ is_pro: false, pro_expires_at: null }).eq('id', userId)
 
   return { ok: true }
 })

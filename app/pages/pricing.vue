@@ -91,23 +91,19 @@
               <ul class="mb-6 space-y-2.5">
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
-                  Everything in Free
+                  Full Pro access for 24 hours
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
-                  Clean exports for 1 project
+                  No watermark, unlimited projects
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
-                  No watermark, 24 hours
+                  Pro-only tools included
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
-                  No subscription
-                </li>
-                <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
-                  <Minus class="mt-0.5 size-4 shrink-0 text-[var(--color-text-muted)] opacity-40" :stroke-width="2" />
-                  Pro-only tools not included
+                  One-time, doesn't renew
                 </li>
               </ul>
               <NuxtLink
@@ -169,7 +165,7 @@
 
           <!-- Day pass callout -->
           <p class="mt-8 text-center text-sm text-[var(--color-text-muted)]">
-            Not ready to subscribe? A day pass gives you clean exports for one project for 24 hours — no strings attached.
+            Not ready to subscribe? A day pass gives you full Pro access for 24 hours — no strings attached.
           </p>
         </div>
       </section>
@@ -299,9 +295,9 @@ const authStore = useAuthStore()
 
 useSeoMeta({
   title: 'Pricing — Snipfolio',
-  description: 'Free to try. $4.99 day pass for clean exports with no watermark. $9.99/mo Pro for unlimited projects and priority support.',
+  description: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for unlimited projects and priority support.',
   ogTitle: 'Snipfolio Pricing',
-  ogDescription: 'Free to try. $4.99 day pass for clean exports. $9.99/mo Pro for unlimited projects.',
+  ogDescription: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for unlimited projects.',
   ogType: 'website',
   ogUrl: 'https://snipfolio.com/pricing',
   ogSiteName: 'Snipfolio',
@@ -310,7 +306,7 @@ useSeoMeta({
   ogImageHeight: 630,
   twitterCard: 'summary_large_image',
   twitterTitle: 'Snipfolio Pricing',
-  twitterDescription: 'Free to try. $4.99 day pass for clean exports. $9.99/mo Pro for unlimited projects.',
+  twitterDescription: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for unlimited projects.',
   twitterImage: 'https://snipfolio.com/og-image.png',
 })
 
@@ -323,17 +319,17 @@ const comparisonRows = [
   { feature: 'Device frames', free: true, dayPass: true, pro: true },
   { feature: 'Custom backgrounds', free: true, dayPass: true, pro: true },
   { feature: 'PNG export', free: true, dayPass: true, pro: true },
-  { feature: 'Clean export (no watermark)', free: false, dayPass: '1 project, 24h', pro: true },
-  { feature: 'Projects', free: '1', dayPass: '1', pro: 'Unlimited' },
-  { feature: 'Cloud save', free: false, dayPass: false, pro: true },
-  { feature: 'Pro-only tools (presets + more)', free: false, dayPass: false, pro: true },
+  { feature: 'Clean export (no watermark)', free: false, dayPass: '24h', pro: true },
+  { feature: 'Projects', free: '1', dayPass: 'Unlimited (24h)', pro: 'Unlimited' },
+  { feature: 'Cloud save', free: false, dayPass: true, pro: true },
+  { feature: 'Pro-only tools (presets + more)', free: false, dayPass: true, pro: true },
   { feature: 'Priority support', free: false, dayPass: false, pro: true },
 ]
 
 const faq = [
   {
     q: 'What is the difference between the day pass and Pro?',
-    a: 'The day pass is a one-time purchase that lets you export one project without watermarks for 24 hours. Pro is a monthly subscription with no watermarks, unlimited projects, cloud save, and access to Pro-only features as they ship. If you just need a clean export once in a while, a day pass is probably the better pick.',
+    a: 'The day pass is a one-time purchase that gives you full Pro access — no watermarks, unlimited projects, cloud save, and Pro-only tools — for 24 hours. Pro is a monthly subscription with the same access on an ongoing basis. If you just need it once in a while, a day pass is probably the better pick.',
   },
   {
     q: 'Will the Pro price go up?',
@@ -345,7 +341,7 @@ const faq = [
   },
   {
     q: 'Is there a free trial for Pro?',
-    a: 'Not a timed trial, but the free tier lets you use most features before paying. Note that some tools (like platform presets) are Pro-only and not included in the day pass. The free tier gives you a good sense of the core workflow.',
+    a: 'Not a timed trial, but the free tier lets you use most features before paying. A day pass gives you 24 hours of full Pro access, including Pro-only tools, if you want to try everything first.',
   },
   {
     q: 'Can I cancel Pro anytime?',

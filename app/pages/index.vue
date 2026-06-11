@@ -337,7 +337,7 @@
         <div class="mx-auto max-w-5xl px-4 py-20">
           <h2 class="mb-4 text-center">Pricing</h2>
           <p class="mb-12 text-center text-[var(--color-text-muted)]">
-            Not sure yet? A day pass lets you export one project without watermarks for 24 hours. No subscription required.
+            Not sure yet? A day pass gives you full Pro access for 24 hours. No subscription required.
           </p>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <!-- Free -->
@@ -374,15 +374,15 @@
               <ul class="mb-6 space-y-2.5">
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
-                  Export 1 project without watermarks
+                  Full Pro access for 24 hours
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
-                  Valid for 24 hours
+                  Unlimited projects, no watermarks
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
-                  No subscription
+                  One-time, doesn't renew
                 </li>
               </ul>
               <NuxtLink
@@ -566,7 +566,7 @@ const faq = [
   },
   {
     q: 'What is the difference between the day pass and Pro?',
-    a: 'The day pass is a one-time purchase that lets you export one project without watermarks for 24 hours. Pro is a monthly subscription with no watermarks, unlimited projects, higher storage limits, and access to Pro-only features as they ship. If you just need a clean export once in a while, a day pass is probably the better pick.',
+    a: 'The day pass is a one-time purchase that gives you full Pro access — no watermarks, unlimited projects, and Pro-only tools — for 24 hours. Pro is a monthly subscription with the same access on an ongoing basis. If you just need it once in a while, a day pass is probably the better pick.',
   },
   {
     q: 'Do I need an account to use it?',
@@ -627,7 +627,7 @@ useHead({
                 price: '4.99',
                 priceCurrency: 'USD',
                 name: 'Day pass',
-                description: '24-hour full access with no watermark, one-time purchase',
+                description: '24 hours of full Pro access, one-time purchase, does not renew',
               },
               {
                 '@type': 'Offer',

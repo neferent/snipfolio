@@ -11,6 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isGuest = ref(false)
   const isPro = ref(false)
   const isAdmin = ref(false)
+  const proExpiresAt = ref<string | null>(null)
   const profileLoaded = ref(false)
 
   const isAuthenticated = computed(() => user.value !== null)
@@ -27,9 +28,10 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = v
   }
 
-  function setProfile(pro: boolean, admin: boolean) {
+  function setProfile(pro: boolean, admin: boolean, expiresAt: string | null = null) {
     isPro.value = pro
     isAdmin.value = admin
+    proExpiresAt.value = expiresAt
     profileLoaded.value = true
   }
 
@@ -63,9 +65,10 @@ export const useAuthStore = defineStore('auth', () => {
     isGuest.value = false
     isPro.value = false
     isAdmin.value = false
+    proExpiresAt.value = null
     profileLoaded.value = false
     if (import.meta.client) localStorage.removeItem(GUEST_FLAG_KEY)
   }
 
-  return { user, token, isLoading, isAuthenticated, isGuest, isPro, isAdmin, profileLoaded, setUser, setToken, setLoading, setProfile, setGuest, restoreGuest, clear }
+  return { user, token, isLoading, isAuthenticated, isGuest, isPro, isAdmin, proExpiresAt, profileLoaded, setUser, setToken, setLoading, setProfile, setGuest, restoreGuest, clear }
 })

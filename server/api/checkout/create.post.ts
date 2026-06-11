@@ -2,7 +2,6 @@ type CheckoutType = 'pro' | 'pro_early' | 'day_pass'
 
 interface CheckoutBody {
   type: CheckoutType
-  projectId?: string
 }
 
 export default defineEventHandler(async (event) => {
@@ -17,9 +16,6 @@ export default defineEventHandler(async (event) => {
   }[body.type]
 
   if (!variantId) throw createError({ statusCode: 400, message: 'Invalid checkout type' })
-  if (body.type === 'day_pass' && !body.projectId) {
-    throw createError({ statusCode: 400, message: 'projectId required for day pass' })
-  }
 
   const baseUrl = process.env.NODE_ENV === 'production'
     ? 'https://snipfol.io'
@@ -35,7 +31,6 @@ export default defineEventHandler(async (event) => {
         checkout_data: {
           custom: {
             user_id: userId,
-            ...(body.projectId ? { project_id: body.projectId } : {}),
           },
         },
       },

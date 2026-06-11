@@ -51,7 +51,7 @@
             {{ previewComp.name }}
           </p>
           <div class="flex flex-1 items-center justify-center overflow-hidden">
-            <CompositionPreview :composition="previewComp" :watermark="!authStore.isPro && !dayAccessExpiry" class="max-h-full max-w-full rounded object-contain" />
+            <CompositionPreview :composition="previewComp" :watermark="!isPro" class="max-h-full max-w-full rounded object-contain" />
           </div>
           <p class="mt-2 text-center text-[10px] text-[var(--color-text-muted)]">
             {{ previewComp.config.outputWidth }}×{{ previewComp.config.outputHeight }}px
@@ -83,13 +83,13 @@
     </div>
 
     <!-- Tier upsell banner -->
-    <div v-if="!authStore.isPro" class="mt-4 rounded-lg bg-[var(--color-surface-3)] border-faint px-4 py-3">
+    <div v-if="!isPro" class="mt-4 rounded-lg bg-[var(--color-surface-3)] border-faint px-4 py-3">
       <!-- Guest -->
-      <template v-if="authStore.isGuest">
+      <template v-if="isGuest">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
-            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark. Sign in for 1-Day Access or Pro.</span>
+            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark. Sign in for a Day Pass or Pro.</span>
           </div>
           <NuxtLink
             to="/"
@@ -98,16 +98,6 @@
           >
             Sign in
           </NuxtLink>
-        </div>
-      </template>
-
-      <!-- Account with active day access -->
-      <template v-else-if="dayAccessExpiry">
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-green-400/12 px-2.5 py-0.5 text-[11px] font-medium text-green-400">
-            <span class="size-1.5 rounded-full bg-green-400" />
-            1-Day Access active — expires {{ formatExpiry(dayAccessExpiry) }}
-          </span>
         </div>
       </template>
 
@@ -122,9 +112,9 @@
             <button
               class="rounded-[5px] px-3 py-1 text-xs font-medium transition hover:bg-white/10 disabled:opacity-40 border-strong text-[var(--color-text)]"
               :disabled="checkoutLoading"
-              @click="onBuyDayAccess"
+              @click="onBuyDayPass"
             >
-              1-Day Access — $4.99
+              Day Pass — $4.99
             </button>
             <button
               class="rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40 bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
@@ -136,6 +126,14 @@
           </div>
         </div>
       </template>
+    </div>
+
+    <!-- Active day pass -->
+    <div v-else-if="isDayPassActive" class="mt-4 rounded-lg bg-[var(--color-surface-3)] border-faint px-4 py-3">
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-green-400/12 px-2.5 py-0.5 text-[11px] font-medium text-green-400">
+        <span class="size-1.5 rounded-full bg-green-400" />
+        Day Pass active — expires {{ formatExpiry(dayPassExpiresAt!) }}
+      </span>
     </div>
 
     <template #footer>
@@ -151,7 +149,7 @@
         @click="exportSelected"
       >
         Export {{ selected.size > 0 ? selected.size : '' }} composition{{ selected.size === 1 ? '' : 's' }}
-        <span v-if="!authStore.isPro && !dayAccessExpiry" class="ml-1.5 opacity-60">(watermarked)</span>
+        <span v-if="!isPro" class="ml-1.5 opacity-60">(watermarked)</span>
       </button>
     </template>
   </AppModal>
@@ -160,8 +158,6 @@
 <script setup lang="ts">
 import { Droplets } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
-import { useProjectStore } from '~/stores/project'
-import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
 import { useCheckout } from '~/composables/useCheckout'
@@ -178,9 +174,7 @@ const emit = defineEmits<{ close: [] }>()
 
 const compositionsStore = useCompositionsStore()
 const snipsStore = useSnipsStore()
-const projectStore = useProjectStore()
-const authStore = useAuthStore()
-const { getDayAccessExpiry } = usePlan()
+const { isGuest, isPro, isDayPassActive, dayPassExpiresAt } = usePlan()
 const { exportComposition } = useExport()
 const { startCheckout, loading: checkoutLoading } = useCheckout()
 const { refreshProfile } = useAuth()
@@ -189,7 +183,6 @@ const compositions = computed(() => compositionsStore.ordered)
 
 const selected = ref<Set<string>>(new Set())
 const previewComp = ref<Composition | null>(null)
-const dayAccessExpiry = ref<Date | null>(null)
 
 const allSelected = computed(() => compositions.value.length > 0 && selected.value.size === compositions.value.length)
 
@@ -200,16 +193,10 @@ const exportMismatches = computed(() =>
 )
 const someSelected = computed(() => selected.value.size > 0)
 
-// Load day access state whenever the modal opens
+// Refresh plan state whenever the modal opens
 watch(() => props.open, async (v) => {
   if (!v) return
   await refreshProfile()
-  const projectId = projectStore.current?.id
-  if (projectId && !authStore.isGuest && !authStore.isPro) {
-    dayAccessExpiry.value = await getDayAccessExpiry(projectId)
-  } else {
-    dayAccessExpiry.value = null
-  }
 }, { immediate: true })
 
 watch(() => compositions.value, (list) => {
@@ -249,7 +236,7 @@ function toggleAll() {
 }
 
 function exportSelected() {
-  const watermark = !authStore.isPro && !dayAccessExpiry.value
+  const watermark = !isPro.value
   const toExport = compositions.value.filter((c) => selected.value.has(c.id))
   toExport.forEach((comp, i) => {
     setTimeout(() => exportComposition(comp, watermark), i * 200)
@@ -257,9 +244,8 @@ function exportSelected() {
   emit('close')
 }
 
-function onBuyDayAccess() {
-  const projectId = projectStore.current?.id
-  if (projectId) startCheckout('day_pass', projectId)
+function onBuyDayPass() {
+  startCheckout('day_pass')
 }
 
 function onGoPro() {
