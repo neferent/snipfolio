@@ -194,6 +194,12 @@
             :style="{ width: previewW + 'px', height: previewH + 'px' }"
           />
 
+          <GridOverlay :visible="gridSettings.showGrid" :size="gridSettings.gridSize * canvasScale" />
+          <SnapGuides
+            :vertical="snapGuideV !== null ? [snapGuideV * canvasScale] : []"
+            :horizontal="snapGuideH !== null ? [snapGuideH * canvasScale] : []"
+          />
+
           <!-- Pan capture overlay (shown when Space is held) -->
           <div
             v-if="spacePressed"
@@ -305,7 +311,12 @@ import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
+import { useGridSettingsStore } from '~/stores/gridSettings'
+import { snapToGrid } from '~/utils/grid'
+import { collectSnapLines, snapMove, snapEdge } from '~/utils/snapping'
 import { useWatermarkPreview } from '~/composables/useWatermarkPreview'
+
+const OBJECT_SNAP_PX = 8
 import type { Composition, FreeformCompositionConfig, FreeformSlotConfig, DeviceFrame, Snip, BackgroundConfig } from '~/types'
 
 const props = defineProps<{
@@ -320,6 +331,7 @@ const emit = defineEmits<{
 
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
+const gridSettings = useGridSettingsStore()
 const { render } = useCanvasRenderer()
 const { active: watermark } = useWatermarkPreview()
 
@@ -348,6 +360,15 @@ watch(
 // slots stored back-to-front (index 0 = back). Display reversed so top of list = front.
 const slots = computed(() => config.value.slots)
 const displaySlots = computed(() => [...slots.value].reverse())
+
+const snapGuideV = ref<number | null>(null)
+const snapGuideH = ref<number | null>(null)
+
+function otherSlotRects(slotId: string) {
+  return slots.value
+    .filter((s) => s.id !== slotId)
+    .map((s) => ({ x: s.x, y: s.y, w: s.width, h: s.height }))
+}
 
 const { width: containerW, height: containerH } = useElementSize(canvasContainer)
 
@@ -567,9 +588,33 @@ function onMouseMove(e: MouseEvent) {
       if (Math.abs(dx) >= Math.abs(dy)) mdy = 0
       else mdx = 0
     }
+    let x = drag.startX + mdx
+    let y = drag.startY + mdy
+    let snappedX = false
+    let snappedY = false
+
+    if (gridSettings.snapToObjects) {
+      const slotId = drag.slotId
+      const slot = slots.value.find((s) => s.id === slotId)
+      const targets = collectSnapLines(otherSlotRects(slotId), { width: config.value.outputWidth, height: config.value.outputHeight })
+      const threshold = OBJECT_SNAP_PX / scale
+      const result = snapMove({ x, y, w: slot?.width ?? 0, h: slot?.height ?? 0 }, targets, threshold)
+      if (result.snappedX) { x += result.dx; snappedX = true }
+      if (result.snappedY) { y += result.dy; snappedY = true }
+      snapGuideV.value = result.vLine
+      snapGuideH.value = result.hLine
+    } else {
+      snapGuideV.value = null
+      snapGuideH.value = null
+    }
+
+    if (gridSettings.snapEnabled) {
+      if (!snappedX) x = snapToGrid(x, gridSettings.gridSize)
+      if (!snappedY) y = snapToGrid(y, gridSettings.gridSize)
+    }
     patchSlot(drag.slotId, {
-      x: Math.round(drag.startX + mdx),
-      y: Math.round(drag.startY + mdy),
+      x: Math.round(x),
+      y: Math.round(y),
     })
   } else {
     const { corner, startX, startY, startW, startH } = drag
@@ -621,6 +666,61 @@ function onMouseMove(e: MouseEvent) {
       }
     }
 
+    snapGuideV.value = null
+    snapGuideH.value = null
+
+    let snappedXEdge = false
+    let snappedYEdge = false
+
+    if (gridSettings.snapToObjects && !lockAspect && !fromCenter) {
+      const targets = collectSnapLines(otherSlotRects(drag.slotId), { width: config.value.outputWidth, height: config.value.outputHeight })
+      const threshold = OBJECT_SNAP_PX / scale
+      if (corner === 'br' || corner === 'tr') {
+        const res = snapEdge(x + w, targets.vertical, threshold)
+        if (res.line !== null) { w = res.value - x; snappedXEdge = true; snapGuideV.value = res.line }
+      }
+      if (corner === 'bl' || corner === 'tl') {
+        const res = snapEdge(x, targets.vertical, threshold)
+        if (res.line !== null) { const right = startX + startW; x = res.value; w = right - x; snappedXEdge = true; snapGuideV.value = res.line }
+      }
+      if (corner === 'br' || corner === 'bl') {
+        const res = snapEdge(y + h, targets.horizontal, threshold)
+        if (res.line !== null) { h = res.value - y; snappedYEdge = true; snapGuideH.value = res.line }
+      }
+      if (corner === 'tr' || corner === 'tl') {
+        const res = snapEdge(y, targets.horizontal, threshold)
+        if (res.line !== null) { const bottom = startY + startH; y = res.value; h = bottom - y; snappedYEdge = true; snapGuideH.value = res.line }
+      }
+    }
+
+    if (gridSettings.snapEnabled && !lockAspect) {
+      const g = gridSettings.gridSize
+      if (fromCenter) {
+        const cx = startX + startW / 2
+        const cy = startY + startH / 2
+        w = Math.max(MIN, snapToGrid(w, g))
+        h = Math.max(MIN, snapToGrid(h, g))
+        x = cx - w / 2
+        y = cy - h / 2
+      } else if (corner === 'br') {
+        if (!snappedXEdge) w = Math.max(MIN, snapToGrid(x + w, g) - x)
+        if (!snappedYEdge) h = Math.max(MIN, snapToGrid(y + h, g) - y)
+      } else if (corner === 'bl') {
+        const right = startX + startW
+        if (!snappedXEdge) { x = snapToGrid(x, g); w = Math.max(MIN, right - x) }
+        if (!snappedYEdge) h = Math.max(MIN, snapToGrid(y + h, g) - y)
+      } else if (corner === 'tr') {
+        const bottom = startY + startH
+        if (!snappedXEdge) w = Math.max(MIN, snapToGrid(x + w, g) - x)
+        if (!snappedYEdge) { y = snapToGrid(y, g); h = Math.max(MIN, bottom - y) }
+      } else {
+        const right = startX + startW
+        const bottom = startY + startH
+        if (!snappedXEdge) { x = snapToGrid(x, g); w = Math.max(MIN, right - x) }
+        if (!snappedYEdge) { y = snapToGrid(y, g); h = Math.max(MIN, bottom - y) }
+      }
+    }
+
     patchSlot(drag.slotId, {
       x: Math.round(x), y: Math.round(y),
       width: Math.round(w), height: Math.round(h),
@@ -630,6 +730,8 @@ function onMouseMove(e: MouseEvent) {
 
 function onMouseUp() {
   drag = null
+  snapGuideV.value = null
+  snapGuideH.value = null
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('mouseup', onMouseUp)
 }

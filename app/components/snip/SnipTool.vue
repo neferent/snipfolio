@@ -91,6 +91,10 @@
 
           <div class="flex-1" />
 
+          <!-- Grid controls -->
+          <GridControls />
+          <div class="mx-1 h-5 w-px shrink-0 bg-[var(--color-border)]" aria-hidden="true" />
+
           <!-- Zoom controls -->
           <AppTooltip text="Zoom out">
             <button v-bind="tbBtn()" aria-label="Zoom out" @click="zoom = Math.max(0.05, zoom - 0.1)">
@@ -168,6 +172,8 @@
               :zoom="zoom"
               :draw-rect="drawRect"
               :snap-frame="snapFrame"
+              :draw-snap-guide-v="drawSnapGuideV"
+              :draw-snap-guide-h="drawSnapGuideH"
               :image-width="activeImage.img.naturalWidth"
               :image-height="activeImage.img.naturalHeight"
             />
@@ -250,11 +256,15 @@ import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
 import { useSnips } from '~/composables/useSnips'
 import { useExport } from '~/composables/useExport'
+import { useGridSettingsStore } from '~/stores/gridSettings'
+import { snapToGrid } from '~/utils/grid'
+import { collectSnapLines, snapEdge } from '~/utils/snapping'
 import type { SourceImage } from '~/types'
 
 const projectStore = useProjectStore()
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
+const gridSettings = useGridSettingsStore()
 const { createSnip, deleteSnip } = useSnips()
 const { exportAllSnipsRaw } = useExport()
 const showExportPicker = ref(false)
@@ -596,8 +606,11 @@ const isDrawing = ref(false)
 interface DrawRect { x: number; y: number; w: number; h: number }
 const drawRect = ref<DrawRect | null>(null)
 const snapFrame = ref<'laptop' | 'phone' | 'tablet' | null>(null)
+const drawSnapGuideV = ref<number | null>(null)
+const drawSnapGuideH = ref<number | null>(null)
 let drawStart: { x: number; y: number } | null = null
 
+const OBJECT_SNAP_PX = 8
 const SNAP_THRESHOLD = 0.20
 const MIN_SNAP_PX = 60
 const LAPTOP_RATIO = 3034.7 / 1964.07 // matches laptop3.svg screen dimensions
@@ -619,6 +632,12 @@ function toImageCoords(e: MouseEvent): { x: number; y: number } {
     x: (e.clientX - rect.left) / zoom.value,
     y: (e.clientY - rect.top) / zoom.value,
   }
+}
+
+function otherSnipRects() {
+  return snipsStore.orderedSnips
+    .filter((s) => s.sourceImageId === activeSourceId.value)
+    .map((s) => ({ x: s.x, y: s.y, w: s.width, h: s.height }))
 }
 
 const SCROLL_ZONE = 60
@@ -652,23 +671,52 @@ function onMouseDown(e: MouseEvent) {
 
     const rawW = Math.abs(cur.x - drawStart.x)
     const rawH = Math.abs(cur.y - drawStart.y)
-    const anchorRight = cur.x < drawStart.x
-    const anchorBottom = cur.y < drawStart.y
 
     const detected = detectSnap(rawW, rawH)
     snapFrame.value = detected
 
-    let snappedW = rawW
-    let snappedH = rawH
-    if (detected === 'laptop') snappedH = rawW / LAPTOP_RATIO
-    else if (detected === 'phone') snappedW = rawH * PHONE_RATIO
-    else if (detected === 'tablet') snappedW = rawH * TABLET_RATIO
+    let endX = cur.x
+    let endY = cur.y
+
+    if (detected) {
+      drawSnapGuideV.value = null
+      drawSnapGuideH.value = null
+      let snappedW = rawW
+      let snappedH = rawH
+      if (detected === 'laptop') snappedH = rawW / LAPTOP_RATIO
+      else if (detected === 'phone') snappedW = rawH * PHONE_RATIO
+      else if (detected === 'tablet') snappedW = rawH * TABLET_RATIO
+      endX = cur.x < drawStart.x ? drawStart.x - snappedW : drawStart.x + snappedW
+      endY = cur.y < drawStart.y ? drawStart.y - snappedH : drawStart.y + snappedH
+    } else {
+      let snappedXEdge = false
+      let snappedYEdge = false
+
+      if (gridSettings.snapToObjects) {
+        const targets = collectSnapLines(otherSnipRects(), { width: img.naturalWidth, height: img.naturalHeight })
+        const threshold = OBJECT_SNAP_PX / zoom.value
+        const resX = snapEdge(endX, targets.vertical, threshold)
+        if (resX.line !== null) { endX = resX.value; snappedXEdge = true; drawSnapGuideV.value = resX.line }
+        else drawSnapGuideV.value = null
+        const resY = snapEdge(endY, targets.horizontal, threshold)
+        if (resY.line !== null) { endY = resY.value; snappedYEdge = true; drawSnapGuideH.value = resY.line }
+        else drawSnapGuideH.value = null
+      } else {
+        drawSnapGuideV.value = null
+        drawSnapGuideH.value = null
+      }
+
+      if (gridSettings.snapEnabled) {
+        if (!snappedXEdge) endX = snapToGrid(endX, gridSettings.gridSize)
+        if (!snappedYEdge) endY = snapToGrid(endY, gridSettings.gridSize)
+      }
+    }
 
     drawRect.value = {
-      x: anchorRight ? drawStart.x - snappedW : drawStart.x,
-      y: anchorBottom ? drawStart.y - snappedH : drawStart.y,
-      w: snappedW,
-      h: snappedH,
+      x: Math.min(drawStart.x, endX),
+      y: Math.min(drawStart.y, endY),
+      w: Math.abs(endX - drawStart.x),
+      h: Math.abs(endY - drawStart.y),
     }
   }
 
@@ -703,6 +751,8 @@ function onMouseDown(e: MouseEvent) {
     drawRect.value = null
     drawStart = null
     snapFrame.value = null
+    drawSnapGuideV.value = null
+    drawSnapGuideH.value = null
 
     if (!rect || rect.w < 10 || rect.h < 10) return
     createSnip(rect.x, rect.y, rect.w, rect.h, snap)

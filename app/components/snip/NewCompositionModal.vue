@@ -186,7 +186,7 @@ const phoneSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapFr
 const types = [
   { value: 'laptop' as const, icon: Laptop, label: 'Desktop', hint: 'One snip in a desktop frame' },
   { value: 'laptop+phone' as const, icon: MonitorSmartphone, label: 'Desktop + Mobile', hint: 'Two snips side by side' },
-  { value: 'auto' as const, icon: LayoutGrid, label: 'Auto-Collage', hint: 'Justified grid · no frames' },
+  { value: 'auto' as const, icon: LayoutGrid, label: 'Auto-Collage', hint: 'Auto-arranged grid, no device frames' },
   { value: 'freeform' as const, icon: Layers, label: 'Free-form', hint: 'Place and frame freely' },
 ]
 

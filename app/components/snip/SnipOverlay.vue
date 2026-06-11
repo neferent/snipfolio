@@ -1,6 +1,12 @@
 <template>
   <!-- All snip overlays rendered relative to source image -->
   <div class="pointer-events-none absolute inset-0">
+    <GridOverlay :visible="gridSettings.showGrid" :size="gridSettings.gridSize" />
+    <SnapGuides
+      :vertical="[snapGuideV, props.drawSnapGuideV].filter((v): v is number => v != null)"
+      :horizontal="[snapGuideH, props.drawSnapGuideH].filter((v): v is number => v != null)"
+    />
+
     <div
       v-for="snip in snips"
       :key="snip.id"
@@ -106,24 +112,41 @@
 import { GripHorizontal, RotateCw } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
+import { useGridSettingsStore } from '~/stores/gridSettings'
+import { snapToGrid } from '~/utils/grid'
+import { collectSnapLines, snapMove, snapEdge } from '~/utils/snapping'
 import type { Snip } from '~/types'
+
+const OBJECT_SNAP_PX = 8
 
 const props = defineProps<{
   zoom: number
   drawRect: { x: number; y: number; w: number; h: number } | null
   snapFrame: 'laptop' | 'phone' | 'tablet' | null
+  drawSnapGuideV?: number | null
+  drawSnapGuideH?: number | null
   imageWidth: number
   imageHeight: number
 }>()
 
 const store = useSnipsStore()
 const sourcesStore = useSourcesStore()
+const gridSettings = useGridSettingsStore()
 const { scheduleSave } = useProject()
 
 const snips = computed(() =>
   store.orderedSnips.filter((s) => s.sourceImageId === sourcesStore.activeSourceId),
 )
 const selectedId = computed(() => store.selectedSnipId)
+
+const snapGuideV = ref<number | null>(null)
+const snapGuideH = ref<number | null>(null)
+
+function otherSnipRects(snipId: string) {
+  return snips.value
+    .filter((s) => s.id !== snipId)
+    .map((s) => ({ x: s.x, y: s.y, w: s.width, h: s.height }))
+}
 
 function overlayStyle(snip: Snip) {
   return {
@@ -154,15 +177,39 @@ function startMove(e: MouseEvent, snip: Snip) {
       if (Math.abs(dx) >= Math.abs(dy)) dy = 0
       else dx = 0
     }
+    let x = origX + dx
+    let y = origY + dy
+    let snappedX = false
+    let snappedY = false
+
+    if (gridSettings.snapToObjects) {
+      const targets = collectSnapLines(otherSnipRects(snip.id), { width: props.imageWidth, height: props.imageHeight })
+      const threshold = OBJECT_SNAP_PX / props.zoom
+      const result = snapMove({ x, y, w: snip.width, h: snip.height }, targets, threshold)
+      if (result.snappedX) { x += result.dx; snappedX = true }
+      if (result.snappedY) { y += result.dy; snappedY = true }
+      snapGuideV.value = result.vLine
+      snapGuideH.value = result.hLine
+    } else {
+      snapGuideV.value = null
+      snapGuideH.value = null
+    }
+
+    if (gridSettings.snapEnabled) {
+      if (!snappedX) x = snapToGrid(x, gridSettings.gridSize)
+      if (!snappedY) y = snapToGrid(y, gridSettings.gridSize)
+    }
     store.updateSnip(snip.id, {
-      x: Math.round(Math.max(0, Math.min(origX + dx, props.imageWidth - snip.width))),
-      y: Math.round(Math.max(0, Math.min(origY + dy, props.imageHeight - snip.height))),
+      x: Math.round(Math.max(0, Math.min(x, props.imageWidth - snip.width))),
+      y: Math.round(Math.max(0, Math.min(y, props.imageHeight - snip.height))),
     })
   }
 
   function onUp() {
     window.removeEventListener('mousemove', onMove)
     window.removeEventListener('mouseup', onUp)
+    snapGuideV.value = null
+    snapGuideH.value = null
     if (moved) scheduleSave()
   }
 
@@ -269,6 +316,48 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
       }
     }
 
+    snapGuideV.value = null
+    snapGuideH.value = null
+
+    let snappedXEdge = false
+    let snappedYEdge = false
+
+    if (gridSettings.snapToObjects && !detected && !lockAspect && !fromCenter) {
+      const targets = collectSnapLines(otherSnipRects(snip.id), { width: props.imageWidth, height: props.imageHeight })
+      const threshold = OBJECT_SNAP_PX / z
+      if (dir.includes('e')) {
+        const res = snapEdge(x + w, targets.vertical, threshold)
+        if (res.line !== null) { w = res.value - x; snappedXEdge = true; snapGuideV.value = res.line }
+      }
+      if (dir.includes('w')) {
+        const res = snapEdge(x, targets.vertical, threshold)
+        if (res.line !== null) { const right = orig.x + orig.w; x = res.value; w = right - x; snappedXEdge = true; snapGuideV.value = res.line }
+      }
+      if (dir.includes('s')) {
+        const res = snapEdge(y + h, targets.horizontal, threshold)
+        if (res.line !== null) { h = res.value - y; snappedYEdge = true; snapGuideH.value = res.line }
+      }
+      if (dir.includes('n')) {
+        const res = snapEdge(y, targets.horizontal, threshold)
+        if (res.line !== null) { const bottom = orig.y + orig.h; y = res.value; h = bottom - y; snappedYEdge = true; snapGuideH.value = res.line }
+      }
+    }
+
+    if (gridSettings.snapEnabled && !detected && !lockAspect) {
+      const g = gridSettings.gridSize
+      if (fromCenter) {
+        if (dir.includes('e') || dir.includes('w')) w = snapToGrid(w, g)
+        if (dir.includes('n') || dir.includes('s')) h = snapToGrid(h, g)
+        if (dir.includes('e') || dir.includes('w')) x = cx - w / 2
+        if (dir.includes('n') || dir.includes('s')) y = cy - h / 2
+      } else {
+        if (dir.includes('e') && !snappedXEdge) w = snapToGrid(x + w, g) - x
+        if (dir.includes('w') && !snappedXEdge) { const right = orig.x + orig.w; x = snapToGrid(x, g); w = right - x }
+        if (dir.includes('s') && !snappedYEdge) h = snapToGrid(y + h, g) - y
+        if (dir.includes('n') && !snappedYEdge) { const bottom = orig.y + orig.h; y = snapToGrid(y, g); h = bottom - y }
+      }
+    }
+
     if (fromCenter) {
       if (x < 0) { w += x; x = 0 }
       if (y < 0) { h += y; y = 0 }
@@ -299,6 +388,8 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
     window.removeEventListener('mouseup', onUp)
     resizingSnipId.value = null
     resizeSnapFrame.value = null
+    snapGuideV.value = null
+    snapGuideH.value = null
     scheduleSave()
   }
 

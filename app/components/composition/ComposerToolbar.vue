@@ -72,6 +72,10 @@
 
     <div class="flex-1" />
 
+    <!-- Grid controls -->
+    <GridControls />
+    <div class="mx-1 h-5 w-px shrink-0 bg-[var(--color-border)]" aria-hidden="true" />
+
     <!-- Zoom -->
     <AppTooltip text="Zoom out">
       <button v-bind="btn()" aria-label="Zoom out" @click="$emit('zoom-change', Math.max(0.1, zoom - 0.1))">
