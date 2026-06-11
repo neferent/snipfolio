@@ -79,21 +79,24 @@
         <!-- Viewport toolbar -->
         <div class="flex h-9 shrink-0 items-center gap-px border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-2">
           <!-- Active tool: Draw -->
-          <button
-            class="flex size-7 items-center justify-center rounded bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
-            title="Draw snip (click and drag)"
-            aria-label="Draw snip"
-            aria-pressed="true"
-          >
-            <Crop class="size-3.5" aria-hidden="true" />
-          </button>
+          <AppTooltip text="Draw snip (click and drag)">
+            <button
+              class="flex size-7 items-center justify-center rounded bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
+              aria-label="Draw snip"
+              aria-pressed="true"
+            >
+              <Crop class="size-3.5" aria-hidden="true" />
+            </button>
+          </AppTooltip>
 
           <div class="flex-1" />
 
           <!-- Zoom controls -->
-          <button v-bind="tbBtn()" title="Zoom out" aria-label="Zoom out" @click="zoom = Math.max(0.05, zoom - 0.1)">
-            <ZoomOut class="size-3.5" aria-hidden="true" />
-          </button>
+          <AppTooltip text="Zoom out">
+            <button v-bind="tbBtn()" aria-label="Zoom out" @click="zoom = Math.max(0.05, zoom - 0.1)">
+              <ZoomOut class="size-3.5" aria-hidden="true" />
+            </button>
+          </AppTooltip>
           <input
             class="!h-7 w-16 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center font-mono text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
             aria-label="Zoom level"
@@ -103,23 +106,29 @@
             @keydown.escape="($event.target as HTMLInputElement).blur()"
             @blur="($event.target as HTMLInputElement).value = zoomLabel"
           />
-          <button v-bind="tbBtn()" title="Zoom in" aria-label="Zoom in" @click="zoom = Math.min(8, zoom + 0.1)">
-            <ZoomIn class="size-3.5" aria-hidden="true" />
-          </button>
-          <button v-bind="tbBtn()" title="Fit to width (Cmd+0)" aria-label="Fit to width" @click="fitToWidth">
-            <Maximize2 class="size-3.5" aria-hidden="true" />
-          </button>
+          <AppTooltip text="Zoom in">
+            <button v-bind="tbBtn()" aria-label="Zoom in" @click="zoom = Math.min(8, zoom + 0.1)">
+              <ZoomIn class="size-3.5" aria-hidden="true" />
+            </button>
+          </AppTooltip>
+          <AppTooltip text="Fit to width (Cmd+0)">
+            <button v-bind="tbBtn()" aria-label="Fit to width" @click="fitToWidth">
+              <Maximize2 class="size-3.5" aria-hidden="true" />
+            </button>
+          </AppTooltip>
 
           <!-- Export -->
-          <AppDropdown align="right">
-            <template #trigger>
-              <button v-bind="tbBtn()" title="Export" aria-label="Export">
-                <ArrowUpFromLine class="size-3.5" aria-hidden="true" />
-              </button>
-            </template>
-            <AppDropdownItem @click="showExportPicker = true">Export compositions…</AppDropdownItem>
-            <AppDropdownItem @click="exportAllSnipsRaw">Export all snips (raw)</AppDropdownItem>
-          </AppDropdown>
+          <AppTooltip text="Export">
+            <AppDropdown align="right">
+              <template #trigger>
+                <button v-bind="tbBtn()" aria-label="Export">
+                  <ArrowUpFromLine class="size-3.5" aria-hidden="true" />
+                </button>
+              </template>
+              <AppDropdownItem @click="showExportPicker = true">Export compositions…</AppDropdownItem>
+              <AppDropdownItem @click="exportAllSnipsRaw">Export all snips (raw)</AppDropdownItem>
+            </AppDropdown>
+          </AppTooltip>
         </div>
 
         <!-- Scrollable source image viewport -->

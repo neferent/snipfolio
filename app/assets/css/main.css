@@ -279,7 +279,7 @@ input[type="range"]::-moz-range-thumb {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.15s ease;
+  transition: opacity 0.175s linear;
 }
 
 .fade-enter-from,

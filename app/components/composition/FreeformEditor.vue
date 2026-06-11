@@ -179,7 +179,12 @@
         <div
           ref="artboard"
           class="relative"
-          :style="{ width: previewW + 'px', height: previewH + 'px' }"
+          :style="{
+            width: previewW + 'px',
+            height: previewH + 'px',
+            opacity: resizing ? 0 : 1,
+            transition: resizing ? 'none' : 'opacity 175ms linear',
+          }"
           @mousedown.self="selectedSlotId = null"
         >
           <!-- Full-composition canvas (background + all slots rendered) -->
@@ -269,74 +274,16 @@
         </div>
       </template>
 
-      <div class="flex h-10 shrink-0 items-center px-4 border-b-subtle">
-        <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Settings</h2>
-      </div>
-
-      <div class="flex-1 overflow-y-auto p-4 space-y-5">
-        <BackgroundControls :model-value="config.background" @update:model-value="updateBackground" />
-
-        <!-- Platform presets -->
-        <PlatformPresets
-          :current-w="config.outputWidth"
-          :current-h="config.outputHeight"
-          @select="setOutputSize"
-        />
-
-        <!-- Output size -->
-        <div class="space-y-2">
-          <label class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Output size</label>
-          <div class="grid grid-cols-2 gap-1.5">
-            <button
-              v-for="preset in sizePresets"
-              :key="preset.label"
-              class="flex h-[30px] items-center justify-center px-3 font-mono text-[12px] transition"
-              :style="config.outputWidth === preset.w && config.outputHeight === preset.h
-                ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
-                : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
-              @click="setOutputSize(preset.w, preset.h)"
-            >
-              {{ preset.label }}
-            </button>
-          </div>
-          <div class="flex items-center gap-2">
-            <input
-              type="number"
-              :value="config.outputWidth"
-              class="w-full font-mono"
-              placeholder="Width"
-              @change="setOutputSize(Number(($event.target as HTMLInputElement).value), config.outputHeight)"
-            />
-            <span class="shrink-0 text-xs text-[var(--color-text-muted)]">×</span>
-            <input
-              type="number"
-              :value="config.outputHeight"
-              class="w-full font-mono"
-              placeholder="Height"
-              @change="setOutputSize(config.outputWidth, Number(($event.target as HTMLInputElement).value))"
-            />
-          </div>
-        </div>
-
-        <!-- Composition name -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
-          <input
-            :value="composition.name"
-            class="w-full"
-            @input="$emit('update-name', ($event.target as HTMLInputElement).value)"
-          />
-        </div>
-
-        <!-- Export -->
-        <button
-          class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
-          @click="$emit('export')"
-        >
-          <Upload class="size-4" />
-          Export PNG
-        </button>
-      </div>
+      <CompositionSettingsPanel
+        :background="config.background"
+        :output-width="config.outputWidth"
+        :output-height="config.outputHeight"
+        :name="composition.name"
+        @update:background="updateBackground"
+        @update:output-size="setOutputSize"
+        @update:name="$emit('update-name', $event)"
+        @export="$emit('export')"
+      />
 
       <!-- Right drag handle -->
       <div
@@ -348,7 +295,7 @@
 </template>
 
 <script setup lang="ts">
-import { Upload, GripVertical, X, Plus, CircleAlert } from 'lucide-vue-next'
+import { GripVertical, X, Plus, CircleAlert } from 'lucide-vue-next'
 import { useResizablePanel } from '~/composables/useResizablePanel'
 
 const { width: leftWidth, startResize: startLeftResize } = useResizablePanel(224, { side: 'right', min: 150, max: 480 })
@@ -404,9 +351,11 @@ const displaySlots = computed(() => [...slots.value].reverse())
 
 const { width: containerW, height: containerH } = useElementSize(canvasContainer)
 
+const containerReady = computed(() => containerW.value > 0 && containerH.value > 0)
+
 const canvasScale = computed(() => {
   if (userZoom.value !== null) return userZoom.value
-  if (!containerW.value || !containerH.value) return 1
+  if (!containerReady.value) return 0
   const pad = 64
   return Math.min(
     (containerW.value - pad) / config.value.outputWidth,
@@ -417,6 +366,15 @@ const canvasScale = computed(() => {
 
 const previewW = computed(() => Math.round(config.value.outputWidth * canvasScale.value))
 const previewH = computed(() => Math.round(config.value.outputHeight * canvasScale.value))
+
+// Crossfade out/in across discrete output-size changes (and the initial size
+// measurement) instead of snapping or stretching the artboard
+const resizing = ref(true)
+watch([() => config.value.outputWidth, () => config.value.outputHeight, containerReady], async () => {
+  resizing.value = true
+  await nextTick()
+  requestAnimationFrame(() => { resizing.value = false })
+})
 
 // --- User zoom override (Cmd+scroll; null = auto-fit) ---
 const userZoom = ref<number | null>(null)
@@ -441,13 +399,6 @@ const mismatchDismissed = ref(false)
 watch(() => frameMismatches.value.length, (n, prev) => {
   if (n > (prev ?? 0)) mismatchDismissed.value = false
 })
-
-const sizePresets = [
-  { label: '1920×1080', w: 1920, h: 1080 },
-  { label: '1080×1920', w: 1080, h: 1920 },
-  { label: '1080×1080', w: 1080, h: 1080 },
-  { label: '1280×720', w: 1280, h: 720 },
-]
 
 // --- Helpers ---
 function snipFor(snipId: string): Snip {

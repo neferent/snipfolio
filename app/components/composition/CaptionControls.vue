@@ -3,13 +3,17 @@
     <!-- Header row -->
     <div class="flex items-center justify-between py-1">
       <span class="text-xs text-[var(--color-text)]">{{ label }}</span>
-      <button
-        class="font-mono text-[12px] transition"
-        :class="enabled ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'"
-        @click="toggleEnabled"
+      <Switch
+        :model-value="enabled"
+        :class="enabled ? 'bg-[var(--color-accent)]' : 'bg-white/10'"
+        class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+        @update:model-value="toggleEnabled"
       >
-        {{ enabled ? 'On' : 'Off' }}
-      </button>
+        <span
+          class="inline-block size-3.5 transform rounded-full bg-white transition-transform"
+          :class="enabled ? 'translate-x-[18px]' : 'translate-x-1'"
+        />
+      </Switch>
     </div>
 
     <template v-if="enabled && modelValue">
@@ -141,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+import { Switch } from '@headlessui/vue'
 import type { CaptionConfig } from '~/types'
 
 const props = defineProps<{

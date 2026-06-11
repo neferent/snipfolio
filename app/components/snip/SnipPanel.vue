@@ -59,13 +59,7 @@
       <!-- Actions -->
       <div class="pt-2 space-y-2">
         <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
-          @click="createCompositionFromSnip"
-        >
-          Create composition
-        </button>
-        <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] bg-transparent text-sm text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-danger)]"
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
           @click="exportRaw"
         >
           Export raw PNG
@@ -93,26 +87,16 @@ import { useResizablePanel } from '~/composables/useResizablePanel'
 
 const { width, startResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
 import { useSnips } from '~/composables/useSnips'
-import { useCompositions } from '~/composables/useCompositions'
 import { useExport } from '~/composables/useExport'
 
 const store = useSnipsStore()
 const snipsActions = useSnips()
-const compositionsActions = useCompositions()
 const { exportSnipRaw } = useExport()
-const router = useRouter()
-const route = useRoute()
 
 const snip = computed(() => store.selectedSnip)
 
 function updateLabel(label: string) {
   if (snip.value) snipsActions.updateLabel(snip.value.id, label)
-}
-
-function createCompositionFromSnip() {
-  if (!snip.value) return
-  const comp = compositionsActions.createLaptopComposition(snip.value.id)
-  router.push(`/project/${route.params.id}/compose/${comp.id}`)
 }
 
 function exportRaw() {

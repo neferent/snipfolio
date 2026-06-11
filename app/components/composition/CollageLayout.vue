@@ -1,9 +1,8 @@
 <template>
   <div class="space-y-4">
     <!-- Warning box -->
-    <div class="relative overflow-hidden rounded-[6px] px-3 py-2.5 text-xs leading-relaxed text-[var(--color-text-muted)] bg-[rgba(239,159,39,0.08)] [border:0.5px_solid_rgba(239,159,39,0.2)]">
-      <div class="absolute inset-y-0 left-0 w-[3px] rounded-full bg-[var(--color-warning)]" />
-      <span class="pl-2">Frames are not supported in Auto-Collage. Content may be slightly clipped to fill the canvas.</span>
+    <div class="rounded-[6px] px-3 py-2.5 text-xs leading-relaxed text-[var(--color-text-muted)] bg-[rgba(239,159,39,0.08)] [border:0.5px_solid_rgba(239,159,39,0.2)]">
+      Frames and repositioning are not supported in Auto-Collage. Content may be slightly clipped to fill the canvas.
     </div>
 
     <!-- Gap slider -->

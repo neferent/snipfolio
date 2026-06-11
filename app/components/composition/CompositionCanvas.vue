@@ -2,7 +2,12 @@
   <div ref="container" class="relative flex h-full flex-col items-center justify-center overflow-hidden bg-[var(--color-surface)] p-6">
     <div
       class="relative"
-      :style="{ width: previewW + 'px', height: previewH + 'px' }"
+      :style="{
+        width: previewW + 'px',
+        height: previewH + 'px',
+        opacity: resizing ? 0 : 1,
+        transition: resizing ? 'none' : 'opacity 175ms linear',
+      }"
     >
       <canvas ref="canvas" class="block h-full w-full" />
     </div>
@@ -52,8 +57,10 @@ const outputH = computed(() => props.composition.config.outputHeight)
 
 const { width: containerW, height: containerH } = useElementSize(container)
 
+const containerReady = computed(() => containerW.value > 0 && containerH.value > 0)
+
 const scale = computed(() => {
-  if (!containerW.value || !containerH.value) return 1
+  if (!containerReady.value) return 0
   const pad = 48
   return Math.min(
     (containerW.value - pad) / outputW.value,
@@ -64,6 +71,15 @@ const scale = computed(() => {
 
 const previewW = computed(() => Math.round(outputW.value * scale.value))
 const previewH = computed(() => Math.round(outputH.value * scale.value))
+
+// Crossfade out/in across discrete output-size changes (and the initial size
+// measurement) instead of snapping or stretching the canvas
+const resizing = ref(true)
+watch([outputW, outputH, containerReady], async () => {
+  resizing.value = true
+  await nextTick()
+  requestAnimationFrame(() => { resizing.value = false })
+})
 
 function buildSourceImagesMap(): Map<string, HTMLImageElement> {
   const map = new Map<string, HTMLImageElement>()
