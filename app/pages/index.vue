@@ -354,6 +354,10 @@
                   Core snipping and composition
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
+                  <span class="mt-0.5 text-[var(--color-accent)]">+</span>
+                  1 project
+                </li>
+                <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-danger)]">-</span>
                   Watermarked exports
                 </li>
@@ -378,7 +382,11 @@
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
-                  Unlimited projects, no watermarks
+                  No watermark on exports
+                </li>
+                <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
+                  <span class="mt-0.5 text-[var(--color-accent)]">+</span>
+                  Up to 50 projects
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
@@ -417,7 +425,7 @@
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
-                  Unlimited projects
+                  Up to 50 projects
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <span class="mt-0.5 text-[var(--color-accent)]">+</span>
@@ -566,7 +574,7 @@ const faq = [
   },
   {
     q: 'What is the difference between the day pass and Pro?',
-    a: 'The day pass is a one-time purchase that gives you full Pro access — no watermarks, unlimited projects, and Pro-only tools — for 24 hours. Pro is a monthly subscription with the same access on an ongoing basis. If you just need it once in a while, a day pass is probably the better pick.',
+    a: 'The day pass is a one-time purchase that gives you full Pro access — no watermarks, up to 50 projects, and Pro-only tools — for 24 hours. Pro is a monthly subscription with the same access on an ongoing basis. If you just need it once in a while, a day pass is probably the better pick.',
   },
   {
     q: 'Do I need an account to use it?',

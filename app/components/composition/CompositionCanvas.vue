@@ -106,4 +106,9 @@ watch(
   () => nextTick(renderCanvas),
   { deep: true, immediate: true },
 )
+
+// The immediate watcher above fires during setup, before the canvas ref is
+// bound, so it can't draw anything yet. Render again once mounted in case
+// nothing else changes afterward to re-trigger the watcher.
+onMounted(() => nextTick(renderCanvas))
 </script>

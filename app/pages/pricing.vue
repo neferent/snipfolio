@@ -95,7 +95,11 @@
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
-                  No watermark, unlimited projects
+                  No watermark on exports
+                </li>
+                <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
+                  <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
+                  Up to 50 projects
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
@@ -138,7 +142,7 @@
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
-                  Unlimited projects
+                  Up to 50 projects
                 </li>
                 <li class="plan-feature flex items-start gap-2 text-[var(--color-text-muted)]">
                   <Check class="mt-0.5 size-4 shrink-0 text-[var(--color-accent)]" :stroke-width="2" />
@@ -295,9 +299,9 @@ const authStore = useAuthStore()
 
 useSeoMeta({
   title: 'Pricing — Snipfolio',
-  description: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for unlimited projects and priority support.',
+  description: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for up to 50 projects and priority support.',
   ogTitle: 'Snipfolio Pricing',
-  ogDescription: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for unlimited projects.',
+  ogDescription: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for up to 50 projects.',
   ogType: 'website',
   ogUrl: 'https://snipfolio.com/pricing',
   ogSiteName: 'Snipfolio',
@@ -306,7 +310,7 @@ useSeoMeta({
   ogImageHeight: 630,
   twitterCard: 'summary_large_image',
   twitterTitle: 'Snipfolio Pricing',
-  twitterDescription: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for unlimited projects.',
+  twitterDescription: 'Free to try. $4.99 day pass for 24 hours of full Pro access. $9.99/mo Pro for up to 50 projects.',
   twitterImage: 'https://snipfolio.com/og-image.png',
 })
 
@@ -320,7 +324,7 @@ const comparisonRows = [
   { feature: 'Custom backgrounds', free: true, dayPass: true, pro: true },
   { feature: 'PNG export', free: true, dayPass: true, pro: true },
   { feature: 'Clean export (no watermark)', free: false, dayPass: '24h', pro: true },
-  { feature: 'Projects', free: '1', dayPass: 'Unlimited (24h)', pro: 'Unlimited' },
+  { feature: 'Projects', free: '1', dayPass: '50 (24h)', pro: '50' },
   { feature: 'Cloud save', free: false, dayPass: true, pro: true },
   { feature: 'Pro-only tools (presets + more)', free: false, dayPass: true, pro: true },
   { feature: 'Priority support', free: false, dayPass: false, pro: true },
@@ -329,7 +333,7 @@ const comparisonRows = [
 const faq = [
   {
     q: 'What is the difference between the day pass and Pro?',
-    a: 'The day pass is a one-time purchase that gives you full Pro access — no watermarks, unlimited projects, cloud save, and Pro-only tools — for 24 hours. Pro is a monthly subscription with the same access on an ongoing basis. If you just need it once in a while, a day pass is probably the better pick.',
+    a: 'The day pass is a one-time purchase that gives you full Pro access — no watermarks, up to 50 projects, cloud save, and Pro-only tools — for 24 hours. Pro is a monthly subscription with the same access on an ongoing basis. If you just need it once in a while, a day pass is probably the better pick.',
   },
   {
     q: 'Will the Pro price go up?',
