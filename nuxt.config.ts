@@ -74,6 +74,7 @@ gtag('config', 'G-C3XP5KTPSP');`,
   // Auth-protected routes are fully client-rendered to avoid hydration mismatches
   // from auth state (user email, isPro, etc.) being empty during SSR.
   routeRules: {
+    '/': { ssr: false },
     '/dashboard': { ssr: false },
     '/project/**': { ssr: false },
     '/admin': { ssr: false },

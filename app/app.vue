@@ -10,5 +10,5 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
 
-const Toaster = defineAsyncComponent(() => import('vue-sonner').then(m => ({ default: m.Toaster })))
+const Toaster = defineAsyncComponent(() => import('vue-sonner').then(m => m.Toaster))
 </script>

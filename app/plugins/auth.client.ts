@@ -30,8 +30,14 @@ export default defineNuxtPlugin(async () => {
     return
   }
 
+  // navigateTo() called here (before app.mount()) gets silently overridden by the
+  // router's own initial navigation, which runs right after plugins resolve. Deferring
+  // to app:mounted ensures the redirect happens after that initial navigation settles.
   if (route.path === '/') {
-    await navigateTo(authStore.isAuthenticated ? '/dashboard' : '/login')
+    const target = authStore.isAuthenticated ? '/dashboard' : '/login'
+    useNuxtApp().hook('app:mounted', () => {
+      navigateTo(target, { replace: true })
+    })
     return
   }
 
