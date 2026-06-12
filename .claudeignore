@@ -1,24 +1,47 @@
+# Other repos
+../snipfolio-marketing/**
+../snipfolio-screenshotter/**
+
 # Dependencies
 node_modules/
+.pnp/
+.pnp.js
 
-# Build output
-.nuxt/
-.output/
+# Build outputs
 dist/
+.output/
+.nuxt/
+.astro/
+build/
+out/
 
-# Lock files
-pnpm-lock.yaml
+# Cache
+.cache/
+.nitro/
+.turbo/
+**/.vite/
+
+# Package manager noise
+*.lock
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 
-# Env files
+# Generated/type files
+**/*.d.ts
+.nuxt/types/
+
+# Env files (good practice anyway)
 .env
 .env.*
-!.env.example
 
-# macOS
-.DS_Store
+# Logs
+*.log
+logs/
 
-# Editor
+# Test coverage
+coverage/
+
+# IDE
 .vscode/
 .idea/

@@ -13,7 +13,7 @@
       <template v-if="authStore.isGuest">
         <span class="text-xs text-[var(--color-text-muted)]">Guest</span>
         <NuxtLink
-          to="/"
+          to="/login"
           class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
         >
           Sign in

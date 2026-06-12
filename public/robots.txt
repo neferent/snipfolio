@@ -1,9 +1,2 @@
 User-agent: *
-Allow: /
-Disallow: /dashboard
-Disallow: /project/
-Disallow: /admin
-Disallow: /checkout/
-Disallow: /auth/
-
-Sitemap: https://snipfolio.com/sitemap.xml
+Disallow: /

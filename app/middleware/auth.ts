@@ -11,7 +11,12 @@ export default defineNuxtRouteMiddleware((to) => {
   if (nuxtApp.isHydrating) return
 
   const authStore = useAuthStore()
-  const publicRoutes = ['/', '/login']
+
+  if (to.path === '/') {
+    return navigateTo(authStore.isAuthenticated ? '/dashboard' : '/login')
+  }
+
+  const publicRoutes = ['/login']
 
   if (!authStore.isAuthenticated && !publicRoutes.includes(to.path)) {
     return navigateTo('/login')

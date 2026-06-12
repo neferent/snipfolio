@@ -58,7 +58,7 @@ function useSupabaseAuth() {
     const supabase = useSupabaseClient()
     if (supabase) await supabase.auth.signOut()
     store.clear()
-    await navigateTo('/')
+    await navigateTo('/login')
   }
 
   async function sendPasswordReset(email: string) {

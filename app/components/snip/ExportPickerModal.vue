@@ -92,7 +92,7 @@
             <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark. Sign in for a Day Pass or Pro.</span>
           </div>
           <NuxtLink
-            to="/"
+            to="/login"
             class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10 border-strong"
             @click="$emit('close')"
           >

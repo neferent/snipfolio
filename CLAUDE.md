@@ -2,6 +2,8 @@
 
 A Nuxt 4 app for clipping regions ("snips") from a screenshot, then composing them into export-ready images with device frames, captions, and backgrounds.
 
+This repo is the **app only**, deployed to `app.snipfol.io`. The marketing site (landing page, pricing page, SEO) lives in a separate repo, `~/snipfolio-marketing` (Astro), deployed to `snipfol.io`. Marketing CTAs link to `https://app.snipfol.io/login` and are auth-unaware.
+
 ## Stack
 
 - **Nuxt 4** + **Vue 3** (Composition API, `<script setup>`)
@@ -20,7 +22,7 @@ A Nuxt 4 app for clipping regions ("snips") from a screenshot, then composing th
 
 | View | Aliases | Route | File | Key components |
 |------|---------|-------|------|-----------------|
-| Landing page | — | `/` | `pages/index.vue` | — |
+| Root | — | `/` | `pages/index.vue` | Redirect-only: `/dashboard` if authenticated, else `/login` |
 | Dashboard | Project list | `/dashboard` | `pages/dashboard.vue` | `NewProjectModal.vue` |
 | Snipper | Snip tool, Snip editor | `/project/[id]` | `pages/project/[id]/index.vue` | `SnipTool.vue` (+ `SnipOverlay`, `SnipList`, `SnipPanel`) |
 | Composer | Composition tool | `/project/[id]/compose/[compositionId]` | `pages/project/[id]/compose/[compositionId].vue` | `CompositionEditor.vue` (+ `FreeformEditor`/`CollageLayout`, `ComposerToolbar`) |
