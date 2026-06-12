@@ -335,7 +335,7 @@ const types = [
   { value: 'laptop+phone' as const, icon: MonitorSmartphone, label: 'Desktop + Mobile', hint: 'Two snips side by side' },
   { value: 'auto' as const, icon: LayoutGrid, label: 'Auto-Collage', hint: 'Auto-arranged grid, no device frames' },
   { value: 'freeform' as const, icon: Layers, label: 'Free-form', hint: 'Place and frame freely' },
-  { value: 'url' as const, icon: Globe, label: 'From URL', hint: 'Capture desktop & mobile, compose instantly', span: true },
+  ...(URL_CAPTURE_ENABLED ? [{ value: 'url' as const, icon: Globe, label: 'From URL', hint: 'Capture desktop & mobile, compose instantly', span: true }] : []),
 ]
 
 const resolvedUrl = computed(() => resolveCaptureUrl(url.value))

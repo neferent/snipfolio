@@ -8,6 +8,7 @@
           @loaded="(img, src, filename) => onFirstImageLoaded(img, src, filename)"
         />
         <button
+          v-if="URL_CAPTURE_ENABLED"
           class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
           @click="showUrlCapture = true"
         >
@@ -220,6 +221,7 @@
           <label class="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">Screenshot</label>
           <ScreenshotDropzone @loaded="onPendingImageLoaded" />
           <button
+            v-if="URL_CAPTURE_ENABLED"
             class="mt-2 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
             @click="showUrlCapture = true"
           >

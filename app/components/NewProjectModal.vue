@@ -1,7 +1,7 @@
 <template>
   <AppModal :open="open" :title="modalTitle" @close="onClose">
     <!-- Step 1: Choose project type -->
-    <div v-if="step === 'choose'" class="grid grid-cols-2 gap-3">
+    <div v-if="step === 'choose'" class="grid gap-3" :class="URL_CAPTURE_ENABLED ? 'grid-cols-2' : 'grid-cols-1'">
       <button
         class="flex flex-col gap-2 rounded-lg border border-white/10 p-4 text-left transition hover:border-white/20 hover:bg-white/5"
         @click="step = 'blank'"
@@ -10,6 +10,7 @@
         <span class="text-xs text-[var(--color-text-muted)]">Start empty, add screenshots manually</span>
       </button>
       <button
+        v-if="URL_CAPTURE_ENABLED"
         class="flex flex-col gap-2 rounded-lg border border-white/10 p-4 text-left transition hover:border-white/20 hover:bg-white/5"
         @click="onChooseUrl"
       >
@@ -301,6 +302,7 @@ function onClose() {
 }
 
 function onChooseUrl() {
+  if (!URL_CAPTURE_ENABLED) return
   step.value = isPro.value ? 'url' : 'url-locked'
 }
 
