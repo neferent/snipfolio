@@ -162,9 +162,11 @@ useHead({ title: 'Sign in -- Snipfolio' })
 import { useAuth } from '~/composables/useAuth'
 import { useAuthStore } from '~/stores/auth'
 import { toast } from '~/composables/useToast'
+import { useResumePostAuth } from '~/composables/useResumePostAuth'
 
 const { signIn: authSignIn, signUp: authSignUp, continueAsGuest, sendPasswordReset } = useAuth()
 const authStore = useAuthStore()
+const { resume: resumePostAuth } = useResumePostAuth()
 
 const email = ref('')
 const password = ref('')
@@ -215,13 +217,13 @@ async function submit() {
     if (isSignUp.value) {
       await authSignUp(email.value, password.value)
       if (authStore.isAuthenticated) {
-        await navigateTo('/dashboard')
+        await resumePostAuth()
       } else {
         message.value = 'Check your email to confirm your account.'
       }
     } else {
       await authSignIn(email.value, password.value)
-      await navigateTo('/dashboard')
+      await resumePostAuth()
     }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : isSignUp.value ? 'Sign up failed' : 'Sign in failed'

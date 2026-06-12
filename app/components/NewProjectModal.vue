@@ -11,7 +11,7 @@
       </button>
       <button
         class="flex flex-col gap-2 rounded-lg border border-white/10 p-4 text-left transition hover:border-white/20 hover:bg-white/5"
-        @click="step = 'url'"
+        @click="onChooseUrl"
       >
         <div class="flex items-center gap-2">
           <span class="text-sm font-medium text-[var(--color-text)]">From URL</span>
@@ -19,6 +19,22 @@
         </div>
         <span class="text-xs text-[var(--color-text-muted)]">Capture desktop &amp; mobile, compose instantly</span>
       </button>
+    </div>
+
+    <!-- Step 2b-locked: From URL is Pro-only -->
+    <div v-else-if="step === 'url-locked'" class="space-y-3">
+      <p class="text-sm text-[var(--color-text-muted)]">
+        Capturing a project from a live URL is a Pro feature.
+      </p>
+      <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
+        <button
+          class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
+          :disabled="checkoutLoading"
+          @click="startCheckout('pro_early')"
+        >
+          Upgrade to Pro
+        </button>
+      </div>
     </div>
 
     <!-- Step 2a: Blank project name -->
@@ -43,10 +59,12 @@
           type="text"
           inputmode="url"
           class="w-full"
+          :class="urlError ? 'border-red-400/40' : ''"
           placeholder="https://example.com"
           @input="onUrlInput"
           @keydown.enter="onStartCapture"
         />
+        <p v-if="urlError" class="text-[10px] text-red-400">{{ urlError }}</p>
       </div>
       <div class="space-y-1.5">
         <label class="text-xs font-medium text-[var(--color-text-muted)]">Project name</label>
@@ -63,11 +81,14 @@
     </div>
 
     <!-- Step 3: Capturing -->
-    <div v-else-if="step === 'capturing'" class="space-y-3">
+    <div v-else-if="step === 'capturing'" class="space-y-1">
       <p class="text-xs text-[var(--color-text-muted)]">
         {{ captureError ? 'Capture failed' : `Capturing ${displayHostname}…` }}
       </p>
-      <div class="flex items-end gap-2">
+      <p v-if="!captureError" class="text-[10px] text-[var(--color-text-muted)]/70">
+        {{ captureProgressHint(elapsedSeconds) }}
+      </p>
+      <div class="flex items-end gap-2 pt-2">
         <!-- Desktop pill (160px wide) -->
         <div class="flex flex-col overflow-hidden rounded border border-white/10" style="width: 160px;">
           <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
@@ -107,7 +128,7 @@
           </div>
         </div>
       </div>
-      <p v-if="captureError" class="text-xs text-red-400">{{ captureError }}</p>
+      <p v-if="captureError" class="pt-1 text-xs text-red-400">{{ captureError }}</p>
     </div>
 
     <template #footer>
@@ -131,6 +152,16 @@
         </button>
       </template>
 
+      <!-- Step 2b-locked: url, not pro -->
+      <template v-else-if="step === 'url-locked'">
+        <button
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          @click="step = 'choose'"
+        >
+          Back
+        </button>
+      </template>
+
       <!-- Step 2b: url -->
       <template v-else-if="step === 'url'">
         <button
@@ -141,7 +172,7 @@
         </button>
         <button
           class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-          :disabled="!resolvedUrl || !name.trim()"
+          :disabled="!resolvedUrl || !!urlError || !name.trim()"
           @click="onStartCapture"
         >
           Capture &amp; Create
@@ -169,6 +200,7 @@
 
 <script setup lang="ts">
 import { Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureProgressHint } from '~/composables/useUrlCapture'
 import { useProject } from '~/composables/useProject'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
@@ -176,16 +208,19 @@ import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
 import { useSnips } from '~/composables/useSnips'
 import { useCompositions } from '~/composables/useCompositions'
+import { useAuthStore } from '~/stores/auth'
+import { usePlan } from '~/composables/usePlan'
+import { useCheckout } from '~/composables/useCheckout'
 import type { SourceImage } from '~/types'
 
 // Screen area aspect ratios (width/height) matching the SVG frame definitions
 const LAPTOP_SCREEN_ASPECT = 3034.7 / 1964.07  // ≈ 1.545
 const PHONE_SCREEN_ASPECT  = 709.65 / 1539.77  // ≈ 0.461
 
-type Step = 'choose' | 'blank' | 'url' | 'capturing'
+type Step = 'choose' | 'blank' | 'url' | 'url-locked' | 'capturing'
 type CaptureStatus = 'idle' | 'loading' | 'done' | 'error'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{ open: boolean; openToUrl?: boolean }>()
 const emit = defineEmits<{
   close: []
   created: [projectId: string]
@@ -199,6 +234,9 @@ const snipsStore = useSnipsStore()
 const compositionsStore = useCompositionsStore()
 const { createSnip } = useSnips()
 const { createLaptopPhoneComposition, createLaptopComposition } = useCompositions()
+const authStore = useAuthStore()
+const { isPro } = usePlan()
+const { startCheckout, loading: checkoutLoading } = useCheckout()
 
 const step = ref<Step>('choose')
 const name = ref('')
@@ -211,18 +249,16 @@ const mobileStatus = ref<CaptureStatus>('idle')
 const desktopSrc = ref('')
 const mobileSrc = ref('')
 const captureError = ref('')
+const { elapsedSeconds, start: startElapsed, stop: stopElapsed } = useCaptureElapsed()
 
 const nameInputRef = ref<HTMLInputElement>()
 const urlInputRef = ref<HTMLInputElement>()
 
-const resolvedUrl = computed(() => {
-  if (!url.value) return ''
-  if (url.value.startsWith('http://') || url.value.startsWith('https://')) return url.value
-  return `https://${url.value}`
-})
-
-const displayHostname = computed(() => {
-  try { return new URL(resolvedUrl.value).hostname } catch { return url.value }
+const resolvedUrl = computed(() => resolveCaptureUrl(url.value))
+const displayHostname = computed(() => getCaptureHostname(url.value))
+const urlError = computed(() => {
+  if (!url.value || isValidCaptureUrl(url.value)) return ''
+  return 'Enter a valid URL'
 })
 
 const modalTitle = computed(() => {
@@ -238,7 +274,13 @@ watch(step, (s) => {
   })
 })
 
-watch(() => props.open, (v) => { if (!v) reset() })
+watch(() => props.open, (v) => {
+  if (!v) {
+    reset()
+  } else if (props.openToUrl) {
+    onChooseUrl()
+  }
+})
 
 function reset() {
   step.value = 'choose'
@@ -251,10 +293,15 @@ function reset() {
   desktopSrc.value = ''
   mobileSrc.value = ''
   captureError.value = ''
+  stopElapsed()
 }
 
 function onClose() {
   emit('close')
+}
+
+function onChooseUrl() {
+  step.value = isPro.value ? 'url' : 'url-locked'
 }
 
 function onUrlInput() {
@@ -280,7 +327,7 @@ async function captureOne(viewport: 'desktop' | 'mobile'): Promise<{ img: HTMLIm
   try {
     const res = await fetch('/api/screenshot', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
       body: JSON.stringify({ url: resolvedUrl.value, viewport }),
     })
     if (!res.ok) {
@@ -306,18 +353,21 @@ async function captureOne(viewport: 'desktop' | 'mobile'): Promise<{ img: HTMLIm
 }
 
 async function onStartCapture() {
-  if (!resolvedUrl.value || !name.value.trim()) return
+  if (!resolvedUrl.value || urlError.value || !name.value.trim()) return
   step.value = 'capturing'
   captureError.value = ''
   desktopStatus.value = 'idle'
   mobileStatus.value = 'idle'
   desktopSrc.value = ''
   mobileSrc.value = ''
+  startElapsed()
 
   const [desktop, mobile] = await Promise.all([
     captureOne('desktop'),
     captureOne('mobile'),
   ])
+
+  stopElapsed()
 
   if (!desktop && !mobile) {
     captureError.value = 'Both captures failed. Check the URL and try again.'

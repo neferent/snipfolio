@@ -78,6 +78,7 @@ definePageMeta({ layout: 'default', middleware: [] })
 useHead({ title: 'Reset password — Snipfolio' })
 
 import { toast } from '~/composables/useToast'
+import { initSupabaseClient } from '~/composables/useSupabaseClient'
 
 const { updatePassword } = useAuth()
 
@@ -89,6 +90,7 @@ const ready = ref(false)
 const done = ref(false)
 
 onMounted(async () => {
+  await initSupabaseClient()
   const supabase = useSupabaseClient()!
   // If arriving from /auth/confirm, session is already set
   const { data } = await supabase.auth.getSession()

@@ -1,23 +1,45 @@
 <template>
   <AppModal :open="open" title="Capture from URL" @close="onClose">
-    <div class="flex flex-col gap-3">
+    <!-- Pro upsell (non-pro users) -->
+    <div v-if="!isPro" class="flex flex-col gap-3">
+      <p class="text-sm text-[var(--color-text-muted)]">
+        Capturing a screenshot from a live URL is a Pro feature.
+      </p>
+      <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
+        <button
+          class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
+          :disabled="checkoutLoading"
+          @click="startCheckout('pro_early')"
+        >
+          Upgrade to Pro
+        </button>
+      </div>
+    </div>
+
+    <div v-else class="flex flex-col gap-3">
+      <p class="text-xs text-[var(--color-text-muted)]">
+        Grab a screenshot of a live page to use as a snip source — pick one or more viewports below.
+      </p>
       <div class="flex gap-2">
         <input
           v-model="url"
-          type="url"
+          type="text"
+          inputmode="url"
           placeholder="https://example.com"
           :disabled="isCapturing"
-          class="h-8 flex-1 rounded-[6px] border border-white/10 bg-white/5 px-3 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-white/20 disabled:opacity-40"
+          class="h-8 flex-1 rounded-[6px] border bg-white/5 px-3 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-white/20 disabled:opacity-40"
+          :class="urlError ? 'border-red-400/40' : 'border-white/10'"
           @keydown.enter="onCapture"
         />
         <button
           class="flex h-8 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text)] transition hover:bg-white/5 disabled:opacity-40"
-          :disabled="isCapturing || !url || selectedViewports.length === 0"
+          :disabled="isCapturing || !url || !!urlError || selectedViewports.length === 0"
           @click="onCapture"
         >
           Capture
         </button>
       </div>
+      <p v-if="urlError" class="-mt-1 text-[10px] text-red-400">{{ urlError }}</p>
 
       <!-- Viewport checkboxes -->
       <div class="flex items-center gap-4">
@@ -36,6 +58,10 @@
           {{ v.label }}
         </label>
       </div>
+
+      <p v-if="isCapturing" class="text-[10px] text-[var(--color-text-muted)]/70">
+        {{ captureProgressHint(elapsedSeconds) }}
+      </p>
 
       <!-- Per-viewport pills -->
       <div v-if="captureStates.length" class="flex items-end gap-2">
@@ -58,7 +84,16 @@
               />
             </template>
             <template v-else-if="state.status === 'error'">
-              <XIcon class="size-4 text-red-400" />
+              <AppTooltip :text="state.error || 'Capture failed'">
+                <button
+                  type="button"
+                  class="flex items-center justify-center rounded p-1 text-red-400 transition hover:bg-white/10 hover:text-red-300"
+                  :aria-label="`Retry ${viewportLabel(state.viewport)} capture`"
+                  @click="retryViewport(state.viewport)"
+                >
+                  <RotateCwIcon class="size-3.5" />
+                </button>
+              </AppTooltip>
             </template>
           </div>
           <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
@@ -92,7 +127,11 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
+import { Loader2Icon, CheckIcon, XIcon, RotateCwIcon } from 'lucide-vue-next'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureProgressHint } from '~/composables/useUrlCapture'
+import { useAuthStore } from '~/stores/auth'
+import { usePlan } from '~/composables/usePlan'
+import { useCheckout } from '~/composables/useCheckout'
 
 type Viewport = 'desktop' | 'tablet' | 'mobile'
 type CaptureStatus = 'loading' | 'done' | 'error'
@@ -102,6 +141,8 @@ interface CaptureState {
   status: CaptureStatus
   error?: string
   src?: string
+  img?: HTMLImageElement
+  filename?: string
 }
 
 const props = defineProps<{ open: boolean }>()
@@ -112,12 +153,22 @@ const emit = defineEmits<{
   batchLoaded: [items: Array<{ img: HTMLImageElement; src: string; filename: string }>]
 }>()
 
+const authStore = useAuthStore()
+const { isPro } = usePlan()
+const { startCheckout, loading: checkoutLoading } = useCheckout()
+
 const url = ref('')
 const selectedViewports = ref<Viewport[]>(['desktop', 'tablet', 'mobile'])
+
+const resolvedUrl = computed(() => resolveCaptureUrl(url.value))
+const urlError = computed(() => {
+  if (!url.value || isValidCaptureUrl(url.value)) return ''
+  return 'Enter a valid URL'
+})
 const captureStates = ref<CaptureState[]>([])
-const captureResults = ref<Array<{ img: HTMLImageElement; src: string; filename: string }>>([])
 const isCapturing = computed(() => captureStates.value.some(s => s.status === 'loading'))
-const successful = computed(() => captureResults.value)
+const { elapsedSeconds, start: startElapsed, stop: stopElapsed } = useCaptureElapsed()
+const successful = computed(() => captureStates.value.filter(s => s.status === 'done'))
 
 const viewports: { key: Viewport; label: string; width: number }[] = [
   { key: 'desktop', label: 'Desktop', width: 1440 },
@@ -136,14 +187,15 @@ function viewportLabel(v: Viewport) {
   return viewports.find(x => x.key === v)?.label ?? v
 }
 
-async function captureOne(viewport: Viewport, hostname: string): Promise<{ img: HTMLImageElement; src: string; filename: string } | null> {
+async function captureOne(viewport: Viewport, hostname: string): Promise<void> {
   const state = captureStates.value.find(s => s.viewport === viewport)!
   state.status = 'loading'
+  state.error = undefined
   try {
     const res = await fetch('/api/screenshot', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: url.value, viewport }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
+      body: JSON.stringify({ url: resolvedUrl.value, viewport }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({})) as { message?: string }
@@ -159,31 +211,40 @@ async function captureOne(viewport: Viewport, hostname: string): Promise<{ img: 
     })
     state.status = 'done'
     state.src = src
-    return { img, src, filename: `${hostname}-${viewport}.png` }
+    state.img = img
+    state.filename = `${hostname}-${viewport}.png`
   } catch (e: unknown) {
     state.status = 'error'
-    return null
+    state.error = e instanceof Error ? e.message : 'Capture failed'
   }
 }
 
 async function onCapture() {
-  if (!url.value || isCapturing.value || selectedViewports.value.length === 0) return
-  captureResults.value = []
+  if (!url.value || urlError.value || isCapturing.value || selectedViewports.value.length === 0) return
 
-  let hostname = url.value
-  try { hostname = new URL(url.value).hostname } catch {}
+  const hostname = getCaptureHostname(url.value)
 
   captureStates.value = selectedViewports.value.map(v => ({ viewport: v, status: 'loading' as CaptureStatus }))
+  startElapsed()
 
-  const results = await Promise.all(selectedViewports.value.map(v => captureOne(v, hostname)))
-  captureResults.value = results.filter((r): r is NonNullable<typeof r> => r !== null)
+  await Promise.all(selectedViewports.value.map(v => captureOne(v, hostname)))
+  stopElapsed()
+}
+
+async function retryViewport(viewport: Viewport) {
+  const hostname = getCaptureHostname(url.value)
+  startElapsed()
+  await captureOne(viewport, hostname)
+  stopElapsed()
 }
 
 function onConfirm() {
-  if (successful.value.length === 1) {
-    emit('loaded', successful.value[0].img, successful.value[0].src, successful.value[0].filename)
-  } else if (successful.value.length > 1) {
-    emit('batchLoaded', successful.value)
+  const items = successful.value.map(s => ({ img: s.img!, src: s.src!, filename: s.filename! }))
+  const first = items[0]
+  if (items.length === 1 && first) {
+    emit('loaded', first.img, first.src, first.filename)
+  } else if (items.length > 1) {
+    emit('batchLoaded', items)
   }
   onClose()
 }
@@ -191,7 +252,7 @@ function onConfirm() {
 function onClose() {
   url.value = ''
   captureStates.value = []
-  captureResults.value = []
+  stopElapsed()
   emit('close')
 }
 

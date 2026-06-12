@@ -21,6 +21,12 @@
       </template>
       <template v-else>
         <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
+        <span
+          v-if="authStore.isPro"
+          class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
+        >
+          PRO
+        </span>
         <a
           v-if="authStore.isPro"
           :href="billingUrl"
@@ -125,6 +131,7 @@
 
     <NewProjectModal
       :open="showNew"
+      :open-to-url="openToUrl"
       @close="showNew = false"
       @created="onProjectCreated"
       @composed="onProjectComposed"
@@ -205,6 +212,7 @@ const billingUrl = config.public.lsStoreSlug
 
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)
+const openToUrl = ref(false)
 const showProUpsell = ref(false)
 const deleteTarget = ref<{ id: string; name: string } | null>(null)
 const previews = ref<Record<string, string>>({})
@@ -222,6 +230,12 @@ watch(projects, (list) => {
 })
 
 onMounted(async () => {
+  if (useRoute().query.openUrlCapture === '1') {
+    openToUrl.value = true
+    showNew.value = true
+    await navigateTo({ path: '/dashboard' }, { replace: true })
+  }
+
   try {
     await fetchProjects()
   } catch (e) {

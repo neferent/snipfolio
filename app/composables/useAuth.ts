@@ -1,5 +1,6 @@
 import { useAuthStore } from '~/stores/auth'
 import { toast } from '~/composables/useToast'
+import { initSupabaseClient } from '~/composables/useSupabaseClient'
 
 let _authListenerRegistered = false
 
@@ -21,6 +22,7 @@ function useSupabaseAuth() {
   }
 
   async function signIn(email: string, password: string) {
+    await initSupabaseClient()
     const supabase = useSupabaseClient()
     if (!supabase) throw new Error('Supabase is not configured')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -33,9 +35,14 @@ function useSupabaseAuth() {
   }
 
   async function signUp(email: string, password: string) {
+    await initSupabaseClient()
     const supabase = useSupabaseClient()
     if (!supabase) throw new Error('Supabase is not configured')
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
+    })
     if (error) throw error
     if (data.user && data.session) {
       store.setUser({ id: data.user.id, email: data.user.email ?? '' })
@@ -47,6 +54,7 @@ function useSupabaseAuth() {
   }
 
   async function signOut() {
+    await initSupabaseClient()
     const supabase = useSupabaseClient()
     if (supabase) await supabase.auth.signOut()
     store.clear()
@@ -54,15 +62,17 @@ function useSupabaseAuth() {
   }
 
   async function sendPasswordReset(email: string) {
+    await initSupabaseClient()
     const supabase = useSupabaseClient()
     if (!supabase) throw new Error('Supabase is not configured')
-const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://snipfol.io/reset-password',
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/confirm`,
     })
     if (error) throw error
   }
 
   async function updatePassword(newPassword: string) {
+    await initSupabaseClient()
     const supabase = useSupabaseClient()
     if (!supabase) throw new Error('Supabase is not configured')
     const { error } = await supabase.auth.updateUser({ password: newPassword })
@@ -76,6 +86,7 @@ const { error } = await supabase.auth.resetPasswordForEmail(email, {
   }
 
   async function restoreSession() {
+    await initSupabaseClient()
     const supabase = useSupabaseClient()
     if (!supabase) return
 

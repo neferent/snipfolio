@@ -59,7 +59,6 @@ gtag('config', 'G-C3XP5KTPSP');`,
     lsApiKey: process.env.NUXT_LS_API_KEY ?? '',
     lsWebhookSecret: process.env.NUXT_LS_WEBHOOK_SECRET ?? '',
     public: {
-      appEnabled: process.env.NUXT_PUBLIC_APP_ENABLED === 'true',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL ?? '',
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY ?? '',
       authMode: process.env.NUXT_PUBLIC_AUTH_MODE ?? 'local',
