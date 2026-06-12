@@ -124,6 +124,14 @@
             </svg>
             <p class="text-sm font-medium text-[var(--color-text)]">No projects yet</p>
             <p class="mt-1 text-xs text-[var(--color-text-muted)]">Create your first project to get started</p>
+            <button
+              v-if="URL_CAPTURE_ENABLED"
+              class="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+              @click="openToUrl = true; showNew = true"
+            >
+              Or capture a project from a URL
+              <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
+            </button>
           </div>
         </Transition>
       </div>

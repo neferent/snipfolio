@@ -9,10 +9,11 @@
         />
         <button
           v-if="URL_CAPTURE_ENABLED"
-          class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+          class="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
           @click="showUrlCapture = true"
         >
           Or capture from a URL
+          <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
         </button>
       </div>
     </div>
@@ -222,10 +223,11 @@
           <ScreenshotDropzone @loaded="onPendingImageLoaded" />
           <button
             v-if="URL_CAPTURE_ENABLED"
-            class="mt-2 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+            class="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
             @click="showUrlCapture = true"
           >
             Or capture from a URL
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
           </button>
           <p v-if="pendingFile" class="mt-2 text-xs text-emerald-400">
             ✓ {{ pendingFile.filename }} ({{ pendingFile.img.naturalWidth }}×{{ pendingFile.img.naturalHeight }})
