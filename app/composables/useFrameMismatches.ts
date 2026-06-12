@@ -18,15 +18,19 @@ const FRAME_LABEL: Partial<Record<DeviceFrame, string>> = {
   phone: 'Mobile', tablet: 'Tablet', laptop: 'Desktop',
 }
 
+function isAspectMismatch(width: number, height: number, frame: DeviceFrame): boolean {
+  const expected = FRAME_SCREEN_ASPECT[frame]
+  if (expected === undefined) return false
+  return Math.abs(width / height / expected - 1) > 0.05
+}
+
 export function getFrameMismatches(composition: Composition, snips: Snip[]): FrameMismatch[] {
   if (!isFreeformConfig(composition.config)) return []
   const out: FrameMismatch[] = []
   for (const slot of composition.config.slots) {
-    const expected = FRAME_SCREEN_ASPECT[slot.deviceFrame]
-    if (expected === undefined) continue
     const snip = snips.find((s) => s.id === slot.snipId)
     if (!snip) continue
-    if (Math.abs(snip.width / snip.height / expected - 1) > 0.05) {
+    if (isAspectMismatch(snip.width, snip.height, slot.deviceFrame)) {
       out.push({
         slotId: slot.id,
         snipLabel: snip.label,
@@ -35,4 +39,11 @@ export function getFrameMismatches(composition: Composition, snips: Snip[]): Fra
     }
   }
   return out
+}
+
+// Whether a snip's own snapFrame badge (set when drawn) no longer matches its
+// aspect ratio — surfaced in the Add Snip picker before it's placed in a slot.
+export function getSnipFrameMismatch(snip: Snip): boolean {
+  if (!snip.snapFrame) return false
+  return isAspectMismatch(snip.width, snip.height, snip.snapFrame)
 }

@@ -143,7 +143,7 @@ export function useProject() {
     if (!proj) throw new Error('Project not found')
     projectStore.setProject(rowToProject(proj))
 
-    const sources = (sourcesData ?? []).map(rowToSourceImage)
+    const sources: SourceImage[] = (sourcesData ?? []).map(rowToSourceImage)
     sourcesStore.setSources(sources)
     sources.forEach((s) => sourcesStore.markSourceLoading(s.id))
     sourcesStore.setActiveSource(sources[0]?.id ?? null)

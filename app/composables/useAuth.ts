@@ -102,7 +102,7 @@ function useSupabaseAuth() {
 
     if (!_authListenerRegistered) {
       _authListenerRegistered = true
-      supabase.auth.onAuthStateChange(async (_event, session) => {
+      supabase.auth.onAuthStateChange(async (_event: string, session: { user: { id: string; email?: string }; access_token: string } | null) => {
         if (session?.user) {
           store.setUser({ id: session.user.id, email: session.user.email ?? '' })
           store.setToken(session.access_token)

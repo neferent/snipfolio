@@ -99,7 +99,7 @@ onMounted(async () => {
     return
   }
   // If arriving directly from email with hash token
-  supabase.auth.onAuthStateChange((event) => {
+  supabase.auth.onAuthStateChange((event: string) => {
     if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
       ready.value = true
     }

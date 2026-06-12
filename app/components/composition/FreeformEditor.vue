@@ -97,6 +97,10 @@
             <span v-if="snip.snapFrame === 'laptop'" class="shrink-0 rounded bg-sky-500/20 px-1 py-px text-[9px] font-medium text-sky-400">Desktop</span>
             <span v-else-if="snip.snapFrame === 'tablet'" class="shrink-0 rounded bg-teal-500/20 px-1 py-px text-[9px] font-medium text-teal-400">Tablet</span>
             <span v-else-if="snip.snapFrame === 'phone'" class="shrink-0 rounded bg-violet-500/20 px-1 py-px text-[9px] font-medium text-violet-400">Mobile</span>
+            <span v-if="getSnipFrameMismatch(snip)" class="mismatch-tip shrink-0">
+              <CircleAlert class="size-3 text-amber-400" />
+              <span class="mismatch-tip-label">Aspect ratio no longer matches frame</span>
+            </span>
             <Plus class="size-3 shrink-0 text-[var(--color-text-muted)]" />
           </div>
           <p v-if="availableSnips.length === 0" class="px-2 py-2 text-[var(--color-text-muted)]">
@@ -306,7 +310,7 @@ import { useResizablePanel } from '~/composables/useResizablePanel'
 
 const { width: leftWidth, startResize: startLeftResize } = useResizablePanel(224, { side: 'right', min: 150, max: 480 })
 const { width: rightWidth, startResize: startRightResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
-import { getFrameMismatches } from '~/composables/useFrameMismatches'
+import { getFrameMismatches, getSnipFrameMismatch } from '~/composables/useFrameMismatches'
 import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
 import { useSnipsStore } from '~/stores/snips'

@@ -406,7 +406,7 @@ function onFirstImageLoaded(img: HTMLImageElement, src: string, filename: string
 function onBatchLoaded(items: Array<{ img: HTMLImageElement; src: string; filename: string }>) {
   if (!projectStore.current || items.length === 0) return
   for (let i = 0; i < items.length; i++) {
-    const { img, src, filename } = items[i]
+    const { img, src, filename } = items[i]!
     const sourceId = crypto.randomUUID()
     const source: SourceImage = {
       id: sourceId,
