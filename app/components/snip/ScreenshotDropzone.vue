@@ -3,15 +3,23 @@
     class="flex flex-col items-center justify-center transition-colors"
     :class="isDragOver ? 'bg-[rgba(142,158,173,0.04)]' : 'bg-[var(--color-surface-2)]'"
     :style="{
-      borderRadius: '12px',
+      borderRadius: prominent ? '16px' : '12px',
       border: isDragOver ? '1.5px dashed #8e9ead' : '1.5px dashed rgba(255,255,255,0.12)',
-      padding: '48px 32px',
+      padding: prominent ? '56px 72px' : '48px 32px',
+      minWidth: prominent ? '320px' : undefined,
     }"
     @dragover.prevent="isDragOver = true"
     @dragleave="isDragOver = false"
     @drop.prevent="onDrop"
   >
-    <ImageIcon class="mb-3 size-10 text-[var(--color-text-muted)]" :stroke-width="1.5" />
+    <div v-if="prominent" class="relative mb-4 flex h-16 w-16 items-center justify-center">
+      <div class="absolute h-12 w-12 -rotate-6 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-3)]/70" />
+      <div class="absolute h-12 w-12 rotate-3 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-3)]/70" />
+      <div class="relative flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-2)]">
+        <ImageIcon class="size-6 text-[var(--color-text-muted)]" :stroke-width="1.5" />
+      </div>
+    </div>
+    <ImageIcon v-else class="mb-3 size-10 text-[var(--color-text-muted)]" :stroke-width="1.5" />
     <p class="mb-1 text-sm font-medium text-[var(--color-text)]">Drop your screenshot here</p>
     <p class="mt-1 text-xs text-[var(--color-text-muted)]">PNG, JPG, or WebP</p>
     <button
@@ -32,6 +40,10 @@
 
 <script setup lang="ts">
 import { ImageIcon } from 'lucide-vue-next'
+
+defineProps<{
+  prominent?: boolean
+}>()
 
 const emit = defineEmits<{
   loaded: [img: HTMLImageElement, src: string, filename: string]

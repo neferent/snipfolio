@@ -1,10 +1,14 @@
 <template>
   <div class="absolute inset-0 flex flex-col bg-[var(--color-surface)]">
     <!-- No sources yet: full-area dropzone -->
-    <div v-if="sources.length === 0" class="flex flex-1 items-center justify-center">
-      <div class="flex flex-col items-center gap-3">
-        <p class="text-sm text-[var(--color-text-muted)]">Drop a screenshot to get started</p>
+    <div v-if="sources.length === 0" class="flex flex-1 items-center justify-center p-8">
+      <div class="flex flex-col items-center gap-5 text-center">
+        <div>
+          <h2 class="text-base font-semibold text-[var(--color-text)]">Add your first screenshot</h2>
+          <p class="mt-1.5 text-sm text-[var(--color-text-muted)]">Drop an image below to start clipping snips from it</p>
+        </div>
         <ScreenshotDropzone
+          prominent
           @loaded="(img, src, filename) => onFirstImageLoaded(img, src, filename)"
         />
         <button
