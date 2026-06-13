@@ -1,84 +1,69 @@
 <template>
   <AppModal :open="open" :title="modalTitle" @close="onClose">
-    <!-- Step 1: Choose project type -->
-    <div v-if="step === 'choose'" class="grid gap-3" :class="URL_CAPTURE_ENABLED ? 'grid-cols-2' : 'grid-cols-1'">
-      <button
-        class="flex flex-col gap-2 rounded-lg border border-white/10 p-4 text-left transition hover:border-white/20 hover:bg-white/5"
-        @click="step = 'blank'"
-      >
-        <span class="text-sm font-medium text-[var(--color-text)]">Blank</span>
-        <span class="text-xs text-[var(--color-text-muted)]">Start empty, add screenshots manually</span>
-      </button>
-      <button
-        v-if="URL_CAPTURE_ENABLED"
-        class="flex flex-col gap-2 rounded-lg border border-white/10 p-4 text-left transition hover:border-white/20 hover:bg-white/5"
-        @click="onChooseUrl"
-      >
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-[var(--color-text)]">From URL</span>
-          <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
-        </div>
-        <span class="text-xs text-[var(--color-text-muted)]">Capture desktop &amp; mobile, compose instantly</span>
-      </button>
-    </div>
-
-    <!-- Step 2b-locked: From URL is Pro-only -->
-    <div v-else-if="step === 'url-locked'" class="space-y-3">
-      <p class="text-sm text-[var(--color-text-muted)]">
-        Capturing a project from a live URL is a Pro feature.
-      </p>
-      <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
-        <button
-          class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
-          :disabled="checkoutLoading"
-          @click="startCheckout('pro_early')"
-        >
-          Upgrade to Pro
-        </button>
-      </div>
-    </div>
-
-    <!-- Step 2a: Blank project name -->
-    <div v-else-if="step === 'blank'" class="space-y-1.5">
-      <label class="text-xs font-medium text-[var(--color-text-muted)]">Project name</label>
-      <input
-        ref="nameInputRef"
-        v-model="name"
-        class="w-full"
-        placeholder="My project"
-        @keydown.enter="onCreateBlank"
-      />
-    </div>
-
-    <!-- Step 2b: URL entry -->
-    <div v-else-if="step === 'url'" class="space-y-3">
-      <div class="space-y-1.5">
-        <label class="text-xs font-medium text-[var(--color-text-muted)]">URL</label>
-        <input
-          ref="urlInputRef"
-          v-model="url"
-          type="text"
-          inputmode="url"
-          class="w-full"
-          :class="urlError ? 'border-red-400/40' : ''"
-          placeholder="https://example.com"
-          @input="onUrlInput"
-          @keydown.enter="onStartCapture"
-        />
-        <p v-if="urlError" class="text-[10px] text-red-400">{{ urlError }}</p>
-      </div>
+    <!-- Main: name + project type -->
+    <div v-if="step === 'main'" class="space-y-3">
       <div class="space-y-1.5">
         <label class="text-xs font-medium text-[var(--color-text-muted)]">Project name</label>
         <input
+          ref="nameInputRef"
           v-model="name"
           class="w-full"
-          placeholder="example.com"
+          :placeholder="type === 'url' ? 'example.com' : 'My project'"
           @focus="nameFocused = true"
           @blur="nameFocused = false"
-          @keydown.enter="onStartCapture"
+          @keydown.enter="onSubmitMain"
         />
       </div>
-      <p class="text-xs text-[var(--color-text-muted)]">Captures desktop + mobile viewports</p>
+
+      <div class="grid gap-3" :class="URL_CAPTURE_ENABLED ? 'grid-cols-2' : 'grid-cols-1'">
+        <button
+          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5"
+          :class="type === 'blank' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
+          @click="type = 'blank'"
+        >
+          <span class="text-sm font-medium text-[var(--color-text)]">Blank</span>
+          <span class="text-xs text-[var(--color-text-muted)]">Start empty, add screenshots manually</span>
+        </button>
+        <button
+          v-if="URL_CAPTURE_ENABLED"
+          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5"
+          :class="type === 'url' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
+          @click="type = 'url'"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-medium text-[var(--color-text)]">From URL</span>
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
+          </div>
+          <span class="text-xs text-[var(--color-text-muted)]">Capture desktop &amp; mobile, compose instantly</span>
+        </button>
+      </div>
+
+      <Transition name="expand" @enter="onExpandEnter" @after-enter="onExpandAfterEnter" @leave="onExpandLeave">
+        <!-- URL entry, shown when "From URL" is selected and the user is Pro -->
+        <div v-if="type === 'url' && isPro" key="url-pro" class="expand-panel space-y-1.5">
+          <label class="mt-3 block text-xs font-medium text-[var(--color-text-muted)]">URL</label>
+          <input
+            ref="urlInputRef"
+            v-model="url"
+            type="text"
+            inputmode="url"
+            class="w-full"
+            :class="urlError ? 'border-red-400/40' : ''"
+            placeholder="https://example.com"
+            @input="onUrlInput"
+            @keydown.enter="onSubmitMain"
+          />
+          <p v-if="urlError" class="text-[10px] text-red-400">{{ urlError }}</p>
+          <p class="text-xs text-[var(--color-text-muted)]">Captures desktop + mobile viewports</p>
+        </div>
+
+        <!-- Pro upsell, shown when "From URL" is selected and the user is not Pro -->
+        <div v-else-if="type === 'url' && !isPro" key="url-locked" class="expand-panel space-y-3">
+          <p class="mt-3 text-sm text-[var(--color-text-muted)]">
+            Capturing a project from a live URL is a Pro feature.
+          </p>
+        </div>
+      </Transition>
     </div>
 
     <!-- Step 3: Capturing -->
@@ -133,58 +118,35 @@
     </div>
 
     <template #footer>
-      <!-- Step 1: no buttons -->
-      <template v-if="step === 'choose'" />
-
-      <!-- Step 2a: blank -->
-      <template v-else-if="step === 'blank'">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
-          @click="step = 'choose'"
-        >
-          Back
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-          :disabled="!name.trim()"
-          @click="onCreateBlank"
-        >
-          Create
-        </button>
-      </template>
-
-      <!-- Step 2b-locked: url, not pro -->
-      <template v-else-if="step === 'url-locked'">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
-          @click="step = 'choose'"
-        >
-          Back
-        </button>
-      </template>
-
-      <!-- Step 2b: url -->
-      <template v-else-if="step === 'url'">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
-          @click="step = 'choose'"
-        >
-          Back
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-          :disabled="!resolvedUrl || !!urlError || !name.trim()"
-          @click="onStartCapture"
-        >
-          Capture &amp; Create
-        </button>
+      <!-- Main step -->
+      <template v-if="step === 'main'">
+        <Transition name="fade" mode="out-in">
+          <button
+            v-if="type === 'url' && !isPro"
+            key="upgrade"
+            class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
+            :disabled="checkoutLoading"
+            @click="startCheckout('pro_early')"
+          >
+            Upgrade to Pro
+          </button>
+          <button
+            v-else
+            key="submit"
+            class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
+            :disabled="!canSubmit"
+            @click="onSubmitMain"
+          >
+            {{ type === 'url' ? 'Capture & Create' : 'Create' }}
+          </button>
+        </Transition>
       </template>
 
       <!-- Step 3: capturing — only show buttons on error -->
       <template v-else-if="step === 'capturing' && captureError">
         <button
           class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
-          @click="step = 'url'"
+          @click="step = 'main'"
         >
           Back
         </button>
@@ -218,7 +180,8 @@ import type { SourceImage } from '~/types'
 const LAPTOP_SCREEN_ASPECT = 3034.7 / 1964.07  // ≈ 1.545
 const PHONE_SCREEN_ASPECT  = 709.65 / 1539.77  // ≈ 0.461
 
-type Step = 'choose' | 'blank' | 'url' | 'url-locked' | 'capturing'
+type Step = 'main' | 'capturing'
+type ProjectType = 'blank' | 'url'
 type CaptureStatus = 'idle' | 'loading' | 'done' | 'error'
 
 const props = defineProps<{ open: boolean; openToUrl?: boolean }>()
@@ -239,7 +202,8 @@ const authStore = useAuthStore()
 const { isPro } = usePlan()
 const { startCheckout, loading: checkoutLoading } = useCheckout()
 
-const step = ref<Step>('choose')
+const step = ref<Step>('main')
+const type = ref<ProjectType>('blank')
 const name = ref('')
 const url = ref('')
 const nameFocused = ref(false)
@@ -264,27 +228,27 @@ const urlError = computed(() => {
 
 const modalTitle = computed(() => {
   if (step.value === 'capturing') return captureError.value ? 'Capture failed' : `Capturing ${displayHostname.value}…`
-  if (step.value === 'url') return 'New Project from URL'
   return 'New Project'
 })
 
-watch(step, (s) => {
-  nextTick(() => {
-    if (s === 'blank') nameInputRef.value?.focus()
-    if (s === 'url') urlInputRef.value?.focus()
-  })
+const canSubmit = computed(() => {
+  if (!name.value.trim()) return false
+  if (type.value === 'url') return isPro.value && !!resolvedUrl.value && !urlError.value
+  return true
 })
 
 watch(() => props.open, (v) => {
   if (!v) {
     reset()
-  } else if (props.openToUrl) {
-    onChooseUrl()
+  } else {
+    if (props.openToUrl && URL_CAPTURE_ENABLED) type.value = 'url'
+    nextTick(() => nameInputRef.value?.focus())
   }
 })
 
 function reset() {
-  step.value = 'choose'
+  step.value = 'main'
+  type.value = 'blank'
   name.value = ''
   url.value = ''
   prevHostname.value = ''
@@ -301,9 +265,31 @@ function onClose() {
   emit('close')
 }
 
-function onChooseUrl() {
-  if (!URL_CAPTURE_ENABLED) return
-  step.value = isPro.value ? 'url' : 'url-locked'
+function onExpandEnter(el: Element) {
+  const e = el as HTMLElement
+  const height = e.scrollHeight
+  e.style.height = '0px'
+  requestAnimationFrame(() => {
+    e.style.height = `${height}px`
+  })
+}
+
+function onExpandAfterEnter(el: Element) {
+  (el as HTMLElement).style.height = ''
+}
+
+function onExpandLeave(el: Element) {
+  const e = el as HTMLElement
+  e.style.height = `${e.scrollHeight}px`
+  requestAnimationFrame(() => {
+    e.style.height = '0px'
+  })
+}
+
+function onSubmitMain() {
+  if (!canSubmit.value) return
+  if (type.value === 'url') onStartCapture()
+  else onCreateBlank()
 }
 
 function onUrlInput() {
@@ -442,3 +428,27 @@ async function onStartCapture() {
   }
 }
 </script>
+
+<style scoped>
+.expand-panel {
+  overflow: hidden;
+  margin-top: 0 !important;
+}
+.expand-enter-active,
+.expand-leave-active {
+  transition: height 0.125s linear, opacity 0.125s linear;
+}
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.1s linear;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
