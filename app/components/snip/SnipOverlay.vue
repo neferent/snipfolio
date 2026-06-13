@@ -38,10 +38,26 @@
 
       <!-- Label badge — top-left, bottom-right radius only -->
       <div
-        class="absolute left-0 top-0 max-w-[80%] truncate px-1.5 py-0.5 bg-[var(--color-accent)] text-[var(--color-on-accent)] text-[10px] font-medium font-mono [border-radius:0_0_4px_0]"
+        v-if="renamingSnipId !== snip.id"
+        class="absolute left-0 top-0 max-w-[80%] cursor-text truncate px-1.5 py-0.5 bg-[var(--color-accent)] text-[var(--color-on-accent)] text-[10px] font-medium font-mono [border-radius:0_0_4px_0]"
+        title="Double-click to rename"
+        @mousedown.stop
+        @dblclick.stop="startRename(snip)"
       >
         {{ snip.label }}
       </div>
+      <input
+        v-else
+        :ref="setRenameInputEl"
+        v-model="renameValue"
+        class="absolute left-0 top-0 px-1.5 py-0.5 bg-[var(--color-accent)] text-[var(--color-on-accent)] text-[10px] font-medium font-mono [border-radius:0_0_4px_0] outline-none ring-1 ring-white/60"
+        :style="{ width: renameInputWidth(renameValue) }"
+        @mousedown.stop
+        @click.stop
+        @keydown.enter="commitRename(snip)"
+        @keydown.escape="cancelRename"
+        @blur="commitRename(snip)"
+      />
 
       <!-- Frame type badge — bottom-left, hidden during resize snap -->
       <div
@@ -113,6 +129,7 @@ import { GripHorizontal, RotateCw } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
 import { useGridSettingsStore } from '~/stores/gridSettings'
+import { useSnips } from '~/composables/useSnips'
 import { snapToGrid } from '~/utils/grid'
 import { collectSnapLines, snapMove, snapEdge } from '~/utils/snapping'
 import type { Snip } from '~/types'
@@ -132,6 +149,7 @@ const props = defineProps<{
 const store = useSnipsStore()
 const sourcesStore = useSourcesStore()
 const gridSettings = useGridSettingsStore()
+const snipsActions = useSnips()
 const { scheduleSave } = useProject()
 
 const snips = computed(() =>
@@ -395,6 +413,54 @@ function startResize(e: MouseEvent, snip: Snip, dir: string) {
 
   window.addEventListener('mousemove', onMove)
   window.addEventListener('mouseup', onUp)
+}
+
+const renamingSnipId = ref<string | null>(null)
+const renameValue = ref('')
+const renameInputEl = ref<HTMLInputElement | null>(null)
+
+function startRename(snip: Snip) {
+  store.selectSnip(snip.id)
+  renamingSnipId.value = snip.id
+  renameValue.value = snip.label
+}
+
+function setRenameInputEl(el: Element | { $el: Element } | null) {
+  const input = (el as HTMLInputElement | null)
+  renameInputEl.value = input
+  if (input) {
+    input.focus()
+    input.select()
+    window.addEventListener('mousedown', onOutsideRenameMouseDown, true)
+  }
+}
+
+function renameInputWidth(value: string) {
+  return `${Math.max(48, value.length * 6.5 + 14)}px`
+}
+
+// Other elements call preventDefault() on mousedown (e.g. startMove), which
+// suppresses the browser's default blur-on-click-away behavior. Watch for
+// outside mousedowns directly so the rename always commits.
+function onOutsideRenameMouseDown(e: MouseEvent) {
+  if (e.target === renameInputEl.value) return
+  const snip = snips.value.find((s) => s.id === renamingSnipId.value)
+  if (snip) commitRename(snip)
+}
+
+function commitRename(snip: Snip) {
+  if (renamingSnipId.value !== snip.id) return
+  renamingSnipId.value = null
+  window.removeEventListener('mousedown', onOutsideRenameMouseDown, true)
+  const trimmed = renameValue.value.trim()
+  if (trimmed && trimmed !== snip.label) {
+    snipsActions.updateLabel(snip.id, trimmed)
+  }
+}
+
+function cancelRename() {
+  renamingSnipId.value = null
+  window.removeEventListener('mousedown', onOutsideRenameMouseDown, true)
 }
 
 function rotateSnip(snip: Snip) {

@@ -124,7 +124,7 @@
       </div>
 
       <!-- Compositions section -->
-      <div>
+      <div v-if="allSnips.length > 0">
         <div class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 transition hover:bg-white/5">
           <button
             class="flex flex-1 items-center gap-1.5 text-left"

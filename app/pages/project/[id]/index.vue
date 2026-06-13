@@ -10,11 +10,7 @@
         ← Dashboard
       </NuxtLink>
 
-      <div class="mx-2 h-4 w-px bg-[var(--color-border)]" />
-
-      <span class="shrink-0 rounded-full bg-[#38bdf8]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#38bdf8]">
-        Snips
-      </span>
+      <span class="shrink-0 text-sm text-[var(--color-text-faint)]">/</span>
 
       <!-- Editable project name -->
       <div class="group relative flex items-center">
