@@ -448,6 +448,58 @@ function onBatchLoaded(items: Array<{ img: HTMLImageElement; src: string; filena
   nextTick(fitToWidth)
 }
 
+// --- Paste image from clipboard ---
+function loadImageFromFile(file: File): Promise<{ img: HTMLImageElement; src: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const src = e.target?.result as string
+      const img = new Image()
+      img.onload = () => resolve({ img, src })
+      img.onerror = reject
+      img.src = src
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+function addPastedSource(img: HTMLImageElement, src: string) {
+  if (!projectStore.current) return
+  const sourceId = crypto.randomUUID()
+  const newSource: SourceImage = {
+    id: sourceId,
+    projectId: projectStore.current.id,
+    label: 'Pasted image',
+    filename: `pasted_${Date.now()}`,
+    width: img.naturalWidth,
+    height: img.naturalHeight,
+    sortOrder: sourcesStore.sources.length,
+  }
+  sourcesStore.addSource(newSource)
+  sourcesStore.setLoadedImage(sourceId, img, src)
+  sourcesStore.setActiveSource(sourceId)
+  saveImage(projectStore.current.id, sourceId, src)
+  if (sourcesStore.sources.length === 1) savePreview(projectStore.current.id, img)
+  scheduleSave()
+  nextTick(fitToWidth)
+}
+
+async function onPaste(e: ClipboardEvent) {
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile()
+      if (!file) continue
+      e.preventDefault()
+      const { img, src } = await loadImageFromFile(file)
+      addPastedSource(img, src)
+      return
+    }
+  }
+}
+
 function onImageLoaded(sourceId: string, img: HTMLImageElement, src: string) {
   if (!projectStore.current) return
   sourcesStore.setLoadedImage(sourceId, img, src)
@@ -606,6 +658,7 @@ onMounted(() => {
   nextTick(onTabScroll)
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
+  window.addEventListener('paste', onPaste)
   _viewportEl = viewport.value ?? null
   // Use capture phase so snip @mousedown.stop doesn't block these
   _viewportEl?.addEventListener('wheel', onViewportWheel, { passive: false, capture: true })
@@ -615,6 +668,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('keyup', onKeyUp)
+  window.removeEventListener('paste', onPaste)
   window.removeEventListener('mousemove', onPanMove)
   window.removeEventListener('mouseup', onPanUp)
   _viewportEl?.removeEventListener('wheel', onViewportWheel, { capture: true } as EventListenerOptions)
