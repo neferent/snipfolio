@@ -10,9 +10,10 @@
     <div
       v-for="snip in snips"
       :key="snip.id"
-      class="group absolute cursor-move [pointer-events:all]"
+      class="group absolute [pointer-events:all]"
+      :class="snip.isFullSource ? 'cursor-pointer' : 'cursor-move'"
       :style="overlayStyle(snip)"
-      @mousedown.stop="startMove($event, snip)"
+      @mousedown.stop="snip.isFullSource ? store.selectSnip(snip.id) : startMove($event, snip)"
     >
       <!-- Fill + border as single element -->
       <div
@@ -21,8 +22,8 @@
           resizingSnipId === snip.id && resizeSnapFrame
             ? 'border:2px solid #34d399;background:rgba(52,211,153,0.10);border-radius:3px'
             : snip.id === selectedId
-              ? 'border:2px solid #8e9ead;background:rgba(142,158,173,0.14);border-radius:3px'
-              : 'border:1.5px solid rgba(142,158,173,0.75);background:rgba(142,158,173,0.08);border-radius:3px'
+              ? (snip.isFullSource ? 'border:2px dashed #8e9ead;background:rgba(142,158,173,0.14);border-radius:3px' : 'border:2px solid #8e9ead;background:rgba(142,158,173,0.14);border-radius:3px')
+              : (snip.isFullSource ? 'border:1.5px dashed rgba(142,158,173,0.75);background:rgba(142,158,173,0.08);border-radius:3px' : 'border:1.5px solid rgba(142,158,173,0.75);background:rgba(142,158,173,0.08);border-radius:3px')
         "
       />
 
@@ -69,13 +70,13 @@
       </div>
 
       <!-- Drag grip — center, visible on hover -->
-      <div class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-60">
+      <div v-if="!snip.isFullSource" class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-60">
         <GripHorizontal class="size-4 drop-shadow text-white" />
       </div>
 
       <!-- Rotate button — top-right, hover only, phone/tablet only -->
       <button
-        v-if="snip.snapFrame === 'phone' || snip.snapFrame === 'tablet'"
+        v-if="!snip.isFullSource && (snip.snapFrame === 'phone' || snip.snapFrame === 'tablet')"
         class="absolute right-1 top-1 flex size-[18px] items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100 bg-black/55 text-white [pointer-events:all]"
         title="Rotate orientation"
         aria-label="Rotate orientation"
@@ -86,7 +87,7 @@
       </button>
 
       <!-- Resize handles (selected only) — 8×8px per spec -->
-      <template v-if="snip.id === selectedId">
+      <template v-if="snip.id === selectedId && !snip.isFullSource">
         <div
           v-for="handle in handles"
           :key="handle.cursor"

@@ -274,6 +274,38 @@
             </div>
           </div>
 
+          <!-- Full-source viewport: scroll position control -->
+          <div v-if="selectedSnip?.isFullSource" class="border-t-subtle pt-3 space-y-1.5">
+            <label for="slot-scroll" class="text-xs font-medium text-[var(--color-text-muted)]">Scroll position</label>
+            <div v-if="selectedSnipMaxScroll > 0" class="flex items-center gap-2">
+              <input
+                id="slot-scroll"
+                type="range"
+                min="0"
+                :max="selectedSnipMaxScroll"
+                step="1"
+                :value="selectedSnip.y"
+                class="flex-1"
+                @input="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
+              />
+              <input
+                type="number"
+                min="0"
+                :max="selectedSnipMaxScroll"
+                step="1"
+                :value="selectedSnip.y"
+                class="w-20 text-right"
+                @change="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
+              />
+            </div>
+            <p v-if="selectedSnipMaxScroll > 0" class="font-mono text-[10px] text-[var(--color-text-muted)]">
+              {{ selectedSnip.y }}px / {{ selectedSnipMaxScroll }}px
+            </p>
+            <p v-else class="text-[10px] text-[var(--color-text-muted)]">
+              Source isn't taller than the viewport — nothing to scroll.
+            </p>
+          </div>
+
           <div class="border-t-subtle pt-3">
             <CaptionControls
               label="Caption"
@@ -314,6 +346,7 @@ const { width: rightWidth, startResize: startRightResize } = useResizablePanel(2
 import { getFrameMismatches, getSnipFrameMismatch } from '~/composables/useFrameMismatches'
 import { useElementSize } from '@vueuse/core'
 import { useCanvasRenderer } from '~/composables/useCanvasRenderer'
+import { useSnips } from '~/composables/useSnips'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
 import { useGridSettingsStore } from '~/stores/gridSettings'
@@ -407,6 +440,19 @@ const userZoom = ref<number | null>(null)
 
 const selectedSlotId = ref<string | null>(null)
 const selectedSlot = computed(() => slots.value.find((s) => s.id === selectedSlotId.value) ?? null)
+
+const { updateScrollOffset } = useSnips()
+const selectedSnip = computed(() => selectedSlot.value ? snipsStore.snips.find((s) => s.id === selectedSlot.value!.snipId) ?? null : null)
+const selectedSnipMaxScroll = computed(() => {
+  const snip = selectedSnip.value
+  if (!snip) return 0
+  const source = sourcesStore.sources.find((s) => s.id === snip.sourceImageId)
+  return source ? Math.max(0, source.height - snip.height) : 0
+})
+
+function onSlotScrollInput(value: number) {
+  if (selectedSnip.value && Number.isFinite(value)) updateScrollOffset(selectedSnip.value.id, value)
+}
 
 const snips = computed(() => snipsStore.orderedSnips)
 const availableSnips = computed(() => snipsStore.orderedSnips)

@@ -34,6 +34,10 @@ export interface Snip {
   height: number
   sortOrder: number
   snapFrame?: 'laptop' | 'phone' | 'tablet' | null
+  // When true, this snip spans the full source width and `y` acts as a
+  // vertical scroll offset into the source (0 = top). width is locked to
+  // the source's width; height is the frame-viewport height.
+  isFullSource?: boolean
 }
 
 export type CompositionType = 'laptop' | 'laptop+phone' | 'laptop+tablet+phone' | 'browser' | 'browser+url' | 'auto' | 'freeform'

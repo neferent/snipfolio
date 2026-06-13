@@ -8,7 +8,7 @@ export interface FrameMismatch {
 }
 
 // Screen area aspect ratios (w/h) for each frame type
-const FRAME_SCREEN_ASPECT: Partial<Record<DeviceFrame, number>> = {
+export const FRAME_SCREEN_ASPECT: Partial<Record<DeviceFrame, number>> = {
   phone:  (743.7  - 34.05) / (1569.89 - 30.12), // ≈ 0.461
   tablet: (2377.7 - 79.14) / (1803.11 - 80.08), // ≈ 1.334
   laptop: 3034.7 / 1964.07,                       // ≈ 1.545

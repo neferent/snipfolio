@@ -13,17 +13,33 @@
 
       <!-- Snips section -->
       <div class="border-b border-[var(--color-border)]">
-        <button
-          class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 text-left transition hover:bg-white/5"
-          @click="snipsOpen = !snipsOpen"
-        >
-          <ChevronDown
-            class="size-3 shrink-0 text-[var(--color-text-muted)] transition-transform"
-            :class="snipsOpen ? '' : '-rotate-90'"
-          />
-          <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Snips</span>
-          <span class="ml-auto inline-flex items-center justify-center rounded bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ allSnips.length }}</span>
-        </button>
+        <div class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 transition hover:bg-white/5">
+          <button
+            class="flex flex-1 items-center gap-1.5 text-left"
+            @click="snipsOpen = !snipsOpen"
+          >
+            <ChevronDown
+              class="size-3 shrink-0 text-[var(--color-text-muted)] transition-transform"
+              :class="snipsOpen ? '' : '-rotate-90'"
+            />
+            <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Snips</span>
+            <span class="inline-flex items-center justify-center rounded bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ allSnips.length }}</span>
+          </button>
+          <AppDropdown v-if="activeSourceId" align="right">
+            <template #trigger>
+              <button
+                class="ml-auto flex items-center gap-0.5 rounded-[4px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
+                title="Add a full-source scrolling viewport snip"
+              >
+                <Plus class="size-2.5" />
+                Full source
+              </button>
+            </template>
+            <AppDropdownItem @click="addFullSourceSnip('laptop')">Desktop</AppDropdownItem>
+            <AppDropdownItem @click="addFullSourceSnip('tablet')">Tablet</AppDropdownItem>
+            <AppDropdownItem @click="addFullSourceSnip('phone')">Mobile</AppDropdownItem>
+          </AppDropdown>
+        </div>
 
         <template v-if="snipsOpen">
           <!-- Grouped by source -->
@@ -229,9 +245,13 @@ function selectSnip(snipId: string, sourceId: string) {
   sourcesStore.setActiveSource(sourceId)
 }
 
-const { deleteSnip } = useSnips()
+const { deleteSnip, createFullSourceSnip } = useSnips()
 
 function confirmDelete(id: string) {
   deleteSnip(id)
+}
+
+function addFullSourceSnip(frame: 'laptop' | 'tablet' | 'phone') {
+  createFullSourceSnip(frame)
 }
 </script>

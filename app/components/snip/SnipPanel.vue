@@ -40,8 +40,43 @@
         </div>
       </div>
 
+      <!-- Full-source viewport: scroll position control -->
+      <div v-if="snip.isFullSource" class="space-y-1.5">
+        <p class="text-xs text-[var(--color-text-muted)]">
+          Full-source viewport — shows {{ snip.width }}×{{ snip.height }}px of a {{ sourceWidth }}×{{ sourceHeight }}px source
+        </p>
+        <label for="snip-scroll" class="text-xs text-[var(--color-text-muted)]">Scroll position</label>
+        <div v-if="maxScroll > 0" class="flex items-center gap-2">
+          <input
+            id="snip-scroll"
+            type="range"
+            min="0"
+            :max="maxScroll"
+            step="1"
+            :value="snip.y"
+            class="flex-1"
+            @input="onScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
+          />
+          <input
+            type="number"
+            min="0"
+            :max="maxScroll"
+            step="1"
+            :value="snip.y"
+            class="w-20 text-right"
+            @change="onScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
+          />
+        </div>
+        <p v-if="maxScroll > 0" class="font-mono text-[10px] text-[var(--color-text-muted)]">
+          {{ snip.y }}px / {{ maxScroll }}px
+        </p>
+        <p v-else class="text-[10px] text-[var(--color-text-muted)]">
+          Source isn't taller than the viewport — nothing to scroll.
+        </p>
+      </div>
+
       <!-- Position (read-only) -->
-      <div class="grid grid-cols-2 gap-2">
+      <div v-else class="grid grid-cols-2 gap-2">
         <div class="space-y-1">
           <label class="text-xs text-[var(--color-text-muted)]">X</label>
           <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-3)] px-3 py-1.5 text-sm text-[var(--color-text-muted)]">
@@ -92,6 +127,7 @@
 <script setup lang="ts">
 import { Check, Copy } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
+import { useSourcesStore } from '~/stores/sources'
 import { useResizablePanel } from '~/composables/useResizablePanel'
 
 const { width, startResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })
@@ -99,11 +135,26 @@ import { useSnips } from '~/composables/useSnips'
 import { useExport } from '~/composables/useExport'
 
 const store = useSnipsStore()
+const sourcesStore = useSourcesStore()
 const snipsActions = useSnips()
 const { exportSnipRaw, copySnipToClipboard } = useExport()
 
 const snip = computed(() => store.selectedSnip)
 const copied = ref(false)
+
+const source = computed(() =>
+  snip.value ? sourcesStore.sources.find((s) => s.id === snip.value!.sourceImageId) : undefined,
+)
+const sourceWidth = computed(() => source.value?.width ?? 0)
+const sourceHeight = computed(() => source.value?.height ?? 0)
+const maxScroll = computed(() => {
+  if (!snip.value || !source.value) return 0
+  return Math.max(0, source.value.height - snip.value.height)
+})
+
+function onScrollInput(value: number) {
+  if (snip.value && Number.isFinite(value)) snipsActions.updateScrollOffset(snip.value.id, value)
+}
 
 function updateLabel(label: string) {
   if (snip.value) snipsActions.updateLabel(snip.value.id, label)
