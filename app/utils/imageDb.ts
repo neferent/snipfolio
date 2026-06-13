@@ -1,14 +1,22 @@
 const THUMB_W = 640
 const THUMB_H = 256
 
-export function generateThumbnail(img: HTMLImageElement): string {
+export async function generateThumbnail(img: HTMLImageElement): Promise<string> {
+  // Crop to top THUMB_H pixels (scaled), then resize via createImageBitmap —
+  // drawing very large source images directly to canvas fails silently in
+  // some browsers (e.g. Safari's GPU texture size limit on tall full-page captures).
+  const srcH = Math.min(Math.round(THUMB_H * img.naturalWidth / THUMB_W), img.naturalHeight)
+  const bitmap = await createImageBitmap(img, 0, 0, img.naturalWidth, srcH, {
+    resizeWidth: THUMB_W,
+    resizeHeight: THUMB_H,
+    resizeQuality: 'medium',
+  })
   const canvas = document.createElement('canvas')
   canvas.width = THUMB_W
   canvas.height = THUMB_H
   const ctx = canvas.getContext('2d')!
-  // Scale image to fill thumbnail width, crop to top THUMB_H pixels
-  const srcH = Math.round(THUMB_H * img.naturalWidth / THUMB_W)
-  ctx.drawImage(img, 0, 0, img.naturalWidth, Math.min(srcH, img.naturalHeight), 0, 0, THUMB_W, THUMB_H)
+  ctx.drawImage(bitmap, 0, 0)
+  bitmap.close()
   return canvas.toDataURL('image/jpeg', 0.8)
 }
 

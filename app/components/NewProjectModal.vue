@@ -244,7 +244,7 @@ const emit = defineEmits<{
   composed: [projectId: string, compositionId: string]
 }>()
 
-const { createProject: createProjectFn, saveImage, persistAll } = useProject()
+const { createProject: createProjectFn, saveImage, savePreview, persistAll } = useProject()
 const projectStore = useProjectStore()
 const sourcesStore = useSourcesStore()
 const snipsStore = useSnipsStore()
@@ -506,6 +506,9 @@ async function onStartCapture() {
       if (!capture) continue
       placed.set(viewport, addCapturedSource(project.id, viewport, capture, sortOrder++))
     }
+
+    const previewCapture = captured.get('desktop') ?? captured.get('tablet') ?? captured.get('mobile')
+    if (previewCapture) savePreview(project.id, previewCapture.img)
 
     const desktop = placed.get('desktop')
     const tablet = placed.get('tablet')

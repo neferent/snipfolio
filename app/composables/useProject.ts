@@ -286,10 +286,10 @@ export function useProject() {
     await sb.storage.from('screenshots').remove([path])
   }
 
-  function savePreview(projectId: string, img: HTMLImageElement) {
+  async function savePreview(projectId: string, img: HTMLImageElement) {
     if (!import.meta.client) return
     try {
-      const thumb = generateThumbnail(img)
+      const thumb = await generateThumbnail(img)
       if (isSupabase) {
         uploadImageToStorage(projectId, `__preview__`, thumb).catch(() => {})
       } else {
@@ -360,6 +360,7 @@ export function useProject() {
           if (source.width === 0 || source.height === 0) {
             sourcesStore.updateSource(source.id, { width: img.naturalWidth, height: img.naturalHeight })
           }
+          if (source.id === sources[0]?.id) backfillPreview(projectId, img)
         }
         img.onerror = () => {
           sourcesStore.markSourceFailed(source.id)
@@ -390,12 +391,20 @@ export function useProject() {
         if (source.width === 0 || source.height === 0) {
           sourcesStore.updateSource(source.id, { width: img.naturalWidth, height: img.naturalHeight })
         }
+        if (source.id === sources[0]?.id) backfillPreview(projectId, img)
       }
       img.onerror = () => {
         sourcesStore.markSourceFailed(source.id)
       }
       img.src = src
     }
+  }
+
+  // Generates a dashboard preview for older projects that were created before
+  // preview generation existed (or via a flow that skipped it).
+  async function backfillPreview(projectId: string, img: HTMLImageElement) {
+    const existing = await loadPreview(projectId)
+    if (!existing) await savePreview(projectId, img)
   }
 
   return { fetchProjects, createProject, renameProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, deleteSourceRecord, savePreview, loadPreview }
