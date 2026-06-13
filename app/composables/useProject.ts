@@ -10,6 +10,8 @@ function generateId() {
   return crypto.randomUUID()
 }
 
+let beforeUnloadRegistered = false
+
 export function useProject() {
   const projectStore = useProjectStore()
   const snipsStore = useSnipsStore()
@@ -155,16 +157,28 @@ export function useProject() {
 
   // --- Save / auto-save ---
   let saveTimer: ReturnType<typeof setTimeout> | null = null
+  let retryTimer: ReturnType<typeof setTimeout> | null = null
+  let retryDelay = 2000
+  const MAX_RETRY_DELAY = 30000
 
   function scheduleSave() {
     projectStore.markUnsaved()
     if (saveTimer) clearTimeout(saveTimer)
+    if (retryTimer) {
+      clearTimeout(retryTimer)
+      retryTimer = null
+    }
+    retryDelay = 2000
     saveTimer = setTimeout(() => persistAll(), 1500)
   }
 
   async function persistAll() {
     const project = projectStore.current
     if (!project) return
+    if (retryTimer) {
+      clearTimeout(retryTimer)
+      retryTimer = null
+    }
     projectStore.setSaveStatus('saving')
     try {
       if (!isSupabase) {
@@ -190,9 +204,32 @@ export function useProject() {
         ])
       }
       projectStore.setSaveStatus('saved')
+      retryDelay = 2000
     } catch {
       projectStore.setSaveStatus('error')
+      // Saves are idempotent upserts, so retrying the full payload is safe even
+      // if only part of the previous attempt actually failed server-side.
+      retryTimer = setTimeout(() => persistAll(), retryDelay)
+      retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY)
     }
+  }
+
+  // Flush a pending debounced save immediately, and warn the user if leaving
+  // the page would lose changes that haven't been confirmed saved yet.
+  if (import.meta.client && !beforeUnloadRegistered) {
+    beforeUnloadRegistered = true
+    window.addEventListener('beforeunload', (e) => {
+      if (saveTimer) {
+        clearTimeout(saveTimer)
+        saveTimer = null
+        persistAll()
+      }
+      const status = projectStore.saveStatus
+      if (status === 'unsaved' || status === 'saving' || status === 'error') {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    })
   }
 
   // --- Supabase Storage helpers ---
@@ -303,6 +340,9 @@ export function useProject() {
             sourcesStore.updateSource(source.id, { width: img.naturalWidth, height: img.naturalHeight })
           }
         }
+        img.onerror = () => {
+          sourcesStore.markSourceFailed(source.id)
+        }
         img.src = src
       }
       return
@@ -329,6 +369,9 @@ export function useProject() {
         if (source.width === 0 || source.height === 0) {
           sourcesStore.updateSource(source.id, { width: img.naturalWidth, height: img.naturalHeight })
         }
+      }
+      img.onerror = () => {
+        sourcesStore.markSourceFailed(source.id)
       }
       img.src = src
     }

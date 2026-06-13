@@ -28,12 +28,18 @@ export function useCheckout() {
       localStorage.setItem('snipfolio_checkout_return', returnTo ?? window.location.pathname + window.location.search)
       localStorage.setItem('snipfolio_checkout_type', type)
       window.location.href = url
+      // Leave loading=true — the page is navigating away, so the button
+      // should stay disabled rather than allow a duplicate checkout request.
     } catch (e) {
       console.error('[startCheckout] error:', e)
-      toast.error('Could not start checkout', { description: 'Please sign in again and retry.' })
-      authStore.clear()
-      await navigateTo('/login')
-    } finally {
+      const statusCode = (e as { statusCode?: number })?.statusCode
+      if (statusCode === 401 || statusCode === 403) {
+        toast.error('Please sign in again to continue')
+        authStore.clear()
+        await navigateTo('/login')
+      } else {
+        toast.error('Could not start checkout', { description: 'Please try again in a moment.' })
+      }
       loading.value = false
     }
   }

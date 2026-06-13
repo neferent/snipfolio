@@ -348,4 +348,40 @@ describe('sourcesStore', () => {
     store.addSource(makeSource({ id: 'a', sortOrder: 1 }))
     expect(store.orderedSources.map((s) => s.id)).toEqual(['a', 'b'])
   })
+
+  it('markSourceFailed flags the source as failed for the active source', () => {
+    const store = useSourcesStore()
+    store.addSource(makeSource({ id: 'src-1' }))
+    store.setActiveSource('src-1')
+    expect(store.isActiveSourceFailed).toBe(false)
+    store.markSourceFailed('src-1')
+    expect(store.isActiveSourceFailed).toBe(true)
+    expect(store.failedSourceIds.has('src-1')).toBe(true)
+  })
+
+  it('setLoadedImage clears a previously failed source', () => {
+    const store = useSourcesStore()
+    store.addSource(makeSource({ id: 'src-1' }))
+    store.setActiveSource('src-1')
+    store.markSourceFailed('src-1')
+    store.setLoadedImage('src-1', {} as HTMLImageElement, 'data:image/png;base64,')
+    expect(store.isActiveSourceFailed).toBe(false)
+    expect(store.failedSourceIds.has('src-1')).toBe(false)
+  })
+
+  it('removeSource clears the failed flag for the removed source', () => {
+    const store = useSourcesStore()
+    store.addSource(makeSource({ id: 'src-1' }))
+    store.markSourceFailed('src-1')
+    store.removeSource('src-1')
+    expect(store.failedSourceIds.has('src-1')).toBe(false)
+  })
+
+  it('setSources resets the failed set', () => {
+    const store = useSourcesStore()
+    store.addSource(makeSource({ id: 'src-1' }))
+    store.markSourceFailed('src-1')
+    store.setSources([makeSource({ id: 'src-2' })])
+    expect(store.failedSourceIds.size).toBe(0)
+  })
 })

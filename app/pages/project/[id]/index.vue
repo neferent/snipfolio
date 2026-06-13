@@ -30,6 +30,7 @@
       <div class="flex-1" />
 
       <SaveStatus :status="projectStore.saveStatus" />
+      <UserMenu />
     </header>
 
     <!-- relative + flex-1 gives SnipTool's absolute inset-0 a defined bounding box -->

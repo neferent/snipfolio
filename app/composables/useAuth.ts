@@ -4,6 +4,21 @@ import { initSupabaseClient } from '~/composables/useSupabaseClient'
 
 let _authListenerRegistered = false
 
+// Distinguishes transient network failures (Supabase unreachable, offline) from
+// genuine auth errors (bad credentials, expired link) so the UI can suggest
+// the right next step.
+export function getAuthErrorMessage(e: unknown, fallback: string): string {
+  if (e instanceof Error) {
+    const name = e.name
+    const msg = e.message.toLowerCase()
+    if (name === 'AuthRetryableFetchError' || msg.includes('fetch') || msg.includes('network')) {
+      return 'Network error — check your connection and try again.'
+    }
+    return e.message
+  }
+  return fallback
+}
+
 function useSupabaseAuth() {
   const store = useAuthStore()
 

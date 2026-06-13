@@ -159,7 +159,7 @@
 definePageMeta({ layout: 'default', middleware: [], ssr: false })
 useHead({ title: 'Sign in -- Snipfolio' })
 
-import { useAuth } from '~/composables/useAuth'
+import { useAuth, getAuthErrorMessage } from '~/composables/useAuth'
 import { useAuthStore } from '~/stores/auth'
 import { toast } from '~/composables/useToast'
 import { useResumePostAuth } from '~/composables/useResumePostAuth'
@@ -199,10 +199,10 @@ async function submitForgotPassword() {
   loading.value = true
   try {
     await sendPasswordReset(email.value)
-    message.value = 'Check your email for a reset link.'
-    toast.success('Reset link sent', { description: 'Check your email for instructions.' })
+    message.value = "If an account exists for that email, you'll receive a reset link shortly."
+    toast.success('Check your inbox', { description: message.value })
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Failed to send reset email'
+    error.value = getAuthErrorMessage(e, 'Failed to send reset email')
     toast.error(error.value)
   } finally {
     loading.value = false
@@ -226,7 +226,7 @@ async function submit() {
       await resumePostAuth()
     }
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : isSignUp.value ? 'Sign up failed' : 'Sign in failed'
+    error.value = getAuthErrorMessage(e, isSignUp.value ? 'Sign up failed' : 'Sign in failed')
     toast.error(error.value)
   } finally {
     loading.value = false

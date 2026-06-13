@@ -23,7 +23,10 @@ export default defineEventHandler(async (event) => {
   // Pro subscription created or renewed
   if (eventName === 'subscription_created' || eventName === 'subscription_payment_success') {
     const userId: string | undefined = payload.meta?.custom_data?.user_id
-    if (!userId) return { ok: true }
+    if (!userId) {
+      console.error('[webhook] subscription event missing custom_data.user_id', eventName)
+      throw createError({ statusCode: 400, message: 'Missing user_id in custom_data' })
+    }
 
     const { error } = await sb.from('profiles').upsert({ id: userId, is_pro: true, pro_expires_at: null }, { onConflict: 'id' })
     if (error) {
@@ -35,7 +38,10 @@ export default defineEventHandler(async (event) => {
   // Pro subscription cancelled/expired
   if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
     const userId: string | undefined = payload.meta?.custom_data?.user_id
-    if (!userId) return { ok: true }
+    if (!userId) {
+      console.error('[webhook] subscription event missing custom_data.user_id', eventName)
+      throw createError({ statusCode: 400, message: 'Missing user_id in custom_data' })
+    }
 
     const { error } = await sb.from('profiles').upsert({ id: userId, is_pro: false }, { onConflict: 'id' })
     if (error) {
@@ -55,9 +61,14 @@ export default defineEventHandler(async (event) => {
 
     console.log('[webhook] order_created', { variantId, dayPassVariantIds, userId })
 
-    if (!dayPassVariantIds.includes(variantId as number) || !userId) {
-      console.log('[webhook] day pass skipped — variant or data mismatch')
+    if (!dayPassVariantIds.includes(variantId as number)) {
+      console.log('[webhook] day pass skipped — variant mismatch')
       return { ok: true }
+    }
+
+    if (!userId) {
+      console.error('[webhook] day pass order missing custom_data.user_id')
+      throw createError({ statusCode: 400, message: 'Missing user_id in custom_data' })
     }
 
     const proExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()

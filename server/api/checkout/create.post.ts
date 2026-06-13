@@ -41,18 +41,27 @@ export default defineEventHandler(async (event) => {
     },
   }
 
-  const response = await $fetch<{ data: { attributes: { url: string } } }>(
-    'https://api.lemonsqueezy.com/v1/checkouts',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.lsApiKey}`,
-        Accept: 'application/vnd.api+json',
-        'Content-Type': 'application/vnd.api+json',
+  let response: { data: { attributes: { url: string } } }
+  try {
+    response = await $fetch<{ data: { attributes: { url: string } } }>(
+      'https://api.lemonsqueezy.com/v1/checkouts',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.lsApiKey}`,
+          Accept: 'application/vnd.api+json',
+          'Content-Type': 'application/vnd.api+json',
+        },
+        body: payload,
+        signal: AbortSignal.timeout(15_000),
       },
-      body: payload,
-    },
-  )
+    )
+  } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      throw createError({ statusCode: 504, message: 'Checkout is taking too long to start. Please try again.' })
+    }
+    throw createError({ statusCode: 502, message: 'Could not start checkout. Please try again.' })
+  }
 
   return { url: response.data.attributes.url }
 })

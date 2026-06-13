@@ -144,9 +144,21 @@
           :class="isPanning ? 'cursor-grabbing' : spacePressed ? 'cursor-grab' : activeImage ? 'cursor-crosshair' : ''"
           @mousedown="onMouseDown"
         >
+          <!-- Image failed to load (e.g. storage error) -->
+          <div
+            v-if="!activeImage && !isActiveSourceLoading && isActiveSourceFailed"
+            class="flex h-full flex-col items-center justify-center gap-2 text-center"
+          >
+            <p class="text-sm text-[var(--color-text-muted)]">
+              This image couldn't be loaded. It may have failed to upload or sync.
+            </p>
+            <p class="text-xs text-[var(--color-text-muted)]">Try re-uploading it below.</p>
+            <ScreenshotDropzone @loaded="(img, src) => onImageLoaded(activeSourceId!, img, src)" />
+          </div>
+
           <!-- Source not yet loaded -->
           <div
-            v-if="!activeImage && !isActiveSourceLoading"
+            v-else-if="!activeImage && !isActiveSourceLoading"
             class="flex h-full items-center justify-center"
           >
             <ScreenshotDropzone @loaded="(img, src) => onImageLoaded(activeSourceId!, img, src)" />
@@ -313,6 +325,7 @@ watch(() => sources.value.length, () => nextTick(onTabScroll))
 const activeSourceId = computed(() => sourcesStore.activeSourceId)
 const activeImage = computed(() => sourcesStore.activeImage)
 const isActiveSourceLoading = computed(() => sourcesStore.isActiveSourceLoading)
+const isActiveSourceFailed = computed(() => sourcesStore.isActiveSourceFailed)
 
 // --- Source tab renaming ---
 const sourceLabelOriginals = new Map<string, string>()

@@ -41,7 +41,12 @@ export default defineNuxtPlugin(async () => {
     return
   }
 
+  // Same deferral as the '/' case above — navigateTo() before app.mount() gets
+  // silently overridden by the router's initial navigation, so without this an
+  // unauthenticated initial load of a protected route would render and stay put.
   if (!authStore.isAuthenticated && !isPublic) {
-    await navigateTo('/login')
+    useNuxtApp().hook('app:mounted', () => {
+      navigateTo('/login', { replace: true })
+    })
   }
 })

@@ -21,6 +21,7 @@
       </span>
       <div class="flex-1" />
       <SaveStatus :status="projectStore.saveStatus" />
+      <UserMenu />
     </header>
 
     <div class="relative min-h-0 flex-1">
