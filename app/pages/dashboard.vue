@@ -100,10 +100,28 @@
                 </div>
               </div>
 
-              <p class="truncate text-sm font-medium text-[var(--color-text)]">{{ project.name }}</p>
+              <input
+                v-if="editingId === project.id"
+                ref="renameInputEl"
+                v-model="editingName"
+                class="w-full truncate rounded bg-[var(--color-surface)] px-1 -mx-1 text-sm font-medium text-[var(--color-text)] outline-none ring-1 ring-[var(--color-accent)]"
+                @click.stop
+                @keydown.enter="commitRename(project.id)"
+                @keydown.escape="cancelRename"
+                @blur="commitRename(project.id)"
+              />
+              <p v-else class="truncate text-sm font-medium text-[var(--color-text)]">{{ project.name }}</p>
               <p class="mt-0.5 text-xs text-[var(--color-text-muted)]">
                 {{ formatDate(project.updatedAt) }}
               </p>
+
+              <!-- Rename button -->
+              <button
+                class="absolute right-10 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-white/10 hover:text-[var(--color-text)]"
+                @click.stop="startRename(project)"
+              >
+                <Pencil class="size-4" />
+              </button>
 
               <!-- Delete button -->
               <button
@@ -197,6 +215,7 @@
 
 <script setup lang="ts">
 useHead({ title: 'Dashboard — Snipfolio' })
+import { Pencil } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
 import { useAuth } from '~/composables/useAuth'
@@ -209,7 +228,7 @@ definePageMeta({ middleware: 'auth' })
 const authStore = useAuthStore()
 const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
-const { fetchProjects, deleteProject, loadPreview } = useProject()
+const { fetchProjects, deleteProject, renameProject, loadPreview } = useProject()
 const { canCreateProject, isPro } = usePlan()
 const { startCheckout } = useCheckout()
 
@@ -225,6 +244,9 @@ const showProUpsell = ref(false)
 const deleteTarget = ref<{ id: string; name: string } | null>(null)
 const previews = ref<Record<string, string>>({})
 const loading = ref(true)
+const editingId = ref<string | null>(null)
+const editingName = ref('')
+const renameInputEl = ref<HTMLInputElement[]>([])
 
 watch(projects, (list) => {
   for (const p of list) {
@@ -277,6 +299,29 @@ function openProject(id: string) {
 
 function confirmDelete(id: string, name: string) {
   deleteTarget.value = { id, name }
+}
+
+function startRename(project: { id: string; name: string }) {
+  editingId.value = project.id
+  editingName.value = project.name
+  nextTick(() => {
+    const input = renameInputEl.value[0]
+    input?.focus()
+    input?.select()
+  })
+}
+
+async function commitRename(id: string) {
+  if (editingId.value !== id) return
+  editingId.value = null
+  const project = projects.value.find((p) => p.id === id)
+  const trimmed = editingName.value.trim()
+  if (!project || trimmed === project.name) return
+  await renameProject(id, trimmed)
+}
+
+function cancelRename() {
+  editingId.value = null
 }
 
 async function doDelete() {

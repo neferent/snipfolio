@@ -84,6 +84,27 @@ export function useProject() {
     return rowToProject(data)
   }
 
+  async function renameProject(id: string, name: string) {
+    const trimmed = name.trim() || 'Untitled project'
+    if (!isSupabase) {
+      const projects = loadLocalProjects()
+      const existing = projects.find((p) => p.id === id)
+      if (existing) {
+        existing.name = trimmed
+        existing.updatedAt = new Date().toISOString()
+        saveLocalProjects(projects)
+      }
+    } else {
+      const sb = useSupabaseClient()!
+      const { error } = await sb.from('projects').update({ name: trimmed }).eq('id', id)
+      if (error) throw error
+    }
+    projectStore.setProjects(projectStore.projects.map((p) => (p.id === id ? { ...p, name: trimmed } : p)))
+    if (projectStore.current?.id === id) {
+      projectStore.current.name = trimmed
+    }
+  }
+
   async function deleteProject(id: string) {
     if (!isSupabase) {
       const projects = loadLocalProjects().filter((p) => p.id !== id)
@@ -377,7 +398,7 @@ export function useProject() {
     }
   }
 
-  return { fetchProjects, createProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, deleteSourceRecord, savePreview, loadPreview }
+  return { fetchProjects, createProject, renameProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, deleteSourceRecord, savePreview, loadPreview }
 }
 
 // --- Row mappers ---
