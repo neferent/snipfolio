@@ -164,10 +164,10 @@
         </div>
 
         <template v-if="compositionsOpen">
-          <div v-for="comp in compositions" :key="comp.id" class="group border-b border-[var(--color-border)]/50">
+          <div v-for="comp in compositions" :key="comp.id" class="group relative border-b border-[var(--color-border)]/50">
             <NuxtLink
               :to="`/project/${projectId}/compose/${comp.id}`"
-              class="flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/5"
+              class="flex min-w-0 items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/5"
               :class="$route.params.compositionId === comp.id ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'text-[var(--color-text)]'"
             >
               <div class="h-[32px] w-[52px] shrink-0 overflow-hidden rounded border border-[var(--color-border)]">
@@ -180,6 +180,14 @@
                 </p>
               </div>
             </NuxtLink>
+            <button
+              class="absolute top-1/2 right-2 size-6 -translate-y-1/2 shrink-0 rounded bg-[var(--color-surface-2)] p-1 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
+              title="Delete composition"
+              aria-label="Delete composition"
+              @click.stop="confirmDeleteComposition(comp.id, comp.name)"
+            >
+              <X class="size-3.5" aria-hidden="true" />
+            </button>
           </div>
 
           <div v-if="compositions.length === 0" class="px-4 py-6 text-center text-sm text-[var(--color-text-muted)]">
@@ -193,6 +201,27 @@
 
     <!-- New composition modal -->
     <NewCompositionModal :open="showNewComp" @close="showNewComp = false" />
+
+    <!-- Delete composition confirm -->
+    <AppModal :open="!!deleteCompTarget" title="Delete composition?" @close="deleteCompTarget = null">
+      <p class="text-sm text-[var(--color-text-muted)]">
+        Delete <strong class="text-[var(--color-text)]">{{ deleteCompTarget?.name }}</strong>? This cannot be undone.
+      </p>
+      <template #footer>
+        <button
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
+          @click="deleteCompTarget = null"
+        >
+          Cancel
+        </button>
+        <button
+          class="flex h-8 items-center rounded-[6px] bg-red-500 px-3 text-sm font-medium text-white transition hover:bg-red-600"
+          @click="doDeleteComposition"
+        >
+          Delete
+        </button>
+      </template>
+    </AppModal>
 
     <!-- Drag handle -->
     <div
@@ -246,9 +275,25 @@ function selectSnip(snipId: string, sourceId: string) {
 }
 
 const { deleteSnip, createFullSourceSnip } = useSnips()
+const { deleteComposition } = useCompositions()
 
 function confirmDelete(id: string) {
   deleteSnip(id)
+}
+
+const deleteCompTarget = ref<{ id: string; name: string } | null>(null)
+
+function confirmDeleteComposition(id: string, name: string) {
+  deleteCompTarget.value = { id, name }
+}
+
+function doDeleteComposition() {
+  if (!deleteCompTarget.value) return
+  if (compositionsStore.selectedId === deleteCompTarget.value.id) {
+    compositionsStore.selectComposition(null)
+  }
+  deleteComposition(deleteCompTarget.value.id)
+  deleteCompTarget.value = null
 }
 
 function addFullSourceSnip(frame: 'laptop' | 'tablet' | 'phone') {

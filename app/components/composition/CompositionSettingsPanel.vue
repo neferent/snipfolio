@@ -59,16 +59,16 @@
     </div>
 
     <!-- Export -->
-    <div class="flex gap-2">
+    <div class="flex flex-col gap-2">
       <button
-        class="flex h-9 flex-1 items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
+        class="flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
         @click="$emit('export')"
       >
         <Upload class="size-4" />
         Export PNG
       </button>
       <button
-        class="flex h-9 flex-1 items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
+        class="flex h-9 items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
         @click="copyToClipboard"
       >
         <Check v-if="copied" class="size-4" />
