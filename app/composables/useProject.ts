@@ -468,6 +468,7 @@ function rowToSnip(row: Record<string, unknown>): Snip {
     height: row.height as number,
     sortOrder: (row.sort_order ?? row.sortOrder ?? 0) as number,
     snapFrame: (row.snap_frame ?? row.snapFrame ?? null) as 'laptop' | 'phone' | 'tablet' | null,
+    isFullSource: (row.is_full_source ?? row.isFullSource ?? false) as boolean,
   }
 }
 
@@ -483,6 +484,7 @@ function snipToRow(snip: Snip) {
     height: snip.height,
     sort_order: snip.sortOrder,
     snap_frame: snip.snapFrame ?? null,
+    is_full_source: snip.isFullSource ?? false,
   }
 }
 
