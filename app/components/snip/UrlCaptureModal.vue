@@ -71,7 +71,7 @@
           class="flex flex-col overflow-hidden border border-white/10"
           :style="{ width: pillWidth(state.viewport) + 'px' }"
         >
-          <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
+          <div class="relative flex items-center justify-center bg-black/20" :style="{ height: PILL_HEIGHT + 'px' }">
             <template v-if="state.status === 'loading'">
               <Loader2Icon class="size-4 animate-spin text-white/30" />
             </template>
@@ -176,7 +176,8 @@ const viewports: { key: Viewport; label: string; width: number }[] = [
   { key: 'mobile', label: 'Mobile', width: 390 },
 ]
 
-const DESKTOP_PILL_WIDTH = 160
+const DESKTOP_PILL_WIDTH = 220
+const PILL_HEIGHT = 140
 
 function pillWidth(v: Viewport) {
   const vp = viewports.find(x => x.key === v)!

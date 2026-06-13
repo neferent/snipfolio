@@ -54,3 +54,27 @@ export function captureProgressHint(elapsedSeconds: number): string {
   if (elapsedSeconds < 12) return 'Full pages can take up to 15s…'
   return 'Still working — large pages take a bit longer…'
 }
+
+/** Expected total duration of a desktop+mobile capture, in seconds — sizes the progress bar fill. */
+export const CAPTURE_EXPECTED_DURATION = 12
+
+const CAPTURE_STAGES: { label: string; at: number }[] = [
+  { label: 'Fetching page…', at: 0 },
+  { label: 'Rendering desktop view…', at: 2 },
+  { label: 'Rendering mobile view…', at: 6 },
+  { label: 'Almost done…', at: 10 },
+]
+
+/** Cycles through capture stage labels based on elapsed seconds, for the "From URL" capture step. */
+export function captureStageLabel(elapsedSeconds: number): string {
+  let label = CAPTURE_STAGES[0]!.label
+  for (const stage of CAPTURE_STAGES) {
+    if (elapsedSeconds >= stage.at) label = stage.label
+  }
+  return label
+}
+
+/** Progress bar fill percentage, capped below 100% so it never appears complete before the capture finishes. */
+export function captureProgressPercent(elapsedSeconds: number): number {
+  return Math.min(95, (elapsedSeconds / CAPTURE_EXPECTED_DURATION) * 100)
+}

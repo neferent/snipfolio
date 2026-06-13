@@ -69,15 +69,18 @@
     <!-- Step 3: Capturing -->
     <div v-else-if="step === 'capturing'" class="space-y-1">
       <p class="text-xs text-[var(--color-text-muted)]">
-        {{ captureError ? 'Capture failed' : `Capturing ${displayHostname}…` }}
+        {{ captureError ? 'Capture failed' : captureStageLabel(elapsedSeconds) }}
       </p>
-      <p v-if="!captureError" class="text-[10px] text-[var(--color-text-muted)]/70">
-        {{ captureProgressHint(elapsedSeconds) }}
-      </p>
+      <div v-if="!captureError" class="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/5">
+        <div
+          class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-1000 ease-linear"
+          :style="{ width: captureProgressPercent(elapsedSeconds) + '%' }"
+        />
+      </div>
       <div class="flex items-end gap-2 pt-2">
-        <!-- Desktop pill (160px wide) -->
-        <div class="flex flex-col overflow-hidden rounded border border-white/10" style="width: 160px;">
-          <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
+        <!-- Desktop pill (240px wide) -->
+        <div class="flex flex-col overflow-hidden rounded border border-white/10" style="width: 240px;">
+          <div class="relative flex items-center justify-center bg-black/20" style="height: 140px;">
             <Loader2Icon v-if="desktopStatus === 'loading'" class="size-4 animate-spin text-white/30" />
             <img
               v-else-if="desktopStatus === 'done' && desktopSrc"
@@ -94,9 +97,9 @@
             <span class="truncate text-[10px] text-[var(--color-text-muted)]">Desktop</span>
           </div>
         </div>
-        <!-- Mobile pill (43px wide — 390/1440 * 160) -->
-        <div class="flex flex-col overflow-hidden rounded border border-white/10" style="width: 43px;">
-          <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
+        <!-- Mobile pill (65px wide — 390/1440 * 240) -->
+        <div class="flex flex-col overflow-hidden rounded border border-white/10" style="width: 65px;">
+          <div class="relative flex items-center justify-center bg-black/20" style="height: 140px;">
             <Loader2Icon v-if="mobileStatus === 'loading'" class="size-4 animate-spin text-white/30" />
             <img
               v-else-if="mobileStatus === 'done' && mobileSrc"
@@ -113,6 +116,15 @@
             <span class="truncate text-[10px] text-[var(--color-text-muted)]">Mobile</span>
           </div>
         </div>
+      </div>
+      <div v-if="!captureError" class="pt-2 text-center">
+        <button
+          type="button"
+          class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+          @click="onCancelCapture"
+        >
+          Cancel
+        </button>
       </div>
       <p v-if="captureError" class="pt-1 text-xs text-red-400">{{ captureError }}</p>
     </div>
@@ -163,7 +175,7 @@
 
 <script setup lang="ts">
 import { Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
-import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureProgressHint } from '~/composables/useUrlCapture'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureStageLabel, captureProgressPercent } from '~/composables/useUrlCapture'
 import { useProject } from '~/composables/useProject'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
@@ -216,6 +228,9 @@ const mobileSrc = ref('')
 const captureError = ref('')
 const { elapsedSeconds, start: startElapsed, stop: stopElapsed } = useCaptureElapsed()
 
+let captureAbortController: AbortController | null = null
+let captureCancelled = false
+
 const nameInputRef = ref<HTMLInputElement>()
 const urlInputRef = ref<HTMLInputElement>()
 
@@ -258,7 +273,23 @@ function reset() {
   desktopSrc.value = ''
   mobileSrc.value = ''
   captureError.value = ''
+  captureAbortController?.abort()
+  captureAbortController = null
+  captureCancelled = false
   stopElapsed()
+}
+
+function onCancelCapture() {
+  captureCancelled = true
+  captureAbortController?.abort()
+  captureAbortController = null
+  stopElapsed()
+  step.value = 'main'
+  captureError.value = ''
+  desktopStatus.value = 'idle'
+  mobileStatus.value = 'idle'
+  desktopSrc.value = ''
+  mobileSrc.value = ''
 }
 
 function onClose() {
@@ -317,6 +348,7 @@ async function captureOne(viewport: 'desktop' | 'mobile'): Promise<{ img: HTMLIm
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
       body: JSON.stringify({ url: resolvedUrl.value, viewport }),
+      signal: captureAbortController?.signal,
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({})) as { message?: string }
@@ -348,6 +380,8 @@ async function onStartCapture() {
   mobileStatus.value = 'idle'
   desktopSrc.value = ''
   mobileSrc.value = ''
+  captureCancelled = false
+  captureAbortController = new AbortController()
   startElapsed()
 
   const [desktop, mobile] = await Promise.all([
@@ -356,6 +390,8 @@ async function onStartCapture() {
   ])
 
   stopElapsed()
+
+  if (captureCancelled) return
 
   if (!desktop && !mobile) {
     captureError.value = 'Both captures failed. Check the URL and try again.'
