@@ -64,6 +64,14 @@
         >
           Export raw PNG
         </button>
+        <button
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
+          @click="copyToClipboard"
+        >
+          <Check v-if="copied" class="size-3.5" />
+          <Copy v-else class="size-3.5" />
+          {{ copied ? 'Copied!' : 'Copy to clipboard' }}
+        </button>
       </div>
     </div>
 
@@ -82,6 +90,7 @@
 </template>
 
 <script setup lang="ts">
+import { Check, Copy } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
 import { useResizablePanel } from '~/composables/useResizablePanel'
 
@@ -91,9 +100,10 @@ import { useExport } from '~/composables/useExport'
 
 const store = useSnipsStore()
 const snipsActions = useSnips()
-const { exportSnipRaw } = useExport()
+const { exportSnipRaw, copySnipToClipboard } = useExport()
 
 const snip = computed(() => store.selectedSnip)
+const copied = ref(false)
 
 function updateLabel(label: string) {
   if (snip.value) snipsActions.updateLabel(snip.value.id, label)
@@ -101,5 +111,14 @@ function updateLabel(label: string) {
 
 function exportRaw() {
   if (snip.value) exportSnipRaw(snip.value)
+}
+
+async function copyToClipboard() {
+  if (!snip.value) return
+  const ok = await copySnipToClipboard(snip.value)
+  if (ok) {
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  }
 }
 </script>

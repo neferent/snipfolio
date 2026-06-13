@@ -285,6 +285,7 @@
       </template>
 
       <CompositionSettingsPanel
+        :composition="composition"
         :background="config.background"
         :output-width="config.outputWidth"
         :output-height="config.outputHeight"

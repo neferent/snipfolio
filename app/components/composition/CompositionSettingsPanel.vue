@@ -59,25 +59,38 @@
     </div>
 
     <!-- Export -->
-    <button
-      class="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
-      @click="$emit('export')"
-    >
-      <Upload class="size-4" />
-      Export PNG
-    </button>
+    <div class="flex gap-2">
+      <button
+        class="flex h-9 flex-1 items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
+        @click="$emit('export')"
+      >
+        <Upload class="size-4" />
+        Export PNG
+      </button>
+      <button
+        class="flex h-9 flex-1 items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
+        @click="copyToClipboard"
+      >
+        <Check v-if="copied" class="size-4" />
+        <Copy v-else class="size-4" />
+        {{ copied ? 'Copied!' : 'Copy to clipboard' }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Upload } from 'lucide-vue-next'
-import type { BackgroundConfig } from '~/types'
+import { Upload, Copy, Check } from 'lucide-vue-next'
+import { useExport } from '~/composables/useExport'
+import { usePlan } from '~/composables/usePlan'
+import type { BackgroundConfig, Composition } from '~/types'
 
-defineProps<{
+const props = defineProps<{
   background: BackgroundConfig
   outputWidth: number
   outputHeight: number
   name: string
+  composition: Composition
 }>()
 
 defineEmits<{
@@ -86,6 +99,18 @@ defineEmits<{
   'update:name': [name: string]
   'export': []
 }>()
+
+const { copyCompositionToClipboard } = useExport()
+const { isPro } = usePlan()
+const copied = ref(false)
+
+async function copyToClipboard() {
+  const ok = await copyCompositionToClipboard(props.composition, !isPro.value)
+  if (ok) {
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  }
+}
 
 const sizePresets = [
   { label: '1920×1080', w: 1920, h: 1080 },

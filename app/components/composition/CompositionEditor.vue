@@ -53,6 +53,7 @@
         :style="{ width: rightWidth + 'px' }"
       >
         <CompositionSettingsPanel
+          :composition="comp"
           :background="collageCfg!.background"
           :output-width="comp.config.outputWidth"
           :output-height="comp.config.outputHeight"

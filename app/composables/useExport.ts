@@ -27,11 +27,42 @@ function downloadCanvas(canvas: HTMLCanvasElement, filename: string): Promise<vo
   })
 }
 
+async function copyCanvasToClipboard(canvas: HTMLCanvasElement): Promise<void> {
+  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+    throw new Error('Copying images is not supported in this browser.')
+  }
+  // Pass a Promise<Blob> rather than awaiting first, so Safari can attribute
+  // the clipboard write to the click gesture that triggered it.
+  const item = new ClipboardItem({
+    'image/png': new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('Could not generate image for clipboard.'))
+      }, 'image/png')
+    }),
+  })
+  await navigator.clipboard.write([item])
+}
+
 export function useExport() {
   const { render } = useCanvasRenderer()
   const snipsStore = useSnipsStore()
   const compositionsStore = useCompositionsStore()
   const sourcesStore = useSourcesStore()
+
+  function buildSnipCanvas(snip: Snip): HTMLCanvasElement {
+    const loaded = sourcesStore.getImage(snip.sourceImageId)
+    if (!loaded) throw new Error(`"${snip.label}" has no loaded source image.`)
+    const canvas = document.createElement('canvas')
+    canvas.width = snip.width
+    canvas.height = snip.height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D context unavailable')
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(loaded.img, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)
+    return canvas
+  }
 
   function buildSourceImagesMap(): Map<string, HTMLImageElement> {
     const map = new Map<string, HTMLImageElement>()
@@ -92,16 +123,7 @@ export function useExport() {
 
   function exportSnipRaw(snip: Snip): boolean {
     try {
-      const loaded = sourcesStore.getImage(snip.sourceImageId)
-      if (!loaded) throw new Error(`"${snip.label}" has no loaded source image.`)
-      const canvas = document.createElement('canvas')
-      canvas.width = snip.width
-      canvas.height = snip.height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('Canvas 2D context unavailable')
-      ctx.imageSmoothingEnabled = true
-      ctx.imageSmoothingQuality = 'high'
-      ctx.drawImage(loaded.img, snip.x, snip.y, snip.width, snip.height, 0, 0, snip.width, snip.height)
+      const canvas = buildSnipCanvas(snip)
       const name = `snipfolio_snip_${sanitizeFilename(snip.label)}.png`
       downloadCanvas(canvas, name).catch((err) => {
         toast.error(err instanceof Error ? err.message : 'Export failed')
@@ -109,6 +131,28 @@ export function useExport() {
       return true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Export failed')
+      return false
+    }
+  }
+
+  async function copySnipToClipboard(snip: Snip): Promise<boolean> {
+    try {
+      const canvas = buildSnipCanvas(snip)
+      await copyCanvasToClipboard(canvas)
+      return true
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Copy failed')
+      return false
+    }
+  }
+
+  async function copyCompositionToClipboard(composition: Composition, watermark = true): Promise<boolean> {
+    try {
+      const canvas = renderComposition(composition, watermark)
+      await copyCanvasToClipboard(canvas)
+      return true
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Copy failed')
       return false
     }
   }
@@ -138,5 +182,5 @@ export function useExport() {
     })
   }
 
-  return { exportComposition, exportAllCompositions, exportSnipRaw, exportAllSnipsRaw }
+  return { exportComposition, exportAllCompositions, exportSnipRaw, exportAllSnipsRaw, copySnipToClipboard, copyCompositionToClipboard }
 }
