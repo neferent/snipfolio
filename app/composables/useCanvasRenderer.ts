@@ -81,7 +81,7 @@ function renderFreeform(
     const snipSource = sourceImages.get(snip.sourceImageId) ?? bgSource
     if (!snipSource) continue
     const content = extractSnip(snip, snipSource)
-    drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor)
+    drawFramedContent(ctx, slot.deviceFrame, content, slot.x, slot.y, slot.width, slot.height, slot.frameColor, slot.browserUrl)
     if (slot.caption) {
       const scr = getFrameScreenBounds(slot.deviceFrame, slot.x, slot.y, slot.width, slot.height)
       drawCaption(ctx, slot.caption, scr.x, scr.y, scr.w, scr.h, scr.r)
@@ -378,6 +378,7 @@ function drawFramedContent(
   w: number,
   h: number,
   frameColor?: string,
+  browserUrl?: string,
 ) {
   switch (frame) {
     case 'phone':
@@ -387,7 +388,7 @@ function drawFramedContent(
       drawTabletFrame(ctx, x, y, w, h, content, frameColor)
       break
     case 'browser':
-      drawBrowserFrame(ctx, x, y, w, h, content, frameColor)
+      drawBrowserFrame(ctx, x, y, w, h, content, frameColor, browserUrl)
       break
     case 'laptop':
       drawLaptopFrame(ctx, x, y, w, h, content, frameColor)

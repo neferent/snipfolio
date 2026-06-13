@@ -54,7 +54,7 @@
             @keydown.enter="onSubmitMain"
           />
           <p v-if="urlError" class="text-[10px] text-red-400">{{ urlError }}</p>
-          <p class="text-xs text-[var(--color-text-muted)]">Captures desktop + mobile viewports</p>
+          <p class="text-xs text-[var(--color-text-muted)]">Choose what to capture on the next step</p>
         </div>
 
         <!-- Pro upsell, shown when "From URL" is selected and the user is not Pro -->
@@ -64,6 +64,25 @@
           </p>
         </div>
       </Transition>
+    </div>
+
+    <!-- Step 2: Preset selection -->
+    <div v-else-if="step === 'preset'" class="space-y-3">
+      <p class="text-xs text-[var(--color-text-muted)]">Choose what to capture for {{ displayHostname }}</p>
+      <div class="grid grid-cols-2 gap-3">
+        <button
+          v-for="p in CAPTURE_PRESETS"
+          :key="p.id"
+          type="button"
+          class="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition hover:bg-white/5"
+          :class="preset === p.id ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
+          @click="preset = p.id"
+        >
+          <CapturePresetThumbnail :preset="p.id" />
+          <span class="text-xs font-medium text-[var(--color-text)]">{{ p.label }}</span>
+          <span class="text-[10px] text-[var(--color-text-muted)]">{{ p.description }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Step 3: Capturing -->
@@ -78,42 +97,27 @@
         />
       </div>
       <div class="flex items-end gap-2 pt-2">
-        <!-- Desktop pill (240px wide) -->
-        <div class="flex flex-col overflow-hidden rounded border border-white/10" style="width: 240px;">
+        <div
+          v-for="viewport in activeViewports"
+          :key="viewport"
+          class="flex flex-col overflow-hidden rounded border border-white/10"
+          :style="{ width: pillWidth(viewport) + 'px' }"
+        >
           <div class="relative flex items-center justify-center bg-black/20" style="height: 140px;">
-            <Loader2Icon v-if="desktopStatus === 'loading'" class="size-4 animate-spin text-white/30" />
+            <Loader2Icon v-if="captureState[viewport].status === 'loading'" class="size-4 animate-spin text-white/30" />
             <img
-              v-else-if="desktopStatus === 'done' && desktopSrc"
-              :src="desktopSrc"
+              v-else-if="captureState[viewport].status === 'done' && captureState[viewport].src"
+              :src="captureState[viewport].src"
               class="absolute inset-0 block w-full object-cover object-top"
               draggable="false"
             />
-            <XIcon v-else-if="desktopStatus === 'error'" class="size-4 text-red-400" />
+            <XIcon v-else-if="captureState[viewport].status === 'error'" class="size-4 text-red-400" />
           </div>
           <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
-            <CheckIcon v-if="desktopStatus === 'done'" class="size-3 shrink-0 text-emerald-400" />
-            <Loader2Icon v-else-if="desktopStatus === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
-            <XIcon v-else-if="desktopStatus === 'error'" class="size-3 shrink-0 text-red-400" />
-            <span class="truncate text-[10px] text-[var(--color-text-muted)]">Desktop</span>
-          </div>
-        </div>
-        <!-- Mobile pill (65px wide — 390/1440 * 240) -->
-        <div class="flex flex-col overflow-hidden rounded border border-white/10" style="width: 65px;">
-          <div class="relative flex items-center justify-center bg-black/20" style="height: 140px;">
-            <Loader2Icon v-if="mobileStatus === 'loading'" class="size-4 animate-spin text-white/30" />
-            <img
-              v-else-if="mobileStatus === 'done' && mobileSrc"
-              :src="mobileSrc"
-              class="absolute inset-0 block w-full object-cover object-top"
-              draggable="false"
-            />
-            <XIcon v-else-if="mobileStatus === 'error'" class="size-4 text-red-400" />
-          </div>
-          <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
-            <CheckIcon v-if="mobileStatus === 'done'" class="size-3 shrink-0 text-emerald-400" />
-            <Loader2Icon v-else-if="mobileStatus === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
-            <XIcon v-else-if="mobileStatus === 'error'" class="size-3 shrink-0 text-red-400" />
-            <span class="truncate text-[10px] text-[var(--color-text-muted)]">Mobile</span>
+            <CheckIcon v-if="captureState[viewport].status === 'done'" class="size-3 shrink-0 text-emerald-400" />
+            <Loader2Icon v-else-if="captureState[viewport].status === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
+            <XIcon v-else-if="captureState[viewport].status === 'error'" class="size-3 shrink-0 text-red-400" />
+            <span class="truncate text-[10px] text-[var(--color-text-muted)]">{{ VIEWPORT_LABEL[viewport] }}</span>
           </div>
         </div>
       </div>
@@ -149,9 +153,25 @@
             :disabled="!canSubmit"
             @click="onSubmitMain"
           >
-            {{ type === 'url' ? 'Capture & Create' : 'Create' }}
+            {{ type === 'url' ? 'Next' : 'Create' }}
           </button>
         </Transition>
+      </template>
+
+      <!-- Step 2: preset selection -->
+      <template v-else-if="step === 'preset'">
+        <button
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          @click="step = 'main'"
+        >
+          Back
+        </button>
+        <button
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+          @click="onStartCapture"
+        >
+          Capture &amp; Create
+        </button>
       </template>
 
       <!-- Step 3: capturing — only show buttons on error -->
@@ -175,7 +195,8 @@
 
 <script setup lang="ts">
 import { Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
-import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureStageLabel, captureProgressPercent } from '~/composables/useUrlCapture'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureStageLabel, captureProgressPercent, CAPTURE_PRESETS } from '~/composables/useUrlCapture'
+import type { CapturePreset, CaptureViewport } from '~/composables/useUrlCapture'
 import { useProject } from '~/composables/useProject'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
@@ -190,9 +211,29 @@ import type { SourceImage } from '~/types'
 
 // Screen area aspect ratios (width/height) matching the SVG frame definitions
 const LAPTOP_SCREEN_ASPECT = 3034.7 / 1964.07  // ≈ 1.545
+const TABLET_SCREEN_ASPECT = (2377.7 - 79.14) / (1803.11 - 80.08)  // ≈ 1.334
 const PHONE_SCREEN_ASPECT  = 709.65 / 1539.77  // ≈ 0.461
 
-type Step = 'main' | 'capturing'
+const VIEWPORT_SCREEN_ASPECT: Record<CaptureViewport, number> = {
+  desktop: LAPTOP_SCREEN_ASPECT,
+  tablet: TABLET_SCREEN_ASPECT,
+  mobile: PHONE_SCREEN_ASPECT,
+}
+const VIEWPORT_SNAP_FRAME: Record<CaptureViewport, 'laptop' | 'tablet' | 'phone'> = {
+  desktop: 'laptop',
+  tablet: 'tablet',
+  mobile: 'phone',
+}
+const VIEWPORT_LABEL: Record<CaptureViewport, string> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+}
+
+// Matches the screenshot service's MAX_CONCURRENT_CAPTURES — exceeding it returns a 429.
+const MAX_CONCURRENT_CAPTURES = 2
+
+type Step = 'main' | 'preset' | 'capturing'
 type ProjectType = 'blank' | 'url'
 type CaptureStatus = 'idle' | 'loading' | 'done' | 'error'
 
@@ -209,7 +250,7 @@ const sourcesStore = useSourcesStore()
 const snipsStore = useSnipsStore()
 const compositionsStore = useCompositionsStore()
 const { createSnip } = useSnips()
-const { createLaptopPhoneComposition, createLaptopComposition } = useCompositions()
+const { createLaptopPhoneComposition, createLaptopTabletPhoneComposition, createBrowserComposition, createLaptopComposition } = useCompositions()
 const authStore = useAuthStore()
 const { isPro } = usePlan()
 const { startCheckout, loading: checkoutLoading } = useCheckout()
@@ -220,11 +261,13 @@ const name = ref('')
 const url = ref('')
 const nameFocused = ref(false)
 const prevHostname = ref('')
+const preset = ref<CapturePreset>('laptop+phone')
 
-const desktopStatus = ref<CaptureStatus>('idle')
-const mobileStatus = ref<CaptureStatus>('idle')
-const desktopSrc = ref('')
-const mobileSrc = ref('')
+const captureState = reactive<Record<CaptureViewport, { status: CaptureStatus; src: string }>>({
+  desktop: { status: 'idle', src: '' },
+  tablet: { status: 'idle', src: '' },
+  mobile: { status: 'idle', src: '' },
+})
 const captureError = ref('')
 const { elapsedSeconds, start: startElapsed, stop: stopElapsed } = useCaptureElapsed()
 
@@ -243,6 +286,7 @@ const urlError = computed(() => {
 
 const modalTitle = computed(() => {
   if (step.value === 'capturing') return captureError.value ? 'Capture failed' : `Capturing ${displayHostname.value}…`
+  if (step.value === 'preset') return 'Choose a layout'
   return 'New Project'
 })
 
@@ -251,6 +295,18 @@ const canSubmit = computed(() => {
   if (type.value === 'url') return isPro.value && !!resolvedUrl.value && !urlError.value
   return true
 })
+
+const activeViewports = computed(() => CAPTURE_PRESETS.find((p) => p.id === preset.value)?.viewports ?? [])
+
+/** Pill width for a capture-progress preview, sized proportionally to the preset's viewport mix. */
+function pillWidth(viewport: CaptureViewport): number {
+  const n = activeViewports.value.length
+  if (n === 1) return 320
+  if (n === 2) return viewport === 'mobile' ? 65 : 240
+  if (viewport === 'desktop') return 170
+  if (viewport === 'tablet') return 130
+  return 55
+}
 
 watch(() => props.open, (v) => {
   if (!v) {
@@ -261,6 +317,13 @@ watch(() => props.open, (v) => {
   }
 })
 
+function resetCaptureState() {
+  for (const viewport of (['desktop', 'tablet', 'mobile'] as const)) {
+    captureState[viewport].status = 'idle'
+    captureState[viewport].src = ''
+  }
+}
+
 function reset() {
   step.value = 'main'
   type.value = 'blank'
@@ -268,10 +331,8 @@ function reset() {
   url.value = ''
   prevHostname.value = ''
   nameFocused.value = false
-  desktopStatus.value = 'idle'
-  mobileStatus.value = 'idle'
-  desktopSrc.value = ''
-  mobileSrc.value = ''
+  preset.value = 'laptop+phone'
+  resetCaptureState()
   captureError.value = ''
   captureAbortController?.abort()
   captureAbortController = null
@@ -284,12 +345,9 @@ function onCancelCapture() {
   captureAbortController?.abort()
   captureAbortController = null
   stopElapsed()
-  step.value = 'main'
+  step.value = 'preset'
   captureError.value = ''
-  desktopStatus.value = 'idle'
-  mobileStatus.value = 'idle'
-  desktopSrc.value = ''
-  mobileSrc.value = ''
+  resetCaptureState()
 }
 
 function onClose() {
@@ -319,7 +377,7 @@ function onExpandLeave(el: Element) {
 
 function onSubmitMain() {
   if (!canSubmit.value) return
-  if (type.value === 'url') onStartCapture()
+  if (type.value === 'url') step.value = 'preset'
   else onCreateBlank()
 }
 
@@ -340,9 +398,8 @@ async function onCreateBlank() {
   emit('created', project.id)
 }
 
-async function captureOne(viewport: 'desktop' | 'mobile'): Promise<{ img: HTMLImageElement; src: string } | null> {
-  if (viewport === 'desktop') desktopStatus.value = 'loading'
-  else mobileStatus.value = 'loading'
+async function captureOne(viewport: CaptureViewport): Promise<{ img: HTMLImageElement; src: string } | null> {
+  captureState[viewport].status = 'loading'
   try {
     const res = await fetch('/api/screenshot', {
       method: 'POST',
@@ -362,39 +419,74 @@ async function captureOne(viewport: 'desktop' | 'mobile'): Promise<{ img: HTMLIm
       el.onerror = reject
       el.src = src
     })
-    if (viewport === 'desktop') { desktopStatus.value = 'done'; desktopSrc.value = src }
-    else { mobileStatus.value = 'done'; mobileSrc.value = src }
+    captureState[viewport].status = 'done'
+    captureState[viewport].src = src
     return { img, src }
   } catch {
-    if (viewport === 'desktop') desktopStatus.value = 'error'
-    else mobileStatus.value = 'error'
+    captureState[viewport].status = 'error'
     return null
   }
+}
+
+/** Registers a captured screenshot as a source image and creates a matching snip cropped to that viewport's frame aspect. */
+function addCapturedSource(
+  projectId: string,
+  viewport: CaptureViewport,
+  capture: { img: HTMLImageElement; src: string },
+  sortOrder: number,
+): { snipId: string; width: number; height: number } {
+  const sourceId = crypto.randomUUID()
+  const source: SourceImage = {
+    id: sourceId,
+    projectId,
+    label: `${displayHostname.value} ${viewport}`,
+    filename: `${displayHostname.value}-${viewport}.png`,
+    width: capture.img.naturalWidth,
+    height: capture.img.naturalHeight,
+    sortOrder,
+  }
+  sourcesStore.addSource(source)
+  sourcesStore.setLoadedImage(sourceId, capture.img, capture.src)
+  sourcesStore.setActiveSource(sourceId)
+  saveImage(projectId, sourceId, capture.src)
+  const width = capture.img.naturalWidth
+  const height = Math.min(capture.img.naturalHeight, Math.round(width / VIEWPORT_SCREEN_ASPECT[viewport]))
+  const snip = createSnip(0, 0, width, height, VIEWPORT_SNAP_FRAME[viewport], sourceId)
+  return { snipId: snip.id, width, height }
 }
 
 async function onStartCapture() {
   if (!resolvedUrl.value || urlError.value || !name.value.trim()) return
   step.value = 'capturing'
   captureError.value = ''
-  desktopStatus.value = 'idle'
-  mobileStatus.value = 'idle'
-  desktopSrc.value = ''
-  mobileSrc.value = ''
+  resetCaptureState()
   captureCancelled = false
   captureAbortController = new AbortController()
   startElapsed()
 
-  const [desktop, mobile] = await Promise.all([
-    captureOne('desktop'),
-    captureOne('mobile'),
-  ])
+  const viewports = activeViewports.value
+  const captured = new Map<CaptureViewport, { img: HTMLImageElement; src: string }>()
+
+  // The screenshot service caps concurrent captures at 2 (MAX_CONCURRENT_CAPTURES),
+  // so run in batches rather than firing all viewports at once.
+  for (let i = 0; i < viewports.length; i += MAX_CONCURRENT_CAPTURES) {
+    const batch = viewports.slice(i, i + MAX_CONCURRENT_CAPTURES)
+    const batchResults = await Promise.all(batch.map((v) => captureOne(v)))
+    if (captureCancelled) break
+    batch.forEach((v, j) => {
+      const result = batchResults[j]
+      if (result) captured.set(v, result)
+    })
+  }
 
   stopElapsed()
 
   if (captureCancelled) return
 
-  if (!desktop && !mobile) {
-    captureError.value = 'Both captures failed. Check the URL and try again.'
+  if (captured.size === 0) {
+    captureError.value = viewports.length > 1
+      ? 'All captures failed. Check the URL and try again.'
+      : 'Capture failed. Check the URL and try again.'
     return
   }
 
@@ -407,54 +499,29 @@ async function onStartCapture() {
     snipsStore.setSnips([])
     compositionsStore.setCompositions([])
 
-    let desktopSnipId: string | null = null
-    let mobileSnipId: string | null = null
-
-    if (desktop) {
-      const sourceId = crypto.randomUUID()
-      const source: SourceImage = {
-        id: sourceId,
-        projectId: project.id,
-        label: `${displayHostname.value} desktop`,
-        filename: `${displayHostname.value}-desktop.png`,
-        width: desktop.img.naturalWidth,
-        height: desktop.img.naturalHeight,
-        sortOrder: 0,
-      }
-      sourcesStore.addSource(source)
-      sourcesStore.setLoadedImage(sourceId, desktop.img, desktop.src)
-      sourcesStore.setActiveSource(sourceId)
-      saveImage(project.id, sourceId, desktop.src)
-      const snipH = Math.min(desktop.img.naturalHeight, Math.round(desktop.img.naturalWidth / LAPTOP_SCREEN_ASPECT))
-      const snip = createSnip(0, 0, desktop.img.naturalWidth, snipH, 'laptop', sourceId)
-      desktopSnipId = snip.id
+    const placed = new Map<CaptureViewport, { snipId: string; width: number; height: number }>()
+    let sortOrder = 0
+    for (const viewport of viewports) {
+      const capture = captured.get(viewport)
+      if (!capture) continue
+      placed.set(viewport, addCapturedSource(project.id, viewport, capture, sortOrder++))
     }
 
-    if (mobile) {
-      const sourceId = crypto.randomUUID()
-      const source: SourceImage = {
-        id: sourceId,
-        projectId: project.id,
-        label: `${displayHostname.value} mobile`,
-        filename: `${displayHostname.value}-mobile.png`,
-        width: mobile.img.naturalWidth,
-        height: mobile.img.naturalHeight,
-        sortOrder: desktop ? 1 : 0,
-      }
-      sourcesStore.addSource(source)
-      sourcesStore.setLoadedImage(sourceId, mobile.img, mobile.src)
-      sourcesStore.setActiveSource(sourceId)
-      saveImage(project.id, sourceId, mobile.src)
-      const snipH = Math.min(mobile.img.naturalHeight, Math.round(mobile.img.naturalWidth / PHONE_SCREEN_ASPECT))
-      const snip = createSnip(0, 0, mobile.img.naturalWidth, snipH, 'phone', sourceId)
-      mobileSnipId = snip.id
-    }
+    const desktop = placed.get('desktop')
+    const tablet = placed.get('tablet')
+    const mobile = placed.get('mobile')
 
     let comp
-    if (desktopSnipId && mobileSnipId) {
-      comp = createLaptopPhoneComposition(desktopSnipId, mobileSnipId, displayHostname.value)
+    if (preset.value === 'laptop+tablet+phone' && desktop && tablet && mobile) {
+      comp = createLaptopTabletPhoneComposition(desktop.snipId, tablet.snipId, mobile.snipId, displayHostname.value)
+    } else if ((preset.value === 'browser' || preset.value === 'browser+url') && desktop) {
+      const browserUrl = preset.value === 'browser+url' ? resolvedUrl.value.replace(/^https?:\/\//, '') : undefined
+      comp = createBrowserComposition(desktop.snipId, desktop.width, desktop.height, displayHostname.value, undefined, browserUrl)
+    } else if (desktop && mobile) {
+      comp = createLaptopPhoneComposition(desktop.snipId, mobile.snipId, displayHostname.value)
     } else {
-      comp = createLaptopComposition((desktopSnipId ?? mobileSnipId)!, displayHostname.value)
+      const fallback = desktop ?? tablet ?? mobile
+      comp = createLaptopComposition(fallback!.snipId, displayHostname.value)
     }
 
     await persistAll()

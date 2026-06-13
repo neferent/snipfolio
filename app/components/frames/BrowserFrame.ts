@@ -26,6 +26,7 @@ export function drawBrowserFrame(
   h: number,
   imageSource: CanvasImageSource,
   color = '#262c44',
+  urlText?: string,
 ): FrameDrawResult {
   const sx = w / SVG_W
   const toolbarH = Math.max(32, TOOLBAR_SVG_H * sx)
@@ -92,6 +93,21 @@ export function drawBrowserFrame(
     ctx.fillStyle = 'rgba(255,255,255,0.12)'
     roundedRect(ctx, barLeft, barY, barW, barH, barR)
     ctx.fill()
+
+    if (urlText) {
+      const fontSize = Math.max(10, barH * 0.5)
+      ctx.font = `${fontSize}px system-ui, sans-serif`
+      ctx.fillStyle = 'rgba(255,255,255,0.65)'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      const maxTextW = barW - fontSize * 1.5
+      let text = urlText
+      while (text.length > 1 && ctx.measureText(text).width > maxTextW) {
+        text = text.slice(0, -1)
+      }
+      if (text !== urlText && text.length > 1) text = text.slice(0, -1) + '…'
+      ctx.fillText(text, barLeft + barW / 2, barY + barH / 2)
+    }
 
     ctx.restore()
   }

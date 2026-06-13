@@ -58,6 +58,24 @@ export function captureProgressHint(elapsedSeconds: number): string {
 /** Expected total duration of a desktop+mobile capture, in seconds — sizes the progress bar fill. */
 export const CAPTURE_EXPECTED_DURATION = 12
 
+export type CaptureViewport = 'desktop' | 'tablet' | 'mobile'
+export type CapturePreset = 'laptop+phone' | 'laptop+tablet+phone' | 'browser' | 'browser+url'
+
+export interface CapturePresetDef {
+  id: CapturePreset
+  label: string
+  description: string
+  viewports: CaptureViewport[]
+}
+
+/** Output presets offered on the "From URL" capture step, each capturing a different set of viewports. */
+export const CAPTURE_PRESETS: CapturePresetDef[] = [
+  { id: 'laptop+phone', label: 'Laptop + Phone', description: 'Desktop and mobile, side by side', viewports: ['desktop', 'mobile'] },
+  { id: 'laptop+tablet+phone', label: 'Laptop + Tablet + Phone', description: 'Desktop, tablet, and mobile', viewports: ['desktop', 'tablet', 'mobile'] },
+  { id: 'browser', label: 'Browser', description: 'Desktop view in a browser frame', viewports: ['desktop'] },
+  { id: 'browser+url', label: 'Browser + URL', description: 'Browser frame with the page URL shown', viewports: ['desktop'] },
+]
+
 const CAPTURE_STAGES: { label: string; at: number }[] = [
   { label: 'Fetching page…', at: 0 },
   { label: 'Rendering desktop view…', at: 2 },

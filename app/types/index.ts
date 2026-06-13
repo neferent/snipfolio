@@ -36,7 +36,7 @@ export interface Snip {
   snapFrame?: 'laptop' | 'phone' | 'tablet' | null
 }
 
-export type CompositionType = 'laptop' | 'laptop+phone' | 'auto' | 'freeform'
+export type CompositionType = 'laptop' | 'laptop+phone' | 'laptop+tablet+phone' | 'browser' | 'browser+url' | 'auto' | 'freeform'
 export type BackgroundType = 'solid' | 'gradient' | 'image' | 'blur'
 
 export interface BackgroundConfig {
@@ -68,6 +68,8 @@ export interface FreeformSlotConfig {
   deviceFrame: DeviceFrame
   frameColor?: string
   caption?: CaptionConfig
+  // Shown in the browser frame's address bar, when deviceFrame is 'browser'
+  browserUrl?: string
   // All in output canvas pixels. (x,y) = top-left corner of the total slot bounding box.
   x: number
   y: number
@@ -122,4 +124,5 @@ export function isCollageConfig(c: CompositionConfig): c is CollageCompositionCo
 
 export function isFreeformType(type: CompositionType): boolean {
   return type === 'freeform' || type === 'laptop' || type === 'laptop+phone'
+    || type === 'laptop+tablet+phone' || type === 'browser' || type === 'browser+url'
 }

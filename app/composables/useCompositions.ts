@@ -17,7 +17,7 @@ import type {
 const FRAME_ASPECT: Record<DeviceFrame, number | null> = {
   laptop: 3809.99 / 2300,
   phone: 772.5 / 1600,
-  tablet: 820 / 1120,
+  tablet: 2449.87 / 1877.1,
   browser: null, // computed from snip aspect (toolbar is thin)
   none: null,    // use snip aspect
 }
@@ -85,6 +85,76 @@ export function getLaptopPhoneLayout(
       width: Math.round(phoneW),
       height: Math.round(phoneH),
     },
+  }
+}
+
+/** Geometry for the "Desktop + Tablet + Mobile" layout: a laptop frame with a tablet and phone fanned out over its right edge, centered on the canvas. */
+export function getLaptopTabletPhoneLayout(
+  outputW: number,
+  outputH: number,
+): {
+  laptop: { x: number; y: number; width: number; height: number }
+  tablet: { x: number; y: number; width: number; height: number }
+  phone: { x: number; y: number; width: number; height: number }
+} {
+  let laptopH = outputH * 0.62
+  let laptopW = laptopH * FRAME_ASPECT.laptop!
+  let tabletH = outputH * 0.78
+  let tabletW = tabletH * FRAME_ASPECT.tablet!
+  let phoneH = outputH * 0.86
+  let phoneW = phoneH * FRAME_ASPECT.phone!
+
+  const tabletOverlap = tabletW * 0.35
+  const phoneOverlap = phoneW * 0.35
+  let totalWidth = laptopW + (tabletW - tabletOverlap) + (phoneW - phoneOverlap)
+
+  const maxWidth = outputW * 0.92
+  if (totalWidth > maxWidth) {
+    const scale = maxWidth / totalWidth
+    laptopH *= scale; laptopW *= scale
+    tabletH *= scale; tabletW *= scale
+    phoneH *= scale; phoneW *= scale
+    totalWidth *= scale
+  }
+
+  const startX = (outputW - totalWidth) / 2
+
+  return {
+    laptop: {
+      x: Math.round(startX),
+      y: Math.round((outputH - laptopH) / 2),
+      width: Math.round(laptopW),
+      height: Math.round(laptopH),
+    },
+    tablet: {
+      x: Math.round(startX + laptopW - tabletW * 0.35),
+      y: Math.round((outputH - tabletH) / 2),
+      width: Math.round(tabletW),
+      height: Math.round(tabletH),
+    },
+    phone: {
+      x: Math.round(startX + laptopW - tabletW * 0.35 + tabletW - phoneW * 0.35),
+      y: Math.round((outputH - phoneH) / 2),
+      width: Math.round(phoneW),
+      height: Math.round(phoneH),
+    },
+  }
+}
+
+/** Geometry for a single framed snip (e.g. "Browser") centered on the canvas, sized to the snip's own aspect ratio. */
+export function getSingleFrameLayout(
+  snipW: number,
+  snipH: number,
+  frame: DeviceFrame,
+  outputW: number,
+  outputH: number,
+): { x: number; y: number; width: number; height: number } {
+  const { w, h } = defaultSlotDimensions(snipW, snipH, frame, outputW, outputH)
+  return {
+    x: Math.round((outputW - w) / 2),
+    y: Math.round((outputH - h) / 2),
+    width: Math.round(w),
+    height: Math.round(h),
   }
 }
 
@@ -199,6 +269,66 @@ export function useCompositions() {
     return _makeComposition(name ?? 'Desktop + Mobile', 'laptop+phone', config)
   }
 
+  function createLaptopTabletPhoneComposition(
+    laptopSnipId: string,
+    tabletSnipId: string,
+    phoneSnipId: string,
+    name?: string,
+    bg?: Partial<BackgroundConfig>,
+  ): Composition {
+    const layout = getLaptopTabletPhoneLayout(outputW, outputH)
+    const laptopSlot: FreeformSlotConfig = {
+      id: crypto.randomUUID(),
+      snipId: laptopSnipId,
+      deviceFrame: 'laptop',
+      ...layout.laptop,
+    }
+    const tabletSlot: FreeformSlotConfig = {
+      id: crypto.randomUUID(),
+      snipId: tabletSnipId,
+      deviceFrame: 'tablet',
+      ...layout.tablet,
+    }
+    const phoneSlot: FreeformSlotConfig = {
+      id: crypto.randomUUID(),
+      snipId: phoneSnipId,
+      deviceFrame: 'phone',
+      ...layout.phone,
+    }
+    const config: FreeformCompositionConfig = {
+      slots: [laptopSlot, tabletSlot, phoneSlot],
+      background: { ...DEFAULT_BACKGROUND, ...bg },
+      outputWidth: outputW,
+      outputHeight: outputH,
+    }
+    return _makeComposition(name ?? 'Desktop + Tablet + Mobile', 'laptop+tablet+phone', config)
+  }
+
+  function createBrowserComposition(
+    snipId: string,
+    snipW: number,
+    snipH: number,
+    name?: string,
+    bg?: Partial<BackgroundConfig>,
+    browserUrl?: string,
+  ): Composition {
+    const slot: FreeformSlotConfig = {
+      id: crypto.randomUUID(),
+      snipId,
+      deviceFrame: 'browser',
+      ...getSingleFrameLayout(snipW, snipH, 'browser', outputW, outputH),
+      ...(browserUrl ? { browserUrl } : {}),
+    }
+    const config: FreeformCompositionConfig = {
+      slots: [slot],
+      background: { ...DEFAULT_BACKGROUND, ...bg },
+      outputWidth: outputW,
+      outputHeight: outputH,
+    }
+    const type: CompositionType = browserUrl ? 'browser+url' : 'browser'
+    return _makeComposition(name ?? (browserUrl ? 'Browser + URL' : 'Browser'), type, config)
+  }
+
   function createAutoComposition(
     snipIds: string[],
     name?: string,
@@ -256,6 +386,8 @@ export function useCompositions() {
   return {
     createLaptopComposition,
     createLaptopPhoneComposition,
+    createLaptopTabletPhoneComposition,
+    createBrowserComposition,
     createAutoComposition,
     createFreeformComposition,
     updateComposition,
