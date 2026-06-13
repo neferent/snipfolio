@@ -198,7 +198,7 @@ export function useCompositions() {
   const store = useCompositionsStore()
   const projectStore = useProjectStore()
   const snipsStore = useSnipsStore()
-  const { scheduleSave } = useProject()
+  const { scheduleSave, deleteCompositionRecord } = useProject()
 
   const outputW = 1920
   const outputH = 1080
@@ -380,6 +380,7 @@ export function useCompositions() {
 
   function deleteComposition(id: string) {
     store.removeComposition(id)
+    if (projectStore.current) deleteCompositionRecord(projectStore.current.id, id)
     scheduleSave()
   }
 

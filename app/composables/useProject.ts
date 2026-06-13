@@ -342,6 +342,17 @@ export function useProject() {
     }
   }
 
+  function deleteCompositionRecord(projectId: string, compositionId: string) {
+    if (!import.meta.client) return
+    if (isSupabase) {
+      const sb = useSupabaseClient()!
+      sb.from('compositions').delete().eq('id', compositionId).eq('project_id', projectId).then(() => {})
+    } else {
+      const comps = loadLocalData<Composition[]>(`snipfolio_comps_${projectId}`, [])
+      saveLocalData(`snipfolio_comps_${projectId}`, comps.filter((c) => c.id !== compositionId))
+    }
+  }
+
   async function restoreImages(projectId: string, sources: SourceImage[]) {
     if (!import.meta.client) return
     if (isSupabase) {
@@ -407,7 +418,7 @@ export function useProject() {
     if (!existing) await savePreview(projectId, img)
   }
 
-  return { fetchProjects, createProject, renameProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, deleteSourceRecord, savePreview, loadPreview }
+  return { fetchProjects, createProject, renameProject, deleteProject, loadProject, scheduleSave, persistAll, saveImage, deleteImage, deleteSourceRecord, deleteCompositionRecord, savePreview, loadPreview }
 }
 
 // --- Row mappers ---
