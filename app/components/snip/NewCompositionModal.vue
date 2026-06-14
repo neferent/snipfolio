@@ -119,7 +119,7 @@
               <button
                 class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
                 :disabled="checkoutLoading"
-                @click="startCheckout('pro_early')"
+                @click="startCheckout('pro')"
               >
                 Upgrade to Pro
               </button>

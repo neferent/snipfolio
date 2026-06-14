@@ -1,4 +1,4 @@
-type CheckoutType = 'pro' | 'pro_early' | 'day_pass'
+type CheckoutType = 'pro' | 'day_pass'
 
 interface CheckoutBody {
   type: CheckoutType
@@ -11,7 +11,6 @@ export default defineEventHandler(async (event) => {
 
   const variantId = {
     pro: config.public.lsProVariantId,
-    pro_early: config.public.lsProEarlyVariantId,
     day_pass: config.public.lsDayPassVariantId,
   }[body.type]
 

@@ -3,11 +3,11 @@ const STORAGE_KEY = 'snipfolio_post_auth_redirect'
 export interface PostAuthRedirect {
   path: string
   /** Set when the user was sent to sign in/up mid-checkout, so we can resume checkout instead of just navigating back. */
-  checkoutType?: 'pro_early' | 'day_pass'
+  checkoutType?: 'pro' | 'day_pass'
 }
 
 /** Remembers where to send the user after they sign in/up, e.g. so they can resume an action that required an account. */
-export function setPostAuthRedirect(path: string, checkoutType?: 'pro_early' | 'day_pass') {
+export function setPostAuthRedirect(path: string, checkoutType?: 'pro' | 'day_pass') {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ path, checkoutType }))
 }
 

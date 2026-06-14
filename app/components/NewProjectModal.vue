@@ -142,7 +142,7 @@
             key="upgrade"
             class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
             :disabled="checkoutLoading"
-            @click="startCheckout('pro_early')"
+            @click="startCheckout('pro')"
           >
             Upgrade to Pro
           </button>

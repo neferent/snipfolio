@@ -249,7 +249,7 @@ function onBuyDayPass() {
 }
 
 function onGoPro() {
-  startCheckout('pro_early')
+  startCheckout('pro')
 }
 
 function formatExpiry(date: Date): string {

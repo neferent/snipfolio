@@ -183,9 +183,9 @@
         <button
           v-if="!isPro"
           class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          @click="startCheckout('pro_early')"
+          @click="startCheckout('pro')"
         >
-          Go Pro — $9.99/mo
+          Go Pro — $14.99/mo
         </button>
       </template>
     </AppModal>

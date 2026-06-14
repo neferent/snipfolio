@@ -6,7 +6,7 @@ export function useCheckout() {
   const authStore = useAuthStore()
   const loading = ref(false)
 
-  async function startCheckout(type: 'pro_early' | 'day_pass', returnTo?: string) {
+  async function startCheckout(type: 'pro' | 'day_pass', returnTo?: string) {
     if (loading.value) return
 
     if (authStore.isGuest || !authStore.token) {
