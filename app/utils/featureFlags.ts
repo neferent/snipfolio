@@ -1,6 +1,5 @@
 /**
- * Capture-from-URL is enabled in local dev (against the local screenshotter at
- * SCREENSHOTTER_URL) but disabled in production until the fly.io service is deployed
- * and the prod env vars (SCREENSHOTTER_URL/TOKEN, CAPTURE_SIGNING_SECRET) are set.
+ * Capture-from-URL hits the fly.io screenshotter via SCREENSHOTTER_URL/TOKEN and
+ * CAPTURE_SIGNING_SECRET (set per-environment: localhost in dev, fly.io in production).
  */
-export const URL_CAPTURE_ENABLED = import.meta.dev
+export const URL_CAPTURE_ENABLED = true
