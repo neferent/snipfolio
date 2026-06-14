@@ -52,11 +52,12 @@ export function useCaptureElapsed() {
 export function captureProgressHint(elapsedSeconds: number): string {
   if (elapsedSeconds < 5) return 'Capturing the page…'
   if (elapsedSeconds < 12) return 'Full pages can take up to 15s…'
-  return 'Still working — large pages take a bit longer…'
+  if (elapsedSeconds < 20) return 'Still working — large pages take a bit longer…'
+  return 'The capture service is waking up — this can take up to 30s…'
 }
 
-/** Expected total duration of a desktop+mobile capture, in seconds — sizes the progress bar fill. */
-export const CAPTURE_EXPECTED_DURATION = 12
+/** Typical duration of a desktop+mobile capture once the service is warm, in seconds — shapes the progress bar curve. */
+export const CAPTURE_EXPECTED_DURATION = 8
 
 export type CaptureViewport = 'desktop' | 'tablet' | 'mobile'
 export type CapturePreset = 'laptop+phone' | 'laptop+tablet+phone' | 'browser' | 'browser+url'
@@ -81,6 +82,7 @@ const CAPTURE_STAGES: { label: string; at: number }[] = [
   { label: 'Rendering desktop view…', at: 2 },
   { label: 'Rendering mobile view…', at: 6 },
   { label: 'Almost done…', at: 10 },
+  { label: 'The capture service is waking up — this can take a bit longer…', at: 20 },
 ]
 
 /** Cycles through capture stage labels based on elapsed seconds, for the "From URL" capture step. */
@@ -92,7 +94,11 @@ export function captureStageLabel(elapsedSeconds: number): string {
   return label
 }
 
-/** Progress bar fill percentage, capped below 100% so it never appears complete before the capture finishes. */
+/**
+ * Progress bar fill percentage. Approaches 95% asymptotically so it never appears
+ * complete before the capture finishes, but keeps creeping forward (rather than
+ * sticking at a hard cap) during slow captures like cold starts.
+ */
 export function captureProgressPercent(elapsedSeconds: number): number {
-  return Math.min(95, (elapsedSeconds / CAPTURE_EXPECTED_DURATION) * 100)
+  return 95 * (1 - Math.exp(-elapsedSeconds / CAPTURE_EXPECTED_DURATION))
 }
