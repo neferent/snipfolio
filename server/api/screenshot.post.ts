@@ -21,7 +21,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'url and viewport are required' })
   }
 
-  const png = await takeScreenshot(url, viewport)
+  let png: Buffer
+  try {
+    png = await takeScreenshot(url, viewport)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Screenshot failed'
+    throw createError({ statusCode: 502, statusMessage: 'Screenshot failed', message })
+  }
 
   setResponseHeader(event, 'Content-Type', 'image/png')
   return png

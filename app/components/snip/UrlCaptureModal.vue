@@ -179,6 +179,9 @@ const viewports: { key: Viewport; label: string; width: number }[] = [
 const DESKTOP_PILL_WIDTH = 220
 const PILL_HEIGHT = 140
 
+// Matches the screenshot service's MAX_CONCURRENT_CAPTURES — exceeding it returns a 429.
+const MAX_CONCURRENT_CAPTURES = 2
+
 function pillWidth(v: Viewport) {
   const vp = viewports.find(x => x.key === v)!
   return Math.round((vp.width / 1440) * DESKTOP_PILL_WIDTH)
@@ -228,7 +231,12 @@ async function onCapture() {
   captureStates.value = selectedViewports.value.map(v => ({ viewport: v, status: 'loading' as CaptureStatus }))
   startElapsed()
 
-  await Promise.all(selectedViewports.value.map(v => captureOne(v, hostname)))
+  // The screenshot service caps concurrent captures at 2 (MAX_CONCURRENT_CAPTURES),
+  // so run in batches rather than firing all viewports at once.
+  for (let i = 0; i < selectedViewports.value.length; i += MAX_CONCURRENT_CAPTURES) {
+    const batch = selectedViewports.value.slice(i, i + MAX_CONCURRENT_CAPTURES)
+    await Promise.all(batch.map(v => captureOne(v, hostname)))
+  }
   stopElapsed()
 }
 
