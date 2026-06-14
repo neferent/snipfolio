@@ -59,8 +59,8 @@
         </label>
       </div>
 
-      <p v-if="isCapturing" class="text-[10px] text-[var(--color-text-muted)]/70">
-        {{ captureProgressHint(elapsedSeconds) }}
+      <p v-if="loadingState" class="text-[10px] text-[var(--color-text-muted)]/70">
+        {{ viewportPhaseLabel(loadingState.progress.phase) }}
       </p>
 
       <!-- Per-viewport pills -->
@@ -74,6 +74,12 @@
           <div class="relative flex items-center justify-center bg-black/20" :style="{ height: PILL_HEIGHT + 'px' }">
             <template v-if="state.status === 'loading'">
               <Loader2Icon class="size-4 animate-spin text-white/30" />
+              <div class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-white/5">
+                <div
+                  class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-150 ease-linear"
+                  :style="{ width: viewportProgressPercent(state.progress, tickNow) + '%' }"
+                />
+              </div>
             </template>
             <template v-else-if="state.status === 'done' && state.src">
               <img
@@ -128,7 +134,8 @@
 
 <script setup lang="ts">
 import { Loader2Icon, CheckIcon, XIcon, RotateCwIcon } from 'lucide-vue-next'
-import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureProgressHint } from '~/composables/useUrlCapture'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, captureViewportSSE, idleProgress, viewportProgressPercent, viewportPhaseLabel, useProgressTick } from '~/composables/useUrlCapture'
+import type { ViewportProgress } from '~/composables/useUrlCapture'
 import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
 import { useCheckout } from '~/composables/useCheckout'
@@ -139,6 +146,7 @@ type CaptureStatus = 'loading' | 'done' | 'error'
 interface CaptureState {
   viewport: Viewport
   status: CaptureStatus
+  progress: ViewportProgress
   error?: string
   src?: string
   img?: HTMLImageElement
@@ -167,7 +175,8 @@ const urlError = computed(() => {
 })
 const captureStates = ref<CaptureState[]>([])
 const isCapturing = computed(() => captureStates.value.some(s => s.status === 'loading'))
-const { elapsedSeconds, start: startElapsed, stop: stopElapsed } = useCaptureElapsed()
+const loadingState = computed(() => captureStates.value.find(s => s.status === 'loading'))
+const { now: tickNow, start: startTick, stop: stopTick } = useProgressTick()
 const successful = computed(() => captureStates.value.filter(s => s.status === 'done'))
 
 const viewports: { key: Viewport; label: string; width: number }[] = [
@@ -178,9 +187,6 @@ const viewports: { key: Viewport; label: string; width: number }[] = [
 
 const DESKTOP_PILL_WIDTH = 220
 const PILL_HEIGHT = 140
-
-// Matches the screenshot service's MAX_CONCURRENT_CAPTURES — exceeding it returns a 429.
-const MAX_CONCURRENT_CAPTURES = 2
 
 function pillWidth(v: Viewport) {
   const vp = viewports.find(x => x.key === v)!
@@ -195,24 +201,14 @@ async function captureOne(viewport: Viewport, hostname: string): Promise<void> {
   const state = captureStates.value.find(s => s.viewport === viewport)!
   state.status = 'loading'
   state.error = undefined
+  state.progress = { phase: 'connecting', phaseStartedAt: Date.now() }
   try {
-    const res = await fetch('/api/screenshot', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-      body: JSON.stringify({ url: resolvedUrl.value, viewport }),
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({})) as { message?: string }
-      throw new Error(err.message || `${res.status}`)
-    }
-    const blob = await res.blob()
-    const src = URL.createObjectURL(blob)
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image()
-      el.onload = () => resolve(el)
-      el.onerror = reject
-      el.src = src
-    })
+    const { img, src } = await captureViewportSSE(
+      resolvedUrl.value,
+      viewport,
+      authStore.token ?? '',
+      (progress) => { state.progress = progress },
+    )
     state.status = 'done'
     state.src = src
     state.img = img
@@ -228,23 +224,20 @@ async function onCapture() {
 
   const hostname = getCaptureHostname(url.value)
 
-  captureStates.value = selectedViewports.value.map(v => ({ viewport: v, status: 'loading' as CaptureStatus }))
-  startElapsed()
+  captureStates.value = selectedViewports.value.map(v => ({ viewport: v, status: 'loading' as CaptureStatus, progress: idleProgress() }))
+  startTick()
 
-  // The screenshot service caps concurrent captures at 2 (MAX_CONCURRENT_CAPTURES),
-  // so run in batches rather than firing all viewports at once.
-  for (let i = 0; i < selectedViewports.value.length; i += MAX_CONCURRENT_CAPTURES) {
-    const batch = selectedViewports.value.slice(i, i + MAX_CONCURRENT_CAPTURES)
-    await Promise.all(batch.map(v => captureOne(v, hostname)))
+  for (const viewport of selectedViewports.value) {
+    await captureOne(viewport, hostname)
   }
-  stopElapsed()
+  stopTick()
 }
 
 async function retryViewport(viewport: Viewport) {
   const hostname = getCaptureHostname(url.value)
-  startElapsed()
+  startTick()
   await captureOne(viewport, hostname)
-  stopElapsed()
+  stopTick()
 }
 
 function onConfirm() {
@@ -261,7 +254,7 @@ function onConfirm() {
 function onClose() {
   url.value = ''
   captureStates.value = []
-  stopElapsed()
+  stopTick()
   emit('close')
 }
 

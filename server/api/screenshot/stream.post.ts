@@ -1,4 +1,4 @@
-import { takeScreenshot } from '../utils/screenshot'
+import { streamScreenshot } from '../../utils/screenshot'
 
 export default defineEventHandler(async (event) => {
   const userId = await requireUser(event)
@@ -10,14 +10,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'url and viewport are required' })
   }
 
-  let png: Buffer
+  let upstream: Response
   try {
-    png = await takeScreenshot(url, viewport)
+    upstream = await streamScreenshot(url, viewport)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Screenshot failed'
     throw createError({ statusCode: 502, statusMessage: 'Screenshot failed', message })
   }
 
-  setResponseHeader(event, 'Content-Type', 'image/png')
-  return png
+  setResponseHeader(event, 'Content-Type', 'text/event-stream')
+  setResponseHeader(event, 'Cache-Control', 'no-cache')
+  setResponseHeader(event, 'Connection', 'keep-alive')
+  setResponseHeader(event, 'X-Accel-Buffering', 'no')
+
+  return upstream.body
 })

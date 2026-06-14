@@ -88,12 +88,12 @@
     <!-- Step 3: Capturing -->
     <div v-else-if="step === 'capturing'" class="space-y-1">
       <p class="text-xs text-[var(--color-text-muted)]">
-        {{ captureError ? 'Capture failed' : captureStageLabel(elapsedSeconds) }}
+        {{ captureError ? 'Capture failed' : captureStatusLabel }}
       </p>
       <div v-if="!captureError" class="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/5">
         <div
           class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-1000 ease-linear"
-          :style="{ width: captureProgressPercent(elapsedSeconds) + '%' }"
+          :style="{ width: overallProgressPercent(activeViewports.map((v) => captureState[v].progress), tickNow) + '%' }"
         />
       </div>
       <div class="flex items-end gap-2 pt-2">
@@ -195,8 +195,8 @@
 
 <script setup lang="ts">
 import { Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
-import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureStageLabel, captureProgressPercent, CAPTURE_PRESETS } from '~/composables/useUrlCapture'
-import type { CapturePreset, CaptureViewport } from '~/composables/useUrlCapture'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, captureViewportSSE, idleProgress, overallProgressPercent, viewportPhaseLabel, useProgressTick, CAPTURE_PRESETS } from '~/composables/useUrlCapture'
+import type { CapturePreset, CaptureViewport, ViewportProgress } from '~/composables/useUrlCapture'
 import { useProject } from '~/composables/useProject'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
@@ -230,9 +230,6 @@ const VIEWPORT_LABEL: Record<CaptureViewport, string> = {
   mobile: 'Mobile',
 }
 
-// Matches the screenshot service's MAX_CONCURRENT_CAPTURES — exceeding it returns a 429.
-const MAX_CONCURRENT_CAPTURES = 2
-
 type Step = 'main' | 'preset' | 'capturing'
 type ProjectType = 'blank' | 'url'
 type CaptureStatus = 'idle' | 'loading' | 'done' | 'error'
@@ -263,13 +260,13 @@ const nameFocused = ref(false)
 const prevHostname = ref('')
 const preset = ref<CapturePreset>('laptop+phone')
 
-const captureState = reactive<Record<CaptureViewport, { status: CaptureStatus; src: string }>>({
-  desktop: { status: 'idle', src: '' },
-  tablet: { status: 'idle', src: '' },
-  mobile: { status: 'idle', src: '' },
+const captureState = reactive<Record<CaptureViewport, { status: CaptureStatus; src: string; progress: ViewportProgress }>>({
+  desktop: { status: 'idle', src: '', progress: idleProgress() },
+  tablet: { status: 'idle', src: '', progress: idleProgress() },
+  mobile: { status: 'idle', src: '', progress: idleProgress() },
 })
 const captureError = ref('')
-const { elapsedSeconds, start: startElapsed, stop: stopElapsed } = useCaptureElapsed()
+const { now: tickNow, start: startTick, stop: stopTick } = useProgressTick()
 
 let captureAbortController: AbortController | null = null
 let captureCancelled = false
@@ -321,8 +318,17 @@ function resetCaptureState() {
   for (const viewport of (['desktop', 'tablet', 'mobile'] as const)) {
     captureState[viewport].status = 'idle'
     captureState[viewport].src = ''
+    captureState[viewport].progress = idleProgress()
   }
 }
+
+/** Status label for the capturing step: shows which viewport is in flight and its current phase. */
+const captureStatusLabel = computed(() => {
+  const loading = activeViewports.value.find((v) => captureState[v].status === 'loading')
+  if (loading) return `${VIEWPORT_LABEL[loading]}: ${viewportPhaseLabel(captureState[loading].progress.phase)}`
+  if (activeViewports.value.length > 0 && activeViewports.value.every((v) => captureState[v].status === 'done')) return 'Finishing up…'
+  return 'Preparing…'
+})
 
 function reset() {
   step.value = 'main'
@@ -337,14 +343,14 @@ function reset() {
   captureAbortController?.abort()
   captureAbortController = null
   captureCancelled = false
-  stopElapsed()
+  stopTick()
 }
 
 function onCancelCapture() {
   captureCancelled = true
   captureAbortController?.abort()
   captureAbortController = null
-  stopElapsed()
+  stopTick()
   step.value = 'preset'
   captureError.value = ''
   resetCaptureState()
@@ -400,29 +406,20 @@ async function onCreateBlank() {
 
 async function captureOne(viewport: CaptureViewport): Promise<{ img: HTMLImageElement; src: string } | null> {
   captureState[viewport].status = 'loading'
+  captureState[viewport].progress = { phase: 'connecting', phaseStartedAt: Date.now() }
   try {
-    const res = await fetch('/api/screenshot', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-      body: JSON.stringify({ url: resolvedUrl.value, viewport }),
-      signal: captureAbortController?.signal,
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({})) as { message?: string }
-      throw new Error(err.message || `${res.status}`)
-    }
-    const blob = await res.blob()
-    const src = URL.createObjectURL(blob)
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image()
-      el.onload = () => resolve(el)
-      el.onerror = reject
-      el.src = src
-    })
+    const result = await captureViewportSSE(
+      resolvedUrl.value,
+      viewport,
+      authStore.token ?? '',
+      (progress) => { captureState[viewport].progress = progress },
+      captureAbortController?.signal,
+    )
     captureState[viewport].status = 'done'
-    captureState[viewport].src = src
-    return { img, src }
-  } catch {
+    captureState[viewport].src = result.src
+    return result
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') return null
     captureState[viewport].status = 'error'
     return null
   }
@@ -462,24 +459,18 @@ async function onStartCapture() {
   resetCaptureState()
   captureCancelled = false
   captureAbortController = new AbortController()
-  startElapsed()
+  startTick()
 
   const viewports = activeViewports.value
   const captured = new Map<CaptureViewport, { img: HTMLImageElement; src: string }>()
 
-  // The screenshot service caps concurrent captures at 2 (MAX_CONCURRENT_CAPTURES),
-  // so run in batches rather than firing all viewports at once.
-  for (let i = 0; i < viewports.length; i += MAX_CONCURRENT_CAPTURES) {
-    const batch = viewports.slice(i, i + MAX_CONCURRENT_CAPTURES)
-    const batchResults = await Promise.all(batch.map((v) => captureOne(v)))
+  for (const viewport of viewports) {
+    const result = await captureOne(viewport)
     if (captureCancelled) break
-    batch.forEach((v, j) => {
-      const result = batchResults[j]
-      if (result) captured.set(v, result)
-    })
+    if (result) captured.set(viewport, result)
   }
 
-  stopElapsed()
+  stopTick()
 
   if (captureCancelled) return
 

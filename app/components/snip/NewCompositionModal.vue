@@ -194,7 +194,7 @@
               {{ captureError ? 'Capture failed' : `Capturing ${displayHostname}…` }}
             </p>
             <p v-if="!captureError" class="-mt-2 text-[10px] text-[var(--color-text-muted)]/70">
-              {{ captureProgressHint(elapsedSeconds) }}
+              {{ viewportPhaseLabel((desktopStatus === 'loading' ? desktopProgress : mobileProgress).phase) }}
             </p>
             <div class="flex items-end gap-2">
               <div
@@ -203,7 +203,15 @@
                 style="width: 160px;"
               >
                 <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
-                  <Loader2Icon v-if="desktopStatus === 'loading'" class="size-4 animate-spin text-white/30" />
+                  <template v-if="desktopStatus === 'loading'">
+                    <Loader2Icon class="size-4 animate-spin text-white/30" />
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-white/5">
+                      <div
+                        class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-150 ease-linear"
+                        :style="{ width: viewportProgressPercent(desktopProgress, tickNow) + '%' }"
+                      />
+                    </div>
+                  </template>
                   <img
                     v-else-if="desktopStatus === 'done' && desktopSrc"
                     :src="desktopSrc"
@@ -225,7 +233,15 @@
                 style="width: 43px;"
               >
                 <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
-                  <Loader2Icon v-if="mobileStatus === 'loading'" class="size-4 animate-spin text-white/30" />
+                  <template v-if="mobileStatus === 'loading'">
+                    <Loader2Icon class="size-4 animate-spin text-white/30" />
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-white/5">
+                      <div
+                        class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-150 ease-linear"
+                        :style="{ width: viewportProgressPercent(mobileProgress, tickNow) + '%' }"
+                      />
+                    </div>
+                  </template>
                   <img
                     v-else-if="mobileStatus === 'done' && mobileSrc"
                     :src="mobileSrc"
@@ -271,7 +287,8 @@
 
 <script setup lang="ts">
 import { Laptop, MonitorSmartphone, LayoutGrid, Layers, Globe, Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
-import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, useCaptureElapsed, captureProgressHint } from '~/composables/useUrlCapture'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, captureViewportSSE, idleProgress, viewportProgressPercent, viewportPhaseLabel, useProgressTick } from '~/composables/useUrlCapture'
+import type { ViewportProgress } from '~/composables/useUrlCapture'
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
@@ -321,9 +338,11 @@ const desktopStatus = ref<CaptureStatus>('idle')
 const mobileStatus = ref<CaptureStatus>('idle')
 const desktopSrc = ref('')
 const mobileSrc = ref('')
+const desktopProgress = ref<ViewportProgress>(idleProgress())
+const mobileProgress = ref<ViewportProgress>(idleProgress())
 const captureError = ref('')
 const isCapturing = ref(false)
-const { elapsedSeconds, start: startElapsed, stop: stopElapsed } = useCaptureElapsed()
+const { now: tickNow, start: startTick, stop: stopTick } = useProgressTick()
 
 const urlViewports: { key: Viewport; label: string }[] = [
   { key: 'desktop', label: 'Desktop' },
@@ -362,9 +381,11 @@ watch(
       mobileStatus.value = 'idle'
       desktopSrc.value = ''
       mobileSrc.value = ''
+      desktopProgress.value = idleProgress()
+      mobileProgress.value = idleProgress()
       captureError.value = ''
       isCapturing.value = false
-      stopElapsed()
+      stopTick()
     }
   },
 )
@@ -487,24 +508,15 @@ const createLabel = computed(() => {
 })
 
 async function captureViewport(viewport: Viewport): Promise<{ img: HTMLImageElement; src: string } | null> {
+  const progress = viewport === 'desktop' ? desktopProgress : mobileProgress
+  progress.value = { phase: 'connecting', phaseStartedAt: Date.now() }
   try {
-    const res = await fetch('/api/screenshot', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-      body: JSON.stringify({ url: resolvedUrl.value, viewport }),
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({})) as { message?: string }
-      throw new Error(err.message || `${res.status}`)
-    }
-    const blob = await res.blob()
-    const src = URL.createObjectURL(blob)
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image()
-      el.onload = () => resolve(el)
-      el.onerror = reject
-      el.src = src
-    })
+    const { img, src } = await captureViewportSSE(
+      resolvedUrl.value,
+      viewport,
+      authStore.token ?? '',
+      (p) => { progress.value = p },
+    )
     if (viewport === 'desktop') { desktopStatus.value = 'done'; desktopSrc.value = src }
     else { mobileStatus.value = 'done'; mobileSrc.value = src }
     return { img, src }
@@ -523,14 +535,14 @@ async function createFromUrl() {
   mobileStatus.value = selectedViewports.value.includes('mobile') ? 'loading' : 'idle'
   desktopSrc.value = ''
   mobileSrc.value = ''
-  startElapsed()
+  desktopProgress.value = idleProgress()
+  mobileProgress.value = idleProgress()
+  startTick()
 
-  const [desktop, mobile] = await Promise.all([
-    selectedViewports.value.includes('desktop') ? captureViewport('desktop') : Promise.resolve(null),
-    selectedViewports.value.includes('mobile') ? captureViewport('mobile') : Promise.resolve(null),
-  ])
+  const desktop = selectedViewports.value.includes('desktop') ? await captureViewport('desktop') : null
+  const mobile = selectedViewports.value.includes('mobile') ? await captureViewport('mobile') : null
 
-  stopElapsed()
+  stopTick()
 
   if (!desktop && !mobile) {
     captureError.value = 'Capture failed. Check the URL and try again.'
