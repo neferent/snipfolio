@@ -46,7 +46,9 @@ onMounted(async () => {
     let type = route.query.type as string
 
     if (token_hash && type) {
-      const { error } = await withTimeout(supabase.auth.verifyOtp({ token_hash, type: type as any }))
+      const { error } = await withTimeout<{ error: unknown }>(
+        supabase.auth.verifyOtp({ token_hash, type: type as any }),
+      )
       if (error) {
         fail('Link expired or invalid. Please request a new one.')
         return
@@ -57,7 +59,7 @@ onMounted(async () => {
       // which the client picks up automatically via detectSessionInUrl.
       const hashParams = new URLSearchParams(window.location.hash.slice(1))
       type = hashParams.get('type') ?? ''
-      const { data } = await withTimeout(supabase.auth.getSession())
+      const { data } = await withTimeout<{ data: { session: unknown } }>(supabase.auth.getSession())
       if (!data.session) {
         fail('Invalid link.')
         return

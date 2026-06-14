@@ -8,7 +8,7 @@ import { isFreeformConfig, isCollageConfig } from '~/types'
 import type { Snip } from '~/types'
 
 vi.mock('~/composables/useProject', () => ({
-  useProject: () => ({ scheduleSave: vi.fn() }),
+  useProject: () => ({ scheduleSave: vi.fn(), deleteCompositionRecord: vi.fn() }),
 }))
 
 function makeSnip(id: string, w = 1920, h = 1080): Snip {
