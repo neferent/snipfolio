@@ -5,7 +5,7 @@
       <div class="flex flex-col items-center gap-5 text-center">
         <div>
           <h2 class="text-base font-semibold text-[var(--color-text)]">Add your first screenshot</h2>
-          <p class="mt-1.5 text-sm text-[var(--color-text-muted)]">Drop an image below to start clipping snips from it</p>
+          <p class="mt-1.5 text-sm text-[var(--color-text-muted)]">Drop an image below to start snipping regions from it.</p>
         </div>
         <ScreenshotDropzone
           prominent

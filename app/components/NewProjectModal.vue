@@ -31,10 +31,10 @@
           @click="type = 'url'"
         >
           <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-[var(--color-text)]">From URL</span>
+            <span class="text-sm font-medium text-[var(--color-text)]">Capture &amp; Compose</span>
             <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
           </div>
-          <span class="text-xs text-[var(--color-text-muted)]">Capture desktop &amp; mobile, compose instantly</span>
+          <span class="text-xs text-[var(--color-text-muted)]">Paste a URL and get a polished composition in seconds.</span>
         </button>
       </div>
 
@@ -67,71 +67,17 @@
     </div>
 
     <!-- Step 2: Preset selection -->
-    <div v-else-if="step === 'preset'" class="space-y-3">
-      <p class="text-xs text-[var(--color-text-muted)]">Choose what to capture for {{ displayHostname }}</p>
-      <div class="grid grid-cols-2 gap-3">
-        <button
-          v-for="p in CAPTURE_PRESETS"
-          :key="p.id"
-          type="button"
-          class="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition hover:bg-white/5"
-          :class="preset === p.id ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
-          @click="preset = p.id"
-        >
-          <CapturePresetThumbnail :preset="p.id" />
-          <span class="text-xs font-medium text-[var(--color-text)]">{{ p.label }}</span>
-          <span class="text-[10px] text-[var(--color-text-muted)]">{{ p.description }}</span>
-        </button>
-      </div>
-    </div>
+    <CapturePresetStep v-else-if="step === 'preset'" v-model="preset" :hostname="displayHostname" />
 
     <!-- Step 3: Capturing -->
-    <div v-else-if="step === 'capturing'" class="space-y-1">
-      <p class="text-xs text-[var(--color-text-muted)]">
-        {{ captureError ? 'Capture failed' : captureStatusLabel }}
-      </p>
-      <div v-if="!captureError" class="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/5">
-        <div
-          class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-1000 ease-linear"
-          :style="{ width: overallProgressPercent(activeViewports.map((v) => captureState[v].progress), tickNow) + '%' }"
-        />
-      </div>
-      <div class="flex items-end gap-2 pt-2">
-        <div
-          v-for="viewport in activeViewports"
-          :key="viewport"
-          class="flex flex-col overflow-hidden rounded border border-white/10"
-          :style="{ width: pillWidth(viewport) + 'px' }"
-        >
-          <div class="relative flex items-center justify-center bg-black/20" style="height: 140px;">
-            <Loader2Icon v-if="captureState[viewport].status === 'loading'" class="size-4 animate-spin text-white/30" />
-            <img
-              v-else-if="captureState[viewport].status === 'done' && captureState[viewport].src"
-              :src="captureState[viewport].src"
-              class="absolute inset-0 block w-full object-cover object-top"
-              draggable="false"
-            />
-            <XIcon v-else-if="captureState[viewport].status === 'error'" class="size-4 text-red-400" />
-          </div>
-          <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
-            <CheckIcon v-if="captureState[viewport].status === 'done'" class="size-3 shrink-0 text-emerald-400" />
-            <Loader2Icon v-else-if="captureState[viewport].status === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
-            <XIcon v-else-if="captureState[viewport].status === 'error'" class="size-3 shrink-0 text-red-400" />
-            <span class="truncate text-[10px] text-[var(--color-text-muted)]">{{ VIEWPORT_LABEL[viewport] }}</span>
-          </div>
-        </div>
-      </div>
-      <div v-if="!captureError" class="pt-2 text-center">
-        <button
-          type="button"
-          class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-          @click="onCancelCapture"
-        >
-          Cancel
-        </button>
-      </div>
-      <p v-if="captureError" class="pt-1 text-xs text-red-400">{{ captureError }}</p>
-    </div>
+    <CapturingStep
+      v-else-if="step === 'capturing'"
+      :active-viewports="activeViewports"
+      :capture-state="captureState"
+      :capture-error="captureError"
+      :tick-now="tickNow"
+      @cancel="onCancelCapture"
+    />
 
     <template #footer>
       <!-- Main step -->
@@ -194,45 +140,20 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
-import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, captureViewportSSE, idleProgress, overallProgressPercent, viewportPhaseLabel, useProgressTick, CAPTURE_PRESETS } from '~/composables/useUrlCapture'
-import type { CapturePreset, CaptureViewport, ViewportProgress } from '~/composables/useUrlCapture'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl } from '~/composables/useUrlCapture'
+import type { CaptureViewport } from '~/composables/useUrlCapture'
+import { useUrlCaptureFlow } from '~/composables/useUrlCaptureFlow'
+import type { PlacedSnip } from '~/composables/useUrlCaptureFlow'
 import { useProject } from '~/composables/useProject'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
 import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
-import { useSnips } from '~/composables/useSnips'
-import { useCompositions } from '~/composables/useCompositions'
-import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
 import { useCheckout } from '~/composables/useCheckout'
-import type { SourceImage } from '~/types'
-
-// Screen area aspect ratios (width/height) matching the SVG frame definitions
-const LAPTOP_SCREEN_ASPECT = 3034.7 / 1964.07  // ≈ 1.545
-const TABLET_SCREEN_ASPECT = (2377.7 - 79.14) / (1803.11 - 80.08)  // ≈ 1.334
-const PHONE_SCREEN_ASPECT  = 709.65 / 1539.77  // ≈ 0.461
-
-const VIEWPORT_SCREEN_ASPECT: Record<CaptureViewport, number> = {
-  desktop: LAPTOP_SCREEN_ASPECT,
-  tablet: TABLET_SCREEN_ASPECT,
-  mobile: PHONE_SCREEN_ASPECT,
-}
-const VIEWPORT_SNAP_FRAME: Record<CaptureViewport, 'laptop' | 'tablet' | 'phone'> = {
-  desktop: 'laptop',
-  tablet: 'tablet',
-  mobile: 'phone',
-}
-const VIEWPORT_LABEL: Record<CaptureViewport, string> = {
-  desktop: 'Desktop',
-  tablet: 'Tablet',
-  mobile: 'Mobile',
-}
 
 type Step = 'main' | 'preset' | 'capturing'
 type ProjectType = 'blank' | 'url'
-type CaptureStatus = 'idle' | 'loading' | 'done' | 'error'
 
 const props = defineProps<{ open: boolean; openToUrl?: boolean }>()
 const emit = defineEmits<{
@@ -241,16 +162,26 @@ const emit = defineEmits<{
   composed: [projectId: string, compositionId: string]
 }>()
 
-const { createProject: createProjectFn, saveImage, savePreview, persistAll } = useProject()
+const { createProject: createProjectFn, savePreview, persistAll } = useProject()
 const projectStore = useProjectStore()
 const sourcesStore = useSourcesStore()
 const snipsStore = useSnipsStore()
 const compositionsStore = useCompositionsStore()
-const { createSnip } = useSnips()
-const { createLaptopPhoneComposition, createLaptopTabletPhoneComposition, createBrowserComposition, createLaptopComposition } = useCompositions()
-const authStore = useAuthStore()
 const { isPro } = usePlan()
 const { startCheckout, loading: checkoutLoading } = useCheckout()
+
+const {
+  preset,
+  captureState,
+  captureError,
+  activeViewports,
+  tickNow,
+  reset: resetCaptureFlow,
+  cancel: cancelCapture,
+  runCapture,
+  addCapturedSource,
+  createCompositionFromPreset,
+} = useUrlCaptureFlow()
 
 const step = ref<Step>('main')
 const type = ref<ProjectType>('blank')
@@ -258,18 +189,6 @@ const name = ref('')
 const url = ref('')
 const nameFocused = ref(false)
 const prevHostname = ref('')
-const preset = ref<CapturePreset>('laptop+phone')
-
-const captureState = reactive<Record<CaptureViewport, { status: CaptureStatus; src: string; progress: ViewportProgress }>>({
-  desktop: { status: 'idle', src: '', progress: idleProgress() },
-  tablet: { status: 'idle', src: '', progress: idleProgress() },
-  mobile: { status: 'idle', src: '', progress: idleProgress() },
-})
-const captureError = ref('')
-const { now: tickNow, start: startTick, stop: stopTick } = useProgressTick()
-
-let captureAbortController: AbortController | null = null
-let captureCancelled = false
 
 const nameInputRef = ref<HTMLInputElement>()
 const urlInputRef = ref<HTMLInputElement>()
@@ -293,18 +212,6 @@ const canSubmit = computed(() => {
   return true
 })
 
-const activeViewports = computed(() => CAPTURE_PRESETS.find((p) => p.id === preset.value)?.viewports ?? [])
-
-/** Pill width for a capture-progress preview, sized proportionally to the preset's viewport mix. */
-function pillWidth(viewport: CaptureViewport): number {
-  const n = activeViewports.value.length
-  if (n === 1) return 320
-  if (n === 2) return viewport === 'mobile' ? 65 : 240
-  if (viewport === 'desktop') return 170
-  if (viewport === 'tablet') return 130
-  return 55
-}
-
 watch(() => props.open, (v) => {
   if (!v) {
     reset()
@@ -314,22 +221,6 @@ watch(() => props.open, (v) => {
   }
 })
 
-function resetCaptureState() {
-  for (const viewport of (['desktop', 'tablet', 'mobile'] as const)) {
-    captureState[viewport].status = 'idle'
-    captureState[viewport].src = ''
-    captureState[viewport].progress = idleProgress()
-  }
-}
-
-/** Status label for the capturing step: shows which viewport is in flight and its current phase. */
-const captureStatusLabel = computed(() => {
-  const loading = activeViewports.value.find((v) => captureState[v].status === 'loading')
-  if (loading) return `${VIEWPORT_LABEL[loading]}: ${viewportPhaseLabel(captureState[loading].progress.phase)}`
-  if (activeViewports.value.length > 0 && activeViewports.value.every((v) => captureState[v].status === 'done')) return 'Finishing up…'
-  return 'Preparing…'
-})
-
 function reset() {
   step.value = 'main'
   type.value = 'blank'
@@ -337,23 +228,12 @@ function reset() {
   url.value = ''
   prevHostname.value = ''
   nameFocused.value = false
-  preset.value = 'laptop+phone'
-  resetCaptureState()
-  captureError.value = ''
-  captureAbortController?.abort()
-  captureAbortController = null
-  captureCancelled = false
-  stopTick()
+  resetCaptureFlow()
 }
 
 function onCancelCapture() {
-  captureCancelled = true
-  captureAbortController?.abort()
-  captureAbortController = null
-  stopTick()
+  cancelCapture()
   step.value = 'preset'
-  captureError.value = ''
-  resetCaptureState()
 }
 
 function onClose() {
@@ -404,82 +284,12 @@ async function onCreateBlank() {
   emit('created', project.id)
 }
 
-async function captureOne(viewport: CaptureViewport): Promise<{ img: HTMLImageElement; src: string } | null> {
-  captureState[viewport].status = 'loading'
-  captureState[viewport].progress = { phase: 'connecting', phaseStartedAt: Date.now() }
-  try {
-    const result = await captureViewportSSE(
-      resolvedUrl.value,
-      viewport,
-      authStore.token ?? '',
-      (progress) => { captureState[viewport].progress = progress },
-      captureAbortController?.signal,
-    )
-    captureState[viewport].status = 'done'
-    captureState[viewport].src = result.src
-    return result
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') return null
-    captureState[viewport].status = 'error'
-    return null
-  }
-}
-
-/** Registers a captured screenshot as a source image and creates a matching snip cropped to that viewport's frame aspect. */
-function addCapturedSource(
-  projectId: string,
-  viewport: CaptureViewport,
-  capture: { img: HTMLImageElement; src: string },
-  sortOrder: number,
-): { snipId: string; width: number; height: number } {
-  const sourceId = crypto.randomUUID()
-  const source: SourceImage = {
-    id: sourceId,
-    projectId,
-    label: `${displayHostname.value} ${viewport}`,
-    filename: `${displayHostname.value}-${viewport}.png`,
-    width: capture.img.naturalWidth,
-    height: capture.img.naturalHeight,
-    sortOrder,
-  }
-  sourcesStore.addSource(source)
-  sourcesStore.setLoadedImage(sourceId, capture.img, capture.src)
-  sourcesStore.setActiveSource(sourceId)
-  saveImage(projectId, sourceId, capture.src)
-  const width = capture.img.naturalWidth
-  const height = Math.min(capture.img.naturalHeight, Math.round(width / VIEWPORT_SCREEN_ASPECT[viewport]))
-  const snip = createSnip(0, 0, width, height, VIEWPORT_SNAP_FRAME[viewport], sourceId)
-  return { snipId: snip.id, width, height }
-}
-
 async function onStartCapture() {
   if (!resolvedUrl.value || urlError.value || !name.value.trim()) return
   step.value = 'capturing'
-  captureError.value = ''
-  resetCaptureState()
-  captureCancelled = false
-  captureAbortController = new AbortController()
-  startTick()
 
-  const viewports = activeViewports.value
-  const captured = new Map<CaptureViewport, { img: HTMLImageElement; src: string }>()
-
-  for (const viewport of viewports) {
-    const result = await captureOne(viewport)
-    if (captureCancelled) break
-    if (result) captured.set(viewport, result)
-  }
-
-  stopTick()
-
-  if (captureCancelled) return
-
-  if (captured.size === 0) {
-    captureError.value = viewports.length > 1
-      ? 'All captures failed. Check the URL and try again.'
-      : 'Capture failed. Check the URL and try again.'
-    return
-  }
+  const captured = await runCapture(resolvedUrl.value)
+  if (!captured || captureError.value) return
 
   try {
     const project = await createProjectFn(name.value.trim())
@@ -490,33 +300,18 @@ async function onStartCapture() {
     snipsStore.setSnips([])
     compositionsStore.setCompositions([])
 
-    const placed = new Map<CaptureViewport, { snipId: string; width: number; height: number }>()
+    const placed = new Map<CaptureViewport, PlacedSnip>()
     let sortOrder = 0
-    for (const viewport of viewports) {
+    for (const viewport of activeViewports.value) {
       const capture = captured.get(viewport)
       if (!capture) continue
-      placed.set(viewport, addCapturedSource(project.id, viewport, capture, sortOrder++))
+      placed.set(viewport, addCapturedSource(project.id, viewport, capture, sortOrder++, displayHostname.value))
     }
 
     const previewCapture = captured.get('desktop') ?? captured.get('tablet') ?? captured.get('mobile')
     if (previewCapture) savePreview(project.id, previewCapture.img)
 
-    const desktop = placed.get('desktop')
-    const tablet = placed.get('tablet')
-    const mobile = placed.get('mobile')
-
-    let comp
-    if (preset.value === 'laptop+tablet+phone' && desktop && tablet && mobile) {
-      comp = createLaptopTabletPhoneComposition(desktop.snipId, tablet.snipId, mobile.snipId, displayHostname.value)
-    } else if ((preset.value === 'browser' || preset.value === 'browser+url') && desktop) {
-      const browserUrl = preset.value === 'browser+url' ? resolvedUrl.value.replace(/^https?:\/\//, '') : undefined
-      comp = createBrowserComposition(desktop.snipId, desktop.width, desktop.height, displayHostname.value, undefined, browserUrl)
-    } else if (desktop && mobile) {
-      comp = createLaptopPhoneComposition(desktop.snipId, mobile.snipId, displayHostname.value)
-    } else {
-      const fallback = desktop ?? tablet ?? mobile
-      comp = createLaptopComposition(fallback!.snipId, displayHostname.value)
-    }
+    const comp = createCompositionFromPreset(placed, displayHostname.value, resolvedUrl.value)
 
     await persistAll()
     emit('composed', project.id, comp.id)

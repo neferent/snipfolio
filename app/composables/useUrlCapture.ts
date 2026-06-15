@@ -28,6 +28,29 @@ export function isValidCaptureUrl(input: string): boolean {
 export type CaptureViewport = 'desktop' | 'tablet' | 'mobile'
 export type CapturePreset = 'laptop+phone' | 'laptop+tablet+phone' | 'browser' | 'browser+url'
 
+// Screen area aspect ratios (width/height) matching the SVG frame definitions
+export const LAPTOP_SCREEN_ASPECT = 3034.7 / 1964.07  // ≈ 1.545
+export const TABLET_SCREEN_ASPECT = (2377.7 - 79.14) / (1803.11 - 80.08)  // ≈ 1.334
+export const PHONE_SCREEN_ASPECT  = 709.65 / 1539.77  // ≈ 0.461
+
+export const VIEWPORT_SCREEN_ASPECT: Record<CaptureViewport, number> = {
+  desktop: LAPTOP_SCREEN_ASPECT,
+  tablet: TABLET_SCREEN_ASPECT,
+  mobile: PHONE_SCREEN_ASPECT,
+}
+
+export const VIEWPORT_SNAP_FRAME: Record<CaptureViewport, 'laptop' | 'tablet' | 'phone'> = {
+  desktop: 'laptop',
+  tablet: 'tablet',
+  mobile: 'phone',
+}
+
+export const VIEWPORT_LABEL: Record<CaptureViewport, string> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+}
+
 export interface CapturePresetDef {
   id: CapturePreset
   label: string

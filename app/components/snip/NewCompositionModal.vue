@@ -1,6 +1,6 @@
 <template>
-  <AppModal :open="open" title="New Composition" max-width="760px" @close="$emit('close')">
-    <div class="flex gap-5">
+  <AppModal :open="open" :title="modalTitle" max-width="760px" @close="$emit('close')">
+    <div v-if="step === 'main'" class="flex gap-5">
       <!-- Left: form controls -->
       <div class="w-64 shrink-0 space-y-4">
         <div class="space-y-1.5">
@@ -126,7 +126,7 @@
             </div>
           </template>
 
-          <!-- From URL: capture desktop/mobile screenshots and create snips -->
+          <!-- From URL: capture from a live page -->
           <template v-else-if="type === 'url'">
             <label for="new-composition-url" class="text-xs font-medium text-[var(--color-text-muted)]">URL</label>
             <input
@@ -137,27 +137,10 @@
               class="w-full"
               :class="urlError ? 'border-red-400/40' : ''"
               placeholder="https://example.com"
-              :disabled="isCapturing"
-              @keydown.enter="create"
+              @keydown.enter="onUrlNext"
             />
             <p v-if="urlError" class="-mt-1 text-[10px] text-red-400">{{ urlError }}</p>
-            <div class="flex items-center gap-4 pt-1">
-              <label
-                v-for="v in urlViewports"
-                :key="v.key"
-                class="flex cursor-pointer items-center gap-1.5 text-xs text-[var(--color-text-muted)] select-none"
-              >
-                <input
-                  v-model="selectedViewports"
-                  type="checkbox"
-                  :value="v.key"
-                  :disabled="isCapturing"
-                  class="accent-[var(--color-accent)]"
-                />
-                {{ v.label }}
-              </label>
-            </div>
-            <p v-if="captureError" class="text-xs text-red-400">{{ captureError }}</p>
+            <p class="text-xs text-[var(--color-text-muted)]">Choose what to capture on the next step</p>
           </template>
 
           <!-- Freeform: optional checkboxes (can add more later in editor) -->
@@ -186,80 +169,6 @@
         <label class="text-xs font-medium text-[var(--color-text-muted)]">Preview</label>
         <div class="flex-1 min-h-[260px] overflow-hidden rounded-lg border border-[var(--color-border)]">
           <CompositionCanvas v-if="previewComposition" :composition="previewComposition" />
-          <div
-            v-else-if="type === 'url' && (isCapturing || desktopStatus !== 'idle' || mobileStatus !== 'idle')"
-            class="flex h-full flex-col items-center justify-center gap-3 p-4"
-          >
-            <p class="text-xs text-[var(--color-text-muted)]">
-              {{ captureError ? 'Capture failed' : `Capturing ${displayHostname}…` }}
-            </p>
-            <p v-if="!captureError" class="-mt-2 text-[10px] text-[var(--color-text-muted)]/70">
-              {{ viewportPhaseLabel((desktopStatus === 'loading' ? desktopProgress : mobileProgress).phase) }}
-            </p>
-            <div class="flex items-end gap-2">
-              <div
-                v-if="selectedViewports.includes('desktop')"
-                class="flex flex-col overflow-hidden rounded border border-white/10"
-                style="width: 160px;"
-              >
-                <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
-                  <template v-if="desktopStatus === 'loading'">
-                    <Loader2Icon class="size-4 animate-spin text-white/30" />
-                    <div class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-white/5">
-                      <div
-                        class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-150 ease-linear"
-                        :style="{ width: viewportProgressPercent(desktopProgress, tickNow) + '%' }"
-                      />
-                    </div>
-                  </template>
-                  <img
-                    v-else-if="desktopStatus === 'done' && desktopSrc"
-                    :src="desktopSrc"
-                    class="absolute inset-0 block w-full object-cover object-top"
-                    draggable="false"
-                  />
-                  <XIcon v-else-if="desktopStatus === 'error'" class="size-4 text-red-400" />
-                </div>
-                <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
-                  <CheckIcon v-if="desktopStatus === 'done'" class="size-3 shrink-0 text-emerald-400" />
-                  <Loader2Icon v-else-if="desktopStatus === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
-                  <XIcon v-else-if="desktopStatus === 'error'" class="size-3 shrink-0 text-red-400" />
-                  <span class="truncate text-[10px] text-[var(--color-text-muted)]">Desktop</span>
-                </div>
-              </div>
-              <div
-                v-if="selectedViewports.includes('mobile')"
-                class="flex flex-col overflow-hidden rounded border border-white/10"
-                style="width: 43px;"
-              >
-                <div class="relative flex items-center justify-center bg-black/20" style="height: 72px;">
-                  <template v-if="mobileStatus === 'loading'">
-                    <Loader2Icon class="size-4 animate-spin text-white/30" />
-                    <div class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-white/5">
-                      <div
-                        class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-150 ease-linear"
-                        :style="{ width: viewportProgressPercent(mobileProgress, tickNow) + '%' }"
-                      />
-                    </div>
-                  </template>
-                  <img
-                    v-else-if="mobileStatus === 'done' && mobileSrc"
-                    :src="mobileSrc"
-                    class="absolute inset-0 block w-full object-cover object-top"
-                    draggable="false"
-                  />
-                  <XIcon v-else-if="mobileStatus === 'error'" class="size-4 text-red-400" />
-                </div>
-                <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
-                  <CheckIcon v-if="mobileStatus === 'done'" class="size-3 shrink-0 text-emerald-400" />
-                  <Loader2Icon v-else-if="mobileStatus === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
-                  <XIcon v-else-if="mobileStatus === 'error'" class="size-3 shrink-0 text-red-400" />
-                  <span class="truncate text-[10px] text-[var(--color-text-muted)]">Mobile</span>
-                </div>
-              </div>
-            </div>
-            <p v-if="captureError" class="text-xs text-red-400">{{ captureError }}</p>
-          </div>
           <div v-else class="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
             {{ previewHint }}
           </div>
@@ -267,45 +176,96 @@
       </div>
     </div>
 
+    <!-- Step 2: Preset selection (From URL only) -->
+    <CapturePresetStep v-else-if="step === 'preset'" v-model="preset" :hostname="displayHostname" />
+
+    <!-- Step 3: Capturing (From URL only) -->
+    <CapturingStep
+      v-else-if="step === 'capturing'"
+      :active-viewports="activeViewports"
+      :capture-state="captureState"
+      :capture-error="captureError"
+      :tick-now="tickNow"
+      @cancel="onCancelCapture"
+    />
+
     <template #footer>
-      <button
-        class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
-        @click="$emit('close')"
-      >
-        Cancel
-      </button>
-      <button
-        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50 text-[var(--color-on-accent)]"
-        :disabled="!canCreate"
-        @click="create"
-      >
-        {{ createLabel }}
-      </button>
+      <template v-if="step === 'main'">
+        <button
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
+          @click="$emit('close')"
+        >
+          Cancel
+        </button>
+        <button
+          v-if="type === 'url'"
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50 text-[var(--color-on-accent)]"
+          :disabled="!canGoToPreset"
+          @click="onUrlNext"
+        >
+          Next
+        </button>
+        <button
+          v-else
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50 text-[var(--color-on-accent)]"
+          :disabled="!canCreate"
+          @click="create"
+        >
+          Create
+        </button>
+      </template>
+
+      <!-- Step 2: preset selection -->
+      <template v-else-if="step === 'preset'">
+        <button
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          @click="step = 'main'"
+        >
+          Back
+        </button>
+        <button
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+          @click="onStartCapture"
+        >
+          Capture &amp; Create
+        </button>
+      </template>
+
+      <!-- Step 3: capturing — only show buttons on error -->
+      <template v-else-if="step === 'capturing' && captureError">
+        <button
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          @click="step = 'main'"
+        >
+          Back
+        </button>
+        <button
+          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
+          @click="onStartCapture"
+        >
+          Retry
+        </button>
+      </template>
     </template>
   </AppModal>
 </template>
 
 <script setup lang="ts">
-import { Laptop, MonitorSmartphone, LayoutGrid, Layers, Globe, Loader2Icon, CheckIcon, XIcon } from 'lucide-vue-next'
-import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, captureViewportSSE, idleProgress, viewportProgressPercent, viewportPhaseLabel, useProgressTick } from '~/composables/useUrlCapture'
-import type { ViewportProgress } from '~/composables/useUrlCapture'
+import { Laptop, MonitorSmartphone, LayoutGrid, Layers, Globe } from 'lucide-vue-next'
+import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl } from '~/composables/useUrlCapture'
+import type { CaptureViewport } from '~/composables/useUrlCapture'
+import { useUrlCaptureFlow } from '~/composables/useUrlCaptureFlow'
+import type { PlacedSnip } from '~/composables/useUrlCaptureFlow'
 import { useSnipsStore } from '~/stores/snips'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
-import { useSnips } from '~/composables/useSnips'
 import { useProject } from '~/composables/useProject'
 import { useCompositions, getLaptopLayout, getLaptopPhoneLayout, getFreeformGridLayout } from '~/composables/useCompositions'
-import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
 import { useCheckout } from '~/composables/useCheckout'
-import type { Composition, FreeformCompositionConfig, CollageCompositionConfig, SourceImage } from '~/types'
+import type { Composition, FreeformCompositionConfig, CollageCompositionConfig } from '~/types'
 
-// Screen area aspect ratios (width/height) matching the SVG frame definitions
-const LAPTOP_SCREEN_ASPECT = 3034.7 / 1964.07  // ≈ 1.545
-const PHONE_SCREEN_ASPECT  = 709.65 / 1539.77  // ≈ 0.461
-
-type CaptureStatus = 'idle' | 'loading' | 'done' | 'error'
-type Viewport = 'desktop' | 'mobile'
+type Step = 'main' | 'preset' | 'capturing'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -313,14 +273,25 @@ const emit = defineEmits<{ close: [] }>()
 const snipsStore = useSnipsStore()
 const projectStore = useProjectStore()
 const sourcesStore = useSourcesStore()
-const { createSnip } = useSnips()
-const { saveImage, scheduleSave } = useProject()
+const { scheduleSave } = useProject()
 const { createLaptopComposition, createLaptopPhoneComposition, createAutoComposition, createFreeformComposition } = useCompositions()
 const router = useRouter()
 const route = useRoute()
-const authStore = useAuthStore()
 const { isPro } = usePlan()
 const { startCheckout, loading: checkoutLoading } = useCheckout()
+
+const {
+  preset,
+  captureState,
+  captureError,
+  activeViewports,
+  tickNow,
+  reset: resetCaptureFlow,
+  cancel: cancelCapture,
+  runCapture,
+  addCapturedSource,
+  createCompositionFromPreset,
+} = useUrlCaptureFlow()
 
 const name = ref('')
 const type = ref<'laptop' | 'laptop+phone' | 'auto' | 'freeform' | 'url'>('laptop')
@@ -332,22 +303,8 @@ const snips = computed(() => snipsStore.orderedSnips)
 const laptopSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapFrame === 'laptop'))
 const phoneSnips = computed(() => snipsStore.orderedSnips.filter((s) => s.snapFrame === 'phone'))
 
+const step = ref<Step>('main')
 const url = ref('')
-const selectedViewports = ref<Viewport[]>(['desktop', 'mobile'])
-const desktopStatus = ref<CaptureStatus>('idle')
-const mobileStatus = ref<CaptureStatus>('idle')
-const desktopSrc = ref('')
-const mobileSrc = ref('')
-const desktopProgress = ref<ViewportProgress>(idleProgress())
-const mobileProgress = ref<ViewportProgress>(idleProgress())
-const captureError = ref('')
-const isCapturing = ref(false)
-const { now: tickNow, start: startTick, stop: stopTick } = useProgressTick()
-
-const urlViewports: { key: Viewport; label: string }[] = [
-  { key: 'desktop', label: 'Desktop' },
-  { key: 'mobile', label: 'Mobile' },
-]
 
 const types = [
   { value: 'laptop' as const, icon: Laptop, label: 'Desktop', hint: 'One snip in a desktop frame' },
@@ -364,6 +321,14 @@ const urlError = computed(() => {
   return 'Enter a valid URL'
 })
 
+const canGoToPreset = computed(() => isPro.value && !!resolvedUrl.value && !urlError.value)
+
+const modalTitle = computed(() => {
+  if (step.value === 'capturing') return captureError.value ? 'Capture failed' : `Capturing ${displayHostname.value}…`
+  if (step.value === 'preset') return 'Choose a layout'
+  return 'New Composition'
+})
+
 watch(
   () => props.open,
   (isOpen) => {
@@ -376,16 +341,8 @@ watch(
       phoneSnipId.value = ''
       selectedIds.value = []
       url.value = ''
-      selectedViewports.value = ['desktop', 'mobile']
-      desktopStatus.value = 'idle'
-      mobileStatus.value = 'idle'
-      desktopSrc.value = ''
-      mobileSrc.value = ''
-      desktopProgress.value = idleProgress()
-      mobileProgress.value = idleProgress()
-      captureError.value = ''
-      isCapturing.value = false
-      stopTick()
+      step.value = 'main'
+      resetCaptureFlow()
     }
   },
 )
@@ -494,123 +451,44 @@ const canCreate = computed(() => {
   if (type.value === 'laptop') return !!laptopSnipId.value
   if (type.value === 'laptop+phone') return !!laptopSnipId.value && !!phoneSnipId.value
   if (type.value === 'auto') return selectedIds.value.length >= 2
-  if (type.value === 'url') return isPro.value && !!resolvedUrl.value && !urlError.value && selectedViewports.value.length > 0 && !isCapturing.value
   return true // freeform: always valid
 })
 
-const createLabel = computed(() => {
-  if (type.value === 'url') {
-    if (isCapturing.value) return 'Capturing…'
-    if (captureError.value) return 'Retry'
-    return 'Capture & Create'
-  }
-  return 'Create'
-})
-
-async function captureViewport(viewport: Viewport): Promise<{ img: HTMLImageElement; src: string } | null> {
-  const progress = viewport === 'desktop' ? desktopProgress : mobileProgress
-  progress.value = { phase: 'connecting', phaseStartedAt: Date.now() }
-  try {
-    const { img, src } = await captureViewportSSE(
-      resolvedUrl.value,
-      viewport,
-      authStore.token ?? '',
-      (p) => { progress.value = p },
-    )
-    if (viewport === 'desktop') { desktopStatus.value = 'done'; desktopSrc.value = src }
-    else { mobileStatus.value = 'done'; mobileSrc.value = src }
-    return { img, src }
-  } catch {
-    if (viewport === 'desktop') desktopStatus.value = 'error'
-    else mobileStatus.value = 'error'
-    return null
-  }
+function onUrlNext() {
+  if (!canGoToPreset.value) return
+  step.value = 'preset'
 }
 
-async function createFromUrl() {
-  if (!projectStore.current) return
-  isCapturing.value = true
-  captureError.value = ''
-  desktopStatus.value = selectedViewports.value.includes('desktop') ? 'loading' : 'idle'
-  mobileStatus.value = selectedViewports.value.includes('mobile') ? 'loading' : 'idle'
-  desktopSrc.value = ''
-  mobileSrc.value = ''
-  desktopProgress.value = idleProgress()
-  mobileProgress.value = idleProgress()
-  startTick()
+function onCancelCapture() {
+  cancelCapture()
+  step.value = 'preset'
+}
 
-  const desktop = selectedViewports.value.includes('desktop') ? await captureViewport('desktop') : null
-  const mobile = selectedViewports.value.includes('mobile') ? await captureViewport('mobile') : null
+async function onStartCapture() {
+  if (!resolvedUrl.value || urlError.value || !projectStore.current) return
+  step.value = 'capturing'
 
-  stopTick()
-
-  if (!desktop && !mobile) {
-    captureError.value = 'Capture failed. Check the URL and try again.'
-    isCapturing.value = false
-    return
-  }
+  const captured = await runCapture(resolvedUrl.value)
+  if (!captured || captureError.value) return
 
   const projectId = projectStore.current.id
-  let desktopSnipId: string | null = null
-  let mobileSnipId: string | null = null
-
-  if (desktop) {
-    const sourceId = crypto.randomUUID()
-    const source: SourceImage = {
-      id: sourceId,
-      projectId,
-      label: `${displayHostname.value} desktop`,
-      filename: `${displayHostname.value}-desktop.png`,
-      width: desktop.img.naturalWidth,
-      height: desktop.img.naturalHeight,
-      sortOrder: sourcesStore.sources.length,
-    }
-    sourcesStore.addSource(source)
-    sourcesStore.setLoadedImage(sourceId, desktop.img, desktop.src)
-    sourcesStore.setActiveSource(sourceId)
-    saveImage(projectId, sourceId, desktop.src)
-    const snipH = Math.min(desktop.img.naturalHeight, Math.round(desktop.img.naturalWidth / LAPTOP_SCREEN_ASPECT))
-    const snip = createSnip(0, 0, desktop.img.naturalWidth, snipH, 'laptop', sourceId)
-    desktopSnipId = snip.id
+  const placed = new Map<CaptureViewport, PlacedSnip>()
+  let sortOrder = sourcesStore.sources.length
+  for (const viewport of activeViewports.value) {
+    const capture = captured.get(viewport)
+    if (!capture) continue
+    placed.set(viewport, addCapturedSource(projectId, viewport, capture, sortOrder++, displayHostname.value))
   }
 
-  if (mobile) {
-    const sourceId = crypto.randomUUID()
-    const source: SourceImage = {
-      id: sourceId,
-      projectId,
-      label: `${displayHostname.value} mobile`,
-      filename: `${displayHostname.value}-mobile.png`,
-      width: mobile.img.naturalWidth,
-      height: mobile.img.naturalHeight,
-      sortOrder: sourcesStore.sources.length,
-    }
-    sourcesStore.addSource(source)
-    sourcesStore.setLoadedImage(sourceId, mobile.img, mobile.src)
-    if (!desktop) sourcesStore.setActiveSource(sourceId)
-    saveImage(projectId, sourceId, mobile.src)
-    const snipH = Math.min(mobile.img.naturalHeight, Math.round(mobile.img.naturalWidth / PHONE_SCREEN_ASPECT))
-    const snip = createSnip(0, 0, mobile.img.naturalWidth, snipH, 'phone', sourceId)
-    mobileSnipId = snip.id
-  }
-
-  const compName = name.value || displayHostname.value
-  const comp = desktopSnipId && mobileSnipId
-    ? createLaptopPhoneComposition(desktopSnipId, mobileSnipId, compName, bg.value)
-    : createLaptopComposition((desktopSnipId ?? mobileSnipId)!, compName, bg.value)
+  const comp = createCompositionFromPreset(placed, displayHostname.value, resolvedUrl.value, name.value || displayHostname.value, bg.value)
 
   scheduleSave()
-  isCapturing.value = false
   emit('close')
   router.push(`/project/${route.params.id}/compose/${comp.id}`)
 }
 
 async function create() {
   if (!canCreate.value) return
-  if (type.value === 'url') {
-    await createFromUrl()
-    return
-  }
   const bgVal = bg.value
   let comp
   if (type.value === 'laptop') {
