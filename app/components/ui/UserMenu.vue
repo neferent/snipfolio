@@ -20,10 +20,16 @@
     <div class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[var(--color-text-muted)]">
       <span class="truncate">{{ authStore.user?.email }}</span>
       <span
-        v-if="authStore.isPro"
+        v-if="isDayPassActive"
         class="shrink-0 rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
       >
-        PRO
+        Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
+      </span>
+      <span
+        v-else-if="authStore.isPro"
+        class="shrink-0 rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
+      >
+        Access active
       </span>
     </div>
     <div class="my-0.5 h-px bg-[var(--color-border)]" />
@@ -35,9 +41,11 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 import { useAuth } from '~/composables/useAuth'
+import { usePlan, formatPassExpiry } from '~/composables/usePlan'
 
 const authStore = useAuthStore()
 const { signOut: authSignOut } = useAuth()
+const { isDayPassActive, dayPassExpiresAt } = usePlan()
 
 const config = useRuntimeConfig()
 const billingUrl = config.public.lsStoreSlug

@@ -13,7 +13,7 @@ export function useCheckout() {
       authStore.clear()
       const { pathname, search } = window.location
       setPostAuthRedirect(pathname === '/dashboard' ? '/dashboard?openUrlCapture=1' : pathname + search, type)
-      toast.info('Sign in to upgrade to Pro')
+      toast.info('Sign in to continue')
       await navigateTo('/login')
       return
     }

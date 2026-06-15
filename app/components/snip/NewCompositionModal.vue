@@ -35,7 +35,7 @@
               <component :is="t.icon" class="size-5 text-[var(--color-text-muted)]" />
               <div class="mt-2 flex items-center gap-1.5 text-sm font-medium text-[var(--color-text)]">
                 {{ t.label }}
-                <span v-if="t.value === 'url' && !isPro" class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
+                <span v-if="t.value === 'url' && !isPro" class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
               </div>
               <div class="mt-[2px] text-[12px] leading-tight text-[var(--color-text-muted)]">{{ t.hint }}</div>
             </button>
@@ -110,18 +110,18 @@
             </div>
           </template>
 
-          <!-- From URL: Pro upsell -->
+          <!-- From URL: 3-Day Pass upsell -->
           <template v-else-if="type === 'url' && !isPro">
             <p class="text-sm text-[var(--color-text-muted)]">
-              Capturing from a live URL is a Pro feature.
+              Capturing from a live URL requires a 3-Day Access Pass.
             </p>
             <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
               <button
                 class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
                 :disabled="checkoutLoading"
-                @click="startCheckout('pro')"
+                @click="startCheckout('day_pass')"
               >
-                Upgrade to Pro
+                Get 3-Day Pass — $4.99
               </button>
             </div>
           </template>

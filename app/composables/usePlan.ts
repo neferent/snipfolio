@@ -7,7 +7,7 @@ export function usePlan() {
   const isGuest = computed(() => authStore.isGuest)
   const isAdmin = computed(() => authStore.isAdmin)
 
-  // A day pass grants full Pro access for 24h, account-wide, without a subscription
+  // A 3-day access pass grants full Pro access for 72h, account-wide, without a subscription
   const isDayPassActive = computed(() => {
     if (authStore.isPro || !authStore.proExpiresAt) return false
     return new Date(authStore.proExpiresAt) > new Date()
@@ -19,12 +19,18 @@ export function usePlan() {
 
   const isPro = computed(() => authStore.isPro || isDayPassActive.value)
 
-  const PRO_PROJECT_LIMIT = 50
+  const PROJECT_LIMIT = 50
 
   function canCreateProject(): boolean {
-    if (isPro.value) return projectStore.projects.length < PRO_PROJECT_LIMIT
-    return projectStore.projects.length < 1
+    return projectStore.projects.length < PROJECT_LIMIT
   }
 
   return { isGuest, isPro, isAdmin, isDayPassActive, dayPassExpiresAt, canCreateProject }
+}
+
+/** Formats a pass expiry as e.g. "Jun 17, 3:42 PM" — used for the "active until" UI. */
+export function formatPassExpiry(date: Date): string {
+  const datePart = date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return `${datePart}, ${timePart}`
 }

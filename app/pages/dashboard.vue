@@ -22,10 +22,16 @@
       <template v-else>
         <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
         <span
-          v-if="authStore.isPro"
+          v-if="isDayPassActive"
           class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
         >
-          PRO
+          Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
+        </span>
+        <span
+          v-else-if="authStore.isPro"
+          class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
+        >
+          Access active
         </span>
         <a
           v-if="authStore.isPro"
@@ -141,14 +147,11 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm0 9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm9.75-9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm0 9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75z" />
             </svg>
             <p class="text-sm font-medium text-[var(--color-text)]">No projects yet</p>
-            <p class="mt-1 text-xs text-[var(--color-text-muted)]">Create your first project to get started</p>
             <button
-              v-if="URL_CAPTURE_ENABLED"
               class="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-              @click="openToUrl = true; showNew = true"
+              @click="onNewProject = true; showNew = true"
             >
-              Or capture a project from a URL
-              <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
+							Create a new project to get started.
             </button>
           </div>
         </Transition>
@@ -157,35 +160,23 @@
 
     <NewProjectModal
       :open="showNew"
-      :open-to-url="openToUrl"
       @close="showNew = false"
       @created="onProjectCreated"
       @composed="onProjectComposed"
     />
 
-    <!-- Pro upsell / project limit modal -->
-    <AppModal :open="showProUpsell" :title="isPro ? 'Project limit reached' : 'Upgrade to Pro'" @close="showProUpsell = false">
-      <p v-if="isPro" class="text-sm text-[var(--color-text-muted)]">
-        Pro accounts are limited to <strong class="text-[var(--color-text)]">50 projects</strong>.
+    <!-- Project limit modal -->
+    <AppModal :open="showProUpsell" title="Project limit reached" @close="showProUpsell = false">
+      <p class="text-sm text-[var(--color-text-muted)]">
+        You're limited to <strong class="text-[var(--color-text)]">50 projects</strong>.
         Delete an existing project to create a new one.
-      </p>
-      <p v-else class="text-sm text-[var(--color-text-muted)]">
-        Free accounts are limited to <strong class="text-[var(--color-text)]">1 project</strong>.
-        Upgrade to Pro for up to 50 projects and watermark-free exports.
       </p>
       <template #footer>
         <button
           class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
           @click="showProUpsell = false"
         >
-          {{ isPro ? 'Close' : 'Not now' }}
-        </button>
-        <button
-          v-if="!isPro"
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          @click="startCheckout('pro')"
-        >
-          Go Pro — $14.99/mo
+          Close
         </button>
       </template>
     </AppModal>
@@ -220,8 +211,7 @@ import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
 import { useAuth } from '~/composables/useAuth'
 import { useProject } from '~/composables/useProject'
-import { usePlan } from '~/composables/usePlan'
-import { useCheckout } from '~/composables/useCheckout'
+import { usePlan, formatPassExpiry } from '~/composables/usePlan'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -229,8 +219,7 @@ const authStore = useAuthStore()
 const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
 const { fetchProjects, deleteProject, renameProject, loadPreview } = useProject()
-const { canCreateProject, isPro } = usePlan()
-const { startCheckout } = useCheckout()
+const { canCreateProject, isDayPassActive, dayPassExpiresAt } = usePlan()
 
 const config = useRuntimeConfig()
 const billingUrl = config.public.lsStoreSlug

@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Day pass purchase — grants 24h of full Pro access, account-wide
+  // Day pass purchase — grants 72h (3 days) of full Pro access, account-wide
   if (eventName === 'order_created') {
     const variantId: number | undefined = payload.data?.attributes?.first_order_item?.variant_id
     const userId: string | undefined = payload.meta?.custom_data?.user_id
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Missing user_id in custom_data' })
     }
 
-    const proExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    const proExpiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
     const { error } = await sb.from('profiles').upsert(
       { id: userId, pro_expires_at: proExpiresAt },
       { onConflict: 'id' },

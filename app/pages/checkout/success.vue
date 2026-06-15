@@ -44,9 +44,9 @@ onMounted(async () => {
   }
 
   if (activated) {
-    const label = checkoutType === 'day_pass' ? 'Day pass activated!' : 'Pro activated!'
+    const label = checkoutType === 'day_pass' ? '3-Day Pass activated!' : 'Subscription activated!'
     const description = checkoutType === 'day_pass'
-      ? 'Enjoy 24 hours of full Pro access.'
+      ? 'Enjoy 3 days of full access.'
       : 'Enjoy watermark-free exports.'
     toast.success(label, { description })
   } else {

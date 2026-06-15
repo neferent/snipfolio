@@ -32,7 +32,7 @@
         >
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium text-[var(--color-text)]">From URL</span>
-            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
           </div>
           <span class="text-xs text-[var(--color-text-muted)]">Capture desktop &amp; mobile, compose instantly</span>
         </button>
@@ -60,7 +60,7 @@
         <!-- Pro upsell, shown when "From URL" is selected and the user is not Pro -->
         <div v-else-if="type === 'url' && !isPro" key="url-locked" class="expand-panel space-y-3">
           <p class="mt-3 text-sm text-[var(--color-text-muted)]">
-            Capturing a project from a live URL is a Pro feature.
+            Capturing from a live URL requires a 3-Day Access Pass.
           </p>
         </div>
       </Transition>
@@ -142,9 +142,9 @@
             key="upgrade"
             class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
             :disabled="checkoutLoading"
-            @click="startCheckout('pro')"
+            @click="startCheckout('day_pass')"
           >
-            Upgrade to Pro
+            Get 3-Day Pass — $4.99
           </button>
           <button
             v-else

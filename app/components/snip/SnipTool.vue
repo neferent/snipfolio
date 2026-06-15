@@ -17,7 +17,7 @@
           @click="showUrlCapture = true"
         >
           Or capture from a URL
-          <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
+          <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
         </button>
       </div>
     </div>
@@ -243,7 +243,7 @@
             @click="showUrlCapture = true"
           >
             Or capture from a URL
-            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">Pro</span>
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
           </button>
           <p v-if="pendingFile" class="mt-2 text-xs text-emerald-400">
             ✓ {{ pendingFile.filename }} ({{ pendingFile.img.naturalWidth }}×{{ pendingFile.img.naturalHeight }})

@@ -10,18 +10,20 @@ describe('usePlan.canCreateProject', () => {
     setActivePinia(createPinia())
   })
 
-  it('returns true for guests with no projects (same limit as free tier)', () => {
-    const auth = useAuthStore()
-    auth.isGuest = true
-    const { canCreateProject } = usePlan()
-    expect(canCreateProject()).toBe(true)
-  })
-
-  it('returns false for guests who already have a project (same limit as free tier)', () => {
+  it('returns true for guests under the 50-project cap', () => {
     const auth = useAuthStore()
     auth.isGuest = true
     const projects = useProjectStore()
     projects.setProjects([{ id: '1' } as Project])
+    const { canCreateProject } = usePlan()
+    expect(canCreateProject()).toBe(true)
+  })
+
+  it('returns false for guests at the 50-project cap', () => {
+    const auth = useAuthStore()
+    auth.isGuest = true
+    const projects = useProjectStore()
+    projects.setProjects(Array.from({ length: 50 }, (_, i) => ({ id: String(i) } as Project)))
     const { canCreateProject } = usePlan()
     expect(canCreateProject()).toBe(false)
   })
@@ -64,20 +66,22 @@ describe('usePlan.canCreateProject', () => {
     expect(canCreateProject()).toBe(false)
   })
 
-  it('returns true for free users with no projects', () => {
-    const auth = useAuthStore()
-    auth.isGuest = false
-    auth.isPro = false
-    const { canCreateProject } = usePlan()
-    expect(canCreateProject()).toBe(true)
-  })
-
-  it('returns false for free users who already have a project', () => {
+  it('returns true for free users under the 50-project cap', () => {
     const auth = useAuthStore()
     auth.isGuest = false
     auth.isPro = false
     const projects = useProjectStore()
     projects.setProjects([{ id: '1' } as Project])
+    const { canCreateProject } = usePlan()
+    expect(canCreateProject()).toBe(true)
+  })
+
+  it('returns false for free users at the 50-project cap', () => {
+    const auth = useAuthStore()
+    auth.isGuest = false
+    auth.isPro = false
+    const projects = useProjectStore()
+    projects.setProjects(Array.from({ length: 50 }, (_, i) => ({ id: String(i) } as Project)))
     const { canCreateProject } = usePlan()
     expect(canCreateProject()).toBe(false)
   })

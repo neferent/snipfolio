@@ -1,17 +1,17 @@
 <template>
   <AppModal :open="open" title="Capture from URL" @close="onClose">
-    <!-- Pro upsell (non-pro users) -->
+    <!-- 3-Day Pass upsell (non-pro users) -->
     <div v-if="!isPro" class="flex flex-col gap-3">
       <p class="text-sm text-[var(--color-text-muted)]">
-        Capturing a screenshot from a live URL is a Pro feature.
+        Capturing from a live URL requires a 3-Day Access Pass.
       </p>
       <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
         <button
           class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
           :disabled="checkoutLoading"
-          @click="startCheckout('pro')"
+          @click="startCheckout('day_pass')"
         >
-          Upgrade to Pro
+          Get 3-Day Pass — $4.99
         </button>
       </div>
     </div>
