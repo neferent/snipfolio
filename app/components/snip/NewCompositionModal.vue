@@ -117,11 +117,12 @@
             </p>
             <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
               <button
-                class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
+                class="flex h-7 w-full items-center justify-center gap-1.5 rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
                 :disabled="checkoutLoading"
                 @click="startCheckout('day_pass', checkoutReturnUrl('openNewComposition=1'))"
               >
-                Get 3-Day Pass — $4.99
+                <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
+                {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
               </button>
             </div>
           </template>
@@ -251,7 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import { Laptop, MonitorSmartphone, LayoutGrid, Layers, Globe } from 'lucide-vue-next'
+import { Laptop, MonitorSmartphone, LayoutGrid, Layers, Globe, Loader2Icon } from 'lucide-vue-next'
 import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl } from '~/composables/useUrlCapture'
 import type { CaptureViewport } from '~/composables/useUrlCapture'
 import { useUrlCaptureFlow } from '~/composables/useUrlCaptureFlow'

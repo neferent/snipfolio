@@ -86,11 +86,12 @@
           <button
             v-if="type === 'url' && !isPro"
             key="upgrade"
-            class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
+            class="flex h-8 items-center justify-center gap-1.5 rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
             :disabled="checkoutLoading"
             @click="startCheckout('day_pass', '/dashboard?openUrlCapture=1')"
           >
-            Get 3-Day Pass — $4.99
+            <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
+            {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
           </button>
           <button
             v-else
@@ -151,6 +152,7 @@ import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
 import { usePlan } from '~/composables/usePlan'
 import { useCheckout } from '~/composables/useCheckout'
+import { Loader2Icon } from 'lucide-vue-next'
 
 type Step = 'main' | 'preset' | 'capturing'
 type ProjectType = 'blank' | 'url'

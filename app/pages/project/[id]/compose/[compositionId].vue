@@ -4,16 +4,23 @@
     <!-- Top toolbar -->
     <header class="flex h-12 shrink-0 items-center gap-2 border-b-subtle bg-[var(--color-surface-2)] px-4">
       <NuxtLink
-        :to="`/project/${projectId}`"
+        to="/dashboard"
         class="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
       >
         <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Snips
+        Dashboard
       </NuxtLink>
       <span class="text-xs text-[var(--color-text-faint)]"> / </span>
-      <span class="text-xs font-medium text-[var(--color-text)]">
+      <NuxtLink
+        :to="`/project/${projectId}`"
+        class="truncate text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+      >
+        {{ projectStore.current?.name || 'Untitled project' }}
+      </NuxtLink>
+      <span class="text-xs text-[var(--color-text-faint)]"> / </span>
+      <span class="truncate text-xs font-medium text-[var(--color-text)]">
         {{ composition?.name ?? 'Composition' }}
       </span>
       <span class="rounded-full bg-[#a78bfa]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#a78bfa]">

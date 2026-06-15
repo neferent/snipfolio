@@ -109,11 +109,12 @@
             <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark.</span>
           </div>
           <button
-            class="rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40 bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
+            class="flex items-center justify-center gap-1.5 rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40 bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
             :disabled="checkoutLoading"
             @click="onBuyDayPass"
           >
-            Get 3-Day Pass — $4.99
+            <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
+            {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
           </button>
         </div>
       </template>
@@ -147,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { Droplets } from 'lucide-vue-next'
+import { Droplets, Loader2Icon } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
 import { usePlan, formatPassExpiry } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
