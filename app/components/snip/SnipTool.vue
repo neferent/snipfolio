@@ -361,6 +361,14 @@ function onSourceLabelKeydown(id: string, e: KeyboardEvent) {
 // --- Add source modal ---
 const showAddSource = ref(false)
 const showUrlCapture = ref(false)
+
+// Returning from checkout (e.g. day-pass purchase) reopens the URL capture modal
+const route = useRoute()
+if (route.query.openUrlCapture === '1') {
+  showUrlCapture.value = true
+  const { openUrlCapture: _openUrlCapture, ...query } = route.query
+  navigateTo({ path: route.path, query }, { replace: true })
+}
 const newSourceLabel = ref('')
 const pendingFile = ref<{ img: HTMLImageElement; src: string; filename: string } | null>(null)
 

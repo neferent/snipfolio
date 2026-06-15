@@ -4,17 +4,22 @@
     <div class="text-sm text-[var(--color-text-muted)]">
       Your purchase was successful. Enjoy Snipfolio.
     </div>
+    <div class="text-sm text-[var(--color-text-faint)]">
+      {{ countdown > 0 ? `Returning you in ${countdown}…` : 'Activating your purchase…' }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { toast } from '~/composables/useToast'
-import { useAuthStore } from '~/stores/auth'
+import { usePlan } from '~/composables/usePlan'
 
 definePageMeta({ layout: 'default', middleware: [] })
 
 const { refreshProfile } = useAuth()
-const authStore = useAuthStore()
+const { isPro } = usePlan()
+
+const countdown = ref(0)
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -36,7 +41,7 @@ onMounted(async () => {
     } catch {
       // ignore transient errors and keep retrying
     }
-    if (authStore.isPro || authStore.proExpiresAt) {
+    if (isPro.value) {
       activated = true
       break
     }
@@ -53,6 +58,10 @@ onMounted(async () => {
     toast.info('Purchase received', {
       description: 'Your access is being activated — this can take a minute. Refresh the page if it doesn\'t appear shortly.',
     })
+  }
+
+  for (countdown.value = 4; countdown.value > 0; countdown.value--) {
+    await sleep(1000)
   }
 
   await navigateTo(returnTo)

@@ -151,7 +151,7 @@ import { Droplets } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
 import { usePlan, formatPassExpiry } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
-import { useCheckout } from '~/composables/useCheckout'
+import { useCheckout, checkoutReturnUrl } from '~/composables/useCheckout'
 import { useAuth } from '~/composables/useAuth'
 import { useSnipsStore } from '~/stores/snips'
 import { getFrameMismatches } from '~/composables/useFrameMismatches'
@@ -236,6 +236,6 @@ function exportSelected() {
 }
 
 function onBuyDayPass() {
-  startCheckout('day_pass')
+  startCheckout('day_pass', checkoutReturnUrl('export=1'))
 }
 </script>

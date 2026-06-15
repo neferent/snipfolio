@@ -2,6 +2,13 @@ import { useAuthStore } from '~/stores/auth'
 import { toast } from '~/composables/useToast'
 import { setPostAuthRedirect } from '~/composables/usePostAuthRedirect'
 
+/** Appends a query param to the current URL so checkout success can reopen the modal the user left. */
+export function checkoutReturnUrl(query: string) {
+  const route = useRoute()
+  const separator = route.fullPath.includes('?') ? '&' : '?'
+  return `${route.fullPath}${separator}${query}`
+}
+
 export function useCheckout() {
   const authStore = useAuthStore()
   const loading = ref(false)

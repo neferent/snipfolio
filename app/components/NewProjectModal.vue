@@ -88,7 +88,7 @@
             key="upgrade"
             class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
             :disabled="checkoutLoading"
-            @click="startCheckout('day_pass')"
+            @click="startCheckout('day_pass', '/dashboard?openUrlCapture=1')"
           >
             Get 3-Day Pass — $4.99
           </button>

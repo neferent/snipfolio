@@ -9,7 +9,7 @@
         <button
           class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
           :disabled="checkoutLoading"
-          @click="startCheckout('day_pass')"
+          @click="startCheckout('day_pass', checkoutReturnUrl('openUrlCapture=1'))"
         >
           Get 3-Day Pass — $4.99
         </button>
@@ -138,7 +138,7 @@ import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, captureViewpo
 import type { ViewportProgress } from '~/composables/useUrlCapture'
 import { useAuthStore } from '~/stores/auth'
 import { usePlan } from '~/composables/usePlan'
-import { useCheckout } from '~/composables/useCheckout'
+import { useCheckout, checkoutReturnUrl } from '~/composables/useCheckout'
 
 type Viewport = 'desktop' | 'tablet' | 'mobile'
 type CaptureStatus = 'loading' | 'done' | 'error'

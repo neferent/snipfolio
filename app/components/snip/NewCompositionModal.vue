@@ -119,7 +119,7 @@
               <button
                 class="flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
                 :disabled="checkoutLoading"
-                @click="startCheckout('day_pass')"
+                @click="startCheckout('day_pass', checkoutReturnUrl('openNewComposition=1'))"
               >
                 Get 3-Day Pass — $4.99
               </button>
@@ -262,7 +262,7 @@ import { useSourcesStore } from '~/stores/sources'
 import { useProject } from '~/composables/useProject'
 import { useCompositions, getLaptopLayout, getLaptopPhoneLayout, getFreeformGridLayout } from '~/composables/useCompositions'
 import { usePlan } from '~/composables/usePlan'
-import { useCheckout } from '~/composables/useCheckout'
+import { useCheckout, checkoutReturnUrl } from '~/composables/useCheckout'
 import type { Composition, FreeformCompositionConfig, CollageCompositionConfig } from '~/types'
 
 type Step = 'main' | 'preset' | 'capturing'
