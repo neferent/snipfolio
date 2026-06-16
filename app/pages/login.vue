@@ -178,7 +178,7 @@ const isForgotPassword = ref(false)
 const checking = ref(true)
 
 onMounted(async () => {
-  if (authStore.isAuthenticated) {
+  if (authStore.isAuthenticated && !authStore.isGuest) {
     await navigateTo('/dashboard')
   } else {
     checking.value = false
