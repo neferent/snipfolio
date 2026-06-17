@@ -96,11 +96,12 @@
           <button
             v-else
             key="submit"
-            class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-            :disabled="!canSubmit"
+            class="flex h-8 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
+            :disabled="!canSubmit || creating"
             @click="onSubmitMain"
           >
-            {{ type === 'url' ? 'Next' : 'Create' }}
+            <Loader2Icon v-if="creating" class="size-3 shrink-0 animate-spin" />
+            {{ type === 'url' ? 'Next' : creating ? 'Creating…' : 'Create' }}
           </button>
         </Transition>
       </template>
@@ -191,6 +192,7 @@ const name = ref('')
 const url = ref('')
 const nameFocused = ref(false)
 const prevHostname = ref('')
+const creating = ref(false)
 
 const nameInputRef = ref<HTMLInputElement>()
 const urlInputRef = ref<HTMLInputElement>()
@@ -230,6 +232,7 @@ function reset() {
   url.value = ''
   prevHostname.value = ''
   nameFocused.value = false
+  creating.value = false
   resetCaptureFlow()
 }
 
@@ -282,8 +285,13 @@ function onUrlInput() {
 
 async function onCreateBlank() {
   if (!name.value.trim()) return
-  const project = await createProjectFn(name.value.trim())
-  emit('created', project.id)
+  creating.value = true
+  try {
+    const project = await createProjectFn(name.value.trim())
+    emit('created', project.id)
+  } finally {
+    creating.value = false
+  }
 }
 
 async function onStartCapture() {
