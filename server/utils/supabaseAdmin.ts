@@ -11,17 +11,18 @@ export function useSupabaseAdmin() {
 
 // Verify the caller's JWT and return their user_id, or throw 401/403
 export async function requireAdmin(event: Parameters<typeof getHeader>[0]): Promise<string> {
-  const config = useRuntimeConfig()
   const authHeader = getHeader(event, 'authorization') ?? ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
   if (!token) throw createError({ statusCode: 401, message: 'Missing token' })
 
-  const sb = createClient(config.public.supabaseUrl, config.public.supabaseKey)
+  const sb = useSupabaseAdmin()
   const { data: { user }, error } = await sb.auth.getUser(token)
-  if (error || !user) throw createError({ statusCode: 401, message: 'Invalid token' })
+  if (error || !user) {
+    console.warn('[requireAdmin] token validation failed:', error?.message ?? 'no user returned')
+    throw createError({ statusCode: 401, message: 'Invalid token' })
+  }
 
-  const admin = useSupabaseAdmin()
-  const { data: profile } = await admin
+  const { data: profile } = await sb
     .from('profiles')
     .select('is_admin')
     .eq('id', user.id)
