@@ -4,10 +4,10 @@
       <!-- Logo / title -->
       <div class="mb-8 text-center">
         <svg class="mx-auto mb-4 size-12" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-          <rect width="48" height="48" rx="12" ry="12" fill="#8e9ead"/>
-          <rect x="8" y="7.82" width="17" height="24" rx="2.5" ry="2.5" fill="#373d43"/>
-          <rect x="28.1" y="7.82" width="12" height="13" rx="2.5" ry="2.5" fill="#373d43"/>
-          <rect x="28.1" y="23.82" width="12" height="16" rx="2.5" ry="2.5" fill="#565f69"/>
+          <rect width="48" height="48" rx="12" ry="12" style="fill: var(--color-brand-300)"/>
+          <rect x="8" y="7.82" width="17" height="24" rx="2.5" ry="2.5" style="fill: var(--color-brand-700)"/>
+          <rect x="28.1" y="7.82" width="12" height="13" rx="2.5" ry="2.5" style="fill: var(--color-brand-700)"/>
+          <rect x="28.1" y="23.82" width="12" height="16" rx="2.5" ry="2.5" style="fill: var(--color-brand-500)"/>
         </svg>
         <h1 class="text-3xl font-medium tracking-tight text-[var(--color-text)]">
           snipfol<span class="text-[var(--color-accent)]">.io</span>
@@ -56,10 +56,10 @@
             />
           </div>
 
-          <div v-if="error" class="rounded-[6px] bg-red-500/15 px-3 py-2 text-xs text-red-400">
+          <div v-if="error" class="rounded-[6px] bg-danger/15 px-3 py-2 text-xs text-danger">
             {{ error }}
           </div>
-          <div v-if="message" class="rounded-[6px] bg-emerald-500/15 px-3 py-2 text-xs text-emerald-400">
+          <div v-if="message" class="rounded-[6px] bg-info/15 px-3 py-2 text-xs text-info">
             {{ message }}
           </div>
 
@@ -112,11 +112,11 @@
             />
           </div>
 
-          <div v-if="error" class="rounded-[6px] bg-red-500/15 px-3 py-2 text-xs text-red-400">
+          <div v-if="error" class="rounded-[6px] bg-danger/15 px-3 py-2 text-xs text-danger">
             {{ error }}
           </div>
 
-          <div v-if="message" class="rounded-[6px] bg-emerald-500/15 px-3 py-2 text-xs text-emerald-400">
+          <div v-if="message" class="rounded-[6px] bg-info/15 px-3 py-2 text-xs text-info">
             {{ message }}
           </div>
 
@@ -141,7 +141,7 @@
       </div>
 
       <button
-        class="mt-4 flex h-9 w-full items-center justify-center rounded-[6px] text-sm text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
+        class="mt-4 flex h-9 w-full items-center justify-center rounded-[6px] text-sm text-[var(--color-text-muted)] transition hover:bg-[var(--color-border-strong)] hover:text-[var(--color-text)] border-strong"
         @click="continueAsGuest"
       >
         Continue without an account
