@@ -63,9 +63,9 @@ function useSupabaseAuth() {
       store.setUser({ id: data.user.id, email: data.user.email ?? '' })
       store.setToken(data.session.access_token)
       await loadProfile(data.user.id)
-    } else if (data.user && !data.session) {
-      throw new Error('Check your email to confirm your account.')
     }
+    // data.user without data.session = email confirmation required.
+    // Caller checks isAuthenticated and shows the message itself.
   }
 
   async function signOut() {
