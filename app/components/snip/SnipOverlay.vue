@@ -1,10 +1,10 @@
 <template>
-  <!-- All snip overlays rendered relative to source image -->
+  <!-- All snip overlays rendered in screen-pixel space (coords * zoom), outside the CSS scale transform -->
   <div class="pointer-events-none absolute inset-0">
-    <GridOverlay :visible="gridSettings.showGrid" :size="gridSettings.gridSize" />
+    <GridOverlay :visible="gridSettings.showGrid" :size="gridSettings.gridSize * zoom" />
     <SnapGuides
-      :vertical="[snapGuideV, props.drawSnapGuideV].filter((v): v is number => v != null)"
-      :horizontal="[snapGuideH, props.drawSnapGuideH].filter((v): v is number => v != null)"
+      :vertical="[snapGuideV, props.drawSnapGuideV].filter((v): v is number => v != null).map(v => v * zoom)"
+      :horizontal="[snapGuideH, props.drawSnapGuideH].filter((v): v is number => v != null).map(v => v * zoom)"
     />
 
     <div
@@ -18,13 +18,7 @@
       <!-- Fill + border as single element -->
       <div
         class="absolute inset-0 transition-colors"
-        :style="
-          resizingSnipId === snip.id && resizeSnapFrame
-            ? 'border:2px solid #34d399;background:rgba(52,211,153,0.10);border-radius:3px'
-            : snip.id === selectedId
-              ? (snip.isFullSource ? 'border:2px dashed #8e9ead;background:rgba(142,158,173,0.14);border-radius:3px' : 'border:2px solid #8e9ead;background:rgba(142,158,173,0.14);border-radius:3px')
-              : (snip.isFullSource ? 'border:1.5px dashed rgba(142,158,173,0.75);background:rgba(142,158,173,0.08);border-radius:3px' : 'border:1.5px solid rgba(142,158,173,0.75);background:rgba(142,158,173,0.08);border-radius:3px')
-        "
+        :style="snipBorderStyle(snip)"
       />
 
       <!-- Snap label during resize -->
@@ -167,12 +161,13 @@ function otherSnipRects(snipId: string) {
     .map((s) => ({ x: s.x, y: s.y, w: s.width, h: s.height }))
 }
 
+// Positions and sizes are in screen pixels (natural coords × zoom)
 function overlayStyle(snip: Snip) {
   return {
-    left: `${snip.x}px`,
-    top: `${snip.y}px`,
-    width: `${snip.width}px`,
-    height: `${snip.height}px`,
+    left: `${snip.x * props.zoom}px`,
+    top: `${snip.y * props.zoom}px`,
+    width: `${snip.width * props.zoom}px`,
+    height: `${snip.height * props.zoom}px`,
   }
 }
 
@@ -240,10 +235,10 @@ const drawRectStyle = computed(() => {
   const r = props.drawRect
   if (!r) return {}
   return {
-    left: `${r.x}px`,
-    top: `${r.y}px`,
-    width: `${r.w}px`,
-    height: `${r.h}px`,
+    left: `${r.x * props.zoom}px`,
+    top: `${r.y * props.zoom}px`,
+    width: `${r.w * props.zoom}px`,
+    height: `${r.h * props.zoom}px`,
   }
 })
 
@@ -275,6 +270,18 @@ const handles = [
   { dir: 'sw', cursor: 'sw-resize', style: { bottom: '-4px', left: '-4px' } },
   { dir: 'w',  cursor: 'w-resize',  style: { top: 'calc(50% - 4px)', left: '-4px' } },
 ]
+
+function snipBorderStyle(snip: Snip): string {
+  if (resizingSnipId.value === snip.id && resizeSnapFrame.value) {
+    return 'border:2px solid #34d399;background:rgba(52,211,153,0.10);border-radius:3px'
+  }
+  if (snip.id === selectedId.value) {
+    const style = snip.isFullSource ? 'dashed' : 'solid'
+    return `border:2px ${style} #8e9ead;background:rgba(142,158,173,0.14);border-radius:3px`
+  }
+  const style = snip.isFullSource ? 'dashed' : 'solid'
+  return `border:1.5px ${style} rgba(142,158,173,0.75);background:rgba(142,158,173,0.08);border-radius:3px`
+}
 
 function startResize(e: MouseEvent, snip: Snip, dir: string) {
   e.preventDefault()

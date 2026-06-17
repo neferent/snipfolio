@@ -186,6 +186,23 @@
               class="block max-w-none select-none"
               draggable="false"
             />
+            <!-- Pan capture overlay (shown when Space is held) -->
+            <div
+              v-if="spacePressed"
+              class="absolute inset-0 z-50"
+              @mousedown.stop="onPanMouseDown"
+            />
+          </div>
+          </Transition>
+          <!-- Snip overlay lives OUTSIDE the CSS scale transform so chrome stays pixel-constant -->
+          <div
+            v-if="activeImage"
+            class="absolute top-0 left-0 pointer-events-none"
+            :style="{
+              width: activeImage.img.naturalWidth * zoom + 'px',
+              height: activeImage.img.naturalHeight * zoom + 'px',
+            }"
+          >
             <SnipOverlay
               :zoom="zoom"
               :draw-rect="drawRect"
@@ -195,14 +212,7 @@
               :image-width="activeImage.img.naturalWidth"
               :image-height="activeImage.img.naturalHeight"
             />
-            <!-- Pan capture overlay (shown when Space is held) -->
-            <div
-              v-if="spacePressed"
-              class="absolute inset-0 z-50"
-              @mousedown.stop="onPanMouseDown"
-            />
           </div>
-          </Transition>
         </div>
       </div>
 
