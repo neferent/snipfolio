@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   if (!variantId) throw createError({ statusCode: 400, message: 'Invalid checkout type' })
 
   const baseUrl = process.env.NODE_ENV === 'production'
-    ? 'https://snipfol.io'
+    ? 'https://app.snipfol.io'
     : 'http://localhost:3000'
 
   const payload = {
