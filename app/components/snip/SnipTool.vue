@@ -135,7 +135,7 @@
                   <ArrowUpFromLine class="size-3.5" aria-hidden="true" />
                 </button>
               </template>
-              <AppDropdownItem @click="showExportPicker = true">Export compositions…</AppDropdownItem>
+              <AppDropdownItem @click="showExportPicker = true">Export mockups…</AppDropdownItem>
               <AppDropdownItem @click="exportAllSnipsRaw">Export all snips (raw)</AppDropdownItem>
             </AppDropdown>
           </AppTooltip>

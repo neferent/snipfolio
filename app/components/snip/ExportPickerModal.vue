@@ -1,5 +1,5 @@
 <template>
-  <AppModal :open="open" title="Export compositions" max-width="780px" @close="$emit('close')">
+  <AppModal :open="open" title="Export mockups" max-width="780px" @close="$emit('close')">
     <div class="flex gap-4 min-h-[340px]">
       <!-- Left: composition list with checkboxes -->
       <div class="flex w-56 shrink-0 flex-col gap-1">
@@ -40,7 +40,7 @@
         </label>
 
         <div v-if="compositions.length === 0" class="px-2 py-4 text-center text-xs text-[var(--color-text-muted)]">
-          No compositions yet
+          No mockups yet
         </div>
       </div>
 
@@ -58,7 +58,7 @@
           </p>
         </template>
         <div v-else class="flex flex-1 items-center justify-center">
-          <p class="text-xs text-[var(--color-text-muted)]">Hover a composition to preview</p>
+          <p class="text-xs text-[var(--color-text-muted)]">Hover a mockup to preview</p>
         </div>
       </div>
     </div>
@@ -140,7 +140,7 @@
         :disabled="selected.size === 0"
         @click="exportSelected"
       >
-        Export {{ selected.size > 0 ? selected.size : '' }} composition{{ selected.size === 1 ? '' : 's' }}
+        Export {{ selected.size > 0 ? selected.size : '' }} mockup{{ selected.size === 1 ? '' : 's' }}
         <span v-if="!isPro" class="ml-1.5 opacity-60">(watermarked)</span>
       </button>
     </template>

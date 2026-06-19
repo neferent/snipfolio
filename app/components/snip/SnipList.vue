@@ -150,12 +150,12 @@
               class="size-3 shrink-0 text-[var(--color-text-muted)] transition-transform"
               :class="compositionsOpen ? '' : '-rotate-90'"
             />
-            <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Compositions</span>
+            <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Mockups</span>
             <span class="inline-flex items-center justify-center rounded bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ compositions.length }}</span>
           </button>
           <button
             class="ml-auto flex items-center gap-0.5 rounded-[4px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
-            title="New composition"
+            title="New mockup"
             @click.stop="showNewComp = true"
           >
             <Plus class="size-2.5" />
@@ -182,8 +182,8 @@
             </NuxtLink>
             <button
               class="absolute top-1/2 right-2 size-6 -translate-y-1/2 shrink-0 rounded bg-[var(--color-surface-2)] p-1 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
-              title="Delete composition"
-              aria-label="Delete composition"
+              title="Delete mockup"
+              aria-label="Delete mockup"
               @click.stop="confirmDeleteComposition(comp.id, comp.name)"
             >
               <X class="size-3.5" aria-hidden="true" />
@@ -191,7 +191,7 @@
           </div>
 
           <div v-if="compositions.length === 0" class="px-4 py-6 text-center text-sm text-[var(--color-text-muted)]">
-            <p class="mb-1">No compositions yet.</p>
+            <p class="mb-1">No mockups yet.</p>
             <p class="text-[10px]">Click <strong>New</strong> to create one.</p>
           </div>
         </template>
@@ -203,7 +203,7 @@
     <NewCompositionModal :open="showNewComp" @close="showNewComp = false" />
 
     <!-- Delete composition confirm -->
-    <AppModal :open="!!deleteCompTarget" title="Delete composition?" @close="deleteCompTarget = null">
+    <AppModal :open="!!deleteCompTarget" title="Delete mockup?" @close="deleteCompTarget = null">
       <p class="text-sm text-[var(--color-text-muted)]">
         Delete <strong class="text-[var(--color-text)]">{{ deleteCompTarget?.name }}</strong>? This cannot be undone.
       </p>

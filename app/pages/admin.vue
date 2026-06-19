@@ -130,7 +130,7 @@
     <!-- Reset confirm modal -->
     <AppModal :open="!!resetTarget" title="Reset account?" @close="resetTarget = null">
       <p class="text-sm text-[var(--color-text-muted)]">
-        This will delete <strong class="text-[var(--color-text)]">all projects, compositions, snips, and storage files</strong>
+        This will delete <strong class="text-[var(--color-text)]">all projects, mockups, snips, and storage files</strong>
         for <strong class="text-[var(--color-text)]">{{ resetTarget?.email }}</strong>, and set their tier back to Account.
         <br /><br />Cannot be undone.
       </p>

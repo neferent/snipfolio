@@ -9,7 +9,7 @@
             id="new-composition-name"
             v-model="name"
             class="w-full"
-            placeholder="My composition"
+            placeholder="My mockup"
           />
         </div>
 
@@ -327,7 +327,7 @@ const canGoToPreset = computed(() => isPro.value && !!resolvedUrl.value && !urlE
 const modalTitle = computed(() => {
   if (step.value === 'capturing') return captureError.value ? 'Capture failed' : `Capturing ${displayHostname.value}…`
   if (step.value === 'preset') return 'Choose a layout'
-  return 'New Composition'
+  return 'New Mockup'
 })
 
 watch(
@@ -335,7 +335,7 @@ watch(
   (isOpen) => {
     if (isOpen) {
       const projectName = projectStore.current?.name ?? 'Project'
-      name.value = `${projectName} - Composition ${snips.value.length + 1}`
+      name.value = `${projectName} - Mockup ${snips.value.length + 1}`
       backgroundColor.value = '#1a1a2e'
       type.value = 'laptop'
       laptopSnipId.value = ''

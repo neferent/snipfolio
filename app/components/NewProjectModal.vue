@@ -34,7 +34,7 @@
             <span class="text-sm font-medium text-[var(--color-text)]">Capture &amp; Compose</span>
             <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
           </div>
-          <span class="text-xs text-[var(--color-text-muted)]">Paste a URL and get a polished composition in seconds.</span>
+          <span class="text-xs text-[var(--color-text-muted)]">Paste a URL and get a polished mockup in seconds.</span>
         </button>
       </div>
 
