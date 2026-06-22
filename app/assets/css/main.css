@@ -93,6 +93,18 @@
   --sf-warning-tint:   rgba(239, 159, 39, 0.12);
 }
 
+/* ─── Mobile ────────────────────────────────────────────────────────────── */
+
+@custom-variant mobile (max-width: 768px);
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* ─── Half-pixel border utilities ────────────────────────────────────────── */
 
 @utility border-b-subtle {

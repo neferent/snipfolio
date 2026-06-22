@@ -11,8 +11,9 @@
 
     <!-- Auto-collage type -->
     <div v-else-if="comp && !isFreeform" class="absolute inset-0 flex">
-      <!-- Left sidebar: gap + caption controls -->
+      <!-- Left sidebar: gap + caption controls (desktop) -->
       <aside
+        v-if="!isMobile"
         class="relative flex shrink-0 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
         :style="{ width: leftWidth + 'px' }"
       >
@@ -43,12 +44,13 @@
       </aside>
 
       <!-- Center: canvas preview -->
-      <div class="relative flex-1">
+      <div class="relative flex-1" :class="isMobile ? 'pb-20' : ''">
         <CompositionCanvas :composition="comp" />
       </div>
 
-      <!-- Right sidebar: bg + output + export -->
+      <!-- Right sidebar: bg + output + export (desktop) -->
       <aside
+        v-if="!isMobile"
         class="relative flex shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
         :style="{ width: rightWidth + 'px' }"
       >
@@ -70,6 +72,58 @@
           @mousedown="startRightResize"
         />
       </aside>
+
+      <!-- Mobile: bottom sheets + toolbar for auto-collage -->
+      <template v-if="isMobile">
+        <AppBottomSheet
+          :open="showCollageSettingsSheet"
+          title="Settings"
+          :snap-points="['half', 'full']"
+          @close="showCollageSettingsSheet = false"
+        >
+          <div class="space-y-5">
+            <CollageLayout
+              :model-value="collageCfg!"
+              @update:model-value="updateCollage"
+            />
+            <CaptionControls
+              label="Global caption"
+              :model-value="collageCfg!.globalCaption"
+              @update:model-value="updateCollageProp('globalCaption', $event)"
+            />
+          </div>
+          <div class="mt-4 border-t border-[var(--color-border)] pt-4">
+            <CompositionSettingsPanel
+              :composition="comp"
+              :background="collageCfg!.background"
+              :output-width="comp.config.outputWidth"
+              :output-height="comp.config.outputHeight"
+              :name="comp.name"
+              @update:background="updateCollageProp('background', $event)"
+              @update:output-size="setOutputSize"
+              @update:name="updateName"
+              @export="doExport"
+            />
+          </div>
+        </AppBottomSheet>
+
+        <div class="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/90 px-2 py-2 pb-safe backdrop-blur-lg">
+          <button
+            class="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[var(--color-text-muted)] transition active:bg-white/10"
+            @click="showCollageSettingsSheet = true"
+          >
+            <Settings class="size-5" />
+            <span class="text-[10px]">Settings</span>
+          </button>
+          <button
+            class="flex flex-col items-center gap-0.5 rounded-lg bg-[var(--color-accent)] px-5 py-1.5 text-[var(--color-on-accent)] transition active:bg-[var(--color-accent-hover)]"
+            @click="doExport"
+          >
+            <ArrowUpFromLine class="size-5" />
+            <span class="text-[10px] font-medium">Export</span>
+          </button>
+        </div>
+      </template>
     </div>
 
     <!-- Export picker modal (non-Pro users) -->
@@ -82,7 +136,11 @@
 </template>
 
 <script setup lang="ts">
+import { Settings, ArrowUpFromLine } from 'lucide-vue-next'
 import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const isMobile = useIsMobile()
+const showCollageSettingsSheet = ref(false)
 
 const { width: leftWidth, startResize: startLeftResize } = useResizablePanel(256, { side: 'right', min: 180, max: 480 })
 const { width: rightWidth, startResize: startRightResize } = useResizablePanel(256, { side: 'left', min: 180, max: 480 })

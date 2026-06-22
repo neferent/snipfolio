@@ -1,7 +1,9 @@
 <template>
-  <aside
-    class="relative flex shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
-    :style="{ width: width + 'px' }"
+  <component
+    :is="mobile ? 'div' : 'aside'"
+    class="relative flex shrink-0 flex-col"
+    :class="mobile ? '' : 'border-r border-[var(--color-border)] bg-[var(--color-surface-2)]'"
+    :style="mobile ? undefined : { width: width + 'px' }"
   >
     <div class="flex h-10 shrink-0 items-center px-4 border-b-subtle">
       <h2 class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">
@@ -223,18 +225,21 @@
       </template>
     </AppModal>
 
-    <!-- Drag handle -->
+    <!-- Drag handle (desktop only) -->
     <div
+      v-if="!mobile"
       class="absolute inset-y-0 right-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-accent)]/40 transition-colors"
       @mousedown="startResize"
     />
-  </aside>
+  </component>
 </template>
 
 <script setup lang="ts">
 import { ChevronDown, X, Plus } from 'lucide-vue-next'
 import { useSnipsStore } from '~/stores/snips'
 import { useResizablePanel } from '~/composables/useResizablePanel'
+
+const props = defineProps<{ mobile?: boolean }>()
 
 const { width, startResize } = useResizablePanel(224, { side: 'right', min: 150, max: 480 })
 import { useCompositionsStore } from '~/stores/compositions'

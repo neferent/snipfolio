@@ -25,7 +25,7 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel
-              class="relative w-full bg-[var(--color-surface-3)] border-strong rounded-2xl"
+              class="relative w-full max-h-[85vh] overflow-y-auto bg-[var(--color-surface-3)] border-strong rounded-2xl"
               :style="{ maxWidth: maxWidth ?? '520px' }"
             >
               <div

@@ -1,7 +1,8 @@
 <template>
   <div class="absolute inset-0 flex">
-    <!-- Left sidebar: slot list (z-order) + add snips -->
+    <!-- Left sidebar: slot list (desktop only) -->
     <aside
+      v-if="!isMobile"
       class="relative flex shrink-0 flex-col overflow-hidden border-r border-[var(--color-border)] bg-[var(--color-surface-2)]"
       :style="{ width: leftWidth + 'px' }"
     >
@@ -115,10 +116,12 @@
         @mousedown="startLeftResize"
       />
     </aside>
+    <!-- /left sidebar -->
 
     <!-- Center: toolbar + artboard -->
     <div class="flex min-w-0 flex-1 flex-col">
       <ComposerToolbar
+        v-if="!isMobile"
         :selected-slot="selectedSlot"
         :zoom="canvasScale"
         @align-left="alignSlot('left')"
@@ -139,8 +142,13 @@
       <div
         ref="canvasContainer"
         class="relative flex-1 overflow-auto bg-[var(--color-surface)]"
-        :class="spacePressed ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : ''"
+        :class="[
+          spacePressed ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : '',
+          isMobile ? 'pb-20' : '',
+        ]"
         @mousedown.self="onContainerSelfMouseDown"
+        @touchstart.passive="onCanvasTouchStart"
+        @touchmove="onCanvasTouchMove"
       >
         <div class="pointer-events-none absolute bottom-4 left-0 right-0 z-20 flex justify-center">
           <div class="pointer-events-auto">
@@ -152,7 +160,8 @@
         <Transition name="mismatch-fade">
           <div
             v-if="frameMismatches.length > 0 && !mismatchDismissed"
-            class="pointer-events-auto absolute bottom-4 right-4 z-20 max-w-[240px] rounded-lg px-[12px] py-[10px] backdrop-blur-sm bg-[rgba(18,20,24,0.92)] shadow-[0_4px_16px_rgba(0,0,0,0.4)] [border:1px_solid_rgba(251,191,36,0.3)]"
+            class="pointer-events-auto absolute right-4 z-20 max-w-[240px] rounded-lg px-[12px] py-[10px] backdrop-blur-sm bg-[rgba(18,20,24,0.92)] shadow-[0_4px_16px_rgba(0,0,0,0.4)] [border:1px_solid_rgba(251,191,36,0.3)]"
+            :class="isMobile ? 'bottom-20' : 'bottom-4'"
           >
             <div class="flex items-center justify-between gap-3 mb-1.5">
               <span class="text-[12px] font-semibold tracking-[0.04em] text-amber-400">Frame mismatch</span>
@@ -218,14 +227,17 @@
             class="absolute"
             :style="overlayStyle(slot)"
             @mousedown.stop="onSlotMouseDown($event, slot)"
+            @touchstart.stop="isMobile && onSlotTouchStart($event, slot)"
           >
             <!-- Selection ring + handles -->
             <template v-if="selectedSlotId === slot.id">
               <div class="pointer-events-none absolute inset-0 rounded-[1px] ring-2 ring-[var(--color-accent)] ring-offset-0" />
-              <div class="handle tl" @mousedown.stop="onHandleMouseDown($event, slot, 'tl')" />
-              <div class="handle tr" @mousedown.stop="onHandleMouseDown($event, slot, 'tr')" />
-              <div class="handle bl" @mousedown.stop="onHandleMouseDown($event, slot, 'bl')" />
-              <div class="handle br" @mousedown.stop="onHandleMouseDown($event, slot, 'br')" />
+              <template v-if="!isMobile">
+                <div class="handle tl" @mousedown.stop="onHandleMouseDown($event, slot, 'tl')" />
+                <div class="handle tr" @mousedown.stop="onHandleMouseDown($event, slot, 'tr')" />
+                <div class="handle bl" @mousedown.stop="onHandleMouseDown($event, slot, 'bl')" />
+                <div class="handle br" @mousedown.stop="onHandleMouseDown($event, slot, 'br')" />
+              </template>
             </template>
           </div>
         </div>
@@ -233,8 +245,9 @@
     </div>
     </div><!-- end center column -->
 
-    <!-- Right sidebar: slot properties + background + output + export -->
+    <!-- Right sidebar: slot properties + background + output + export (desktop only) -->
     <aside
+      v-if="!isMobile"
       class="relative flex shrink-0 flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-surface-2)]"
       :style="{ width: rightWidth + 'px' }"
     >
@@ -334,11 +347,184 @@
         @mousedown="startRightResize"
       />
     </aside>
+
+    <!-- Mobile bottom sheets + toolbar -->
+    <template v-if="isMobile">
+      <AppBottomSheet
+        :open="showLayersSheet"
+        title="Layers"
+        :snap-points="['half', 'full']"
+        @close="showLayersSheet = false"
+      >
+        <div class="space-y-2">
+          <div v-if="slots.length > 0" class="space-y-1">
+            <p class="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+              Top = front
+            </p>
+            <div
+              v-for="(slot, idx) in displaySlots"
+              :key="slot.id"
+              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition"
+              :class="selectedSlotId === slot.id ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'text-[var(--color-text)] active:bg-white/5'"
+              @click="selectedSlotId = slot.id"
+            >
+              <div class="flex shrink-0 flex-col gap-0.5">
+                <button
+                  class="rounded p-0.5 text-[var(--color-text-muted)] transition active:bg-white/10 disabled:opacity-20"
+                  :disabled="idx === 0"
+                  @click.stop="moveForward(slot.id)"
+                >
+                  <ChevronUp class="size-3.5" />
+                </button>
+                <button
+                  class="rounded p-0.5 text-[var(--color-text-muted)] transition active:bg-white/10 disabled:opacity-20"
+                  :disabled="idx === displaySlots.length - 1"
+                  @click.stop="moveBackward(slot.id)"
+                >
+                  <ChevronDown class="size-3.5" />
+                </button>
+              </div>
+              <SnipThumbnail :snip="snipFor(slot.snipId)" class="size-7 shrink-0 rounded" />
+              <span class="truncate">{{ snipLabel(slot.snipId) }}</span>
+              <span class="flex-1" />
+              <button
+                class="shrink-0 rounded p-1 text-[var(--color-text-muted)] active:bg-red-500/20 active:text-red-400"
+                @click.stop="removeSlot(slot.id)"
+              >
+                <X class="size-3.5" />
+              </button>
+            </div>
+          </div>
+          <div class="border-t border-[var(--color-border)] pt-2">
+            <p class="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Add snip</p>
+            <div
+              v-for="snip in availableSnips"
+              :key="snip.id"
+              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-text)] active:bg-white/5"
+              @click="addSnip(snip)"
+            >
+              <SnipThumbnail :snip="snip" class="size-7 shrink-0 rounded" />
+              <span class="truncate">{{ snip.label }}</span>
+              <Plus class="ml-auto size-3 shrink-0 text-[var(--color-text-muted)]" />
+            </div>
+          </div>
+        </div>
+      </AppBottomSheet>
+
+      <AppBottomSheet
+        :open="showSettingsSheet"
+        title="Settings"
+        :snap-points="['half', 'full']"
+        @close="showSettingsSheet = false"
+      >
+        <CompositionSettingsPanel
+          :composition="composition"
+          :background="config.background"
+          :output-width="config.outputWidth"
+          :output-height="config.outputHeight"
+          :name="composition.name"
+          @update:background="updateBackground"
+          @update:output-size="setOutputSize"
+          @update:name="$emit('update-name', $event)"
+          @export="$emit('export')"
+        />
+      </AppBottomSheet>
+
+      <AppBottomSheet
+        :open="showSlotSheet"
+        title="Slot Settings"
+        :snap-points="['half', 'full']"
+        @close="showSlotSheet = false"
+      >
+        <div v-if="selectedSlot" class="p-4 space-y-3">
+          <div class="space-y-2">
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Frame</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button
+                v-for="frame in frames"
+                :key="frame.value"
+                class="py-1.5 text-xs transition"
+                :style="selectedSlot.deviceFrame === frame.value
+                  ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
+                  : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);color:#6b7280'"
+                @click="updateSlotFrame(selectedSlot.id, frame.value)"
+              >
+                {{ frame.label }}
+              </button>
+            </div>
+            <div v-if="selectedSlot.deviceFrame !== 'none'" class="flex items-center gap-2">
+              <label class="text-xs text-[var(--color-text-muted)]">Color</label>
+              <AppColorPicker
+                :model-value="selectedSlot.frameColor ?? '#262c44'"
+                @update:model-value="patchSlot(selectedSlot.id, { frameColor: $event })"
+              />
+              <button
+                class="rounded-[6px] text-xs text-[var(--color-text-muted)] transition active:text-[var(--color-text)]"
+                @click="patchSlot(selectedSlot.id, { frameColor: undefined })"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div v-if="selectedSnip?.isFullSource" class="border-t-subtle pt-3 space-y-1.5">
+            <label class="text-xs font-medium text-[var(--color-text-muted)]">Scroll position</label>
+            <div v-if="selectedSnipMaxScroll > 0" class="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                :max="selectedSnipMaxScroll"
+                step="1"
+                :value="selectedSnip.y"
+                class="flex-1"
+                @input="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
+              />
+              <input
+                type="number"
+                min="0"
+                :max="selectedSnipMaxScroll"
+                step="1"
+                :value="selectedSnip.y"
+                class="w-20 text-right"
+                @change="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
+              />
+            </div>
+            <p v-if="selectedSnipMaxScroll > 0" class="font-mono text-[10px] text-[var(--color-text-muted)]">
+              {{ selectedSnip.y }}px / {{ selectedSnipMaxScroll }}px
+            </p>
+            <p v-else class="text-[10px] text-[var(--color-text-muted)]">
+              Source isn't taller than the viewport — nothing to scroll.
+            </p>
+          </div>
+
+          <div class="border-t-subtle pt-3">
+            <CaptionControls
+              label="Caption"
+              :model-value="selectedSlot.caption"
+              @update:model-value="patchSlot(selectedSlot.id, { caption: $event })"
+            />
+          </div>
+        </div>
+        <div v-else class="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">
+          Tap a snip on the canvas to select it.
+        </div>
+      </AppBottomSheet>
+
+      <ComposerToolbarMobile
+        @show-layers="showLayersSheet = true"
+        @show-settings="showSettingsSheet = true"
+        @show-slot="showSlotSheet = true"
+        @center="selectedSlotId && (alignSlot('center-h'), alignSlot('center-v'))"
+        @delete-slot="selectedSlotId && removeSlot(selectedSlotId)"
+        @export="$emit('export')"
+        :has-selection="!!selectedSlotId"
+      />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { GripVertical, X, Plus, CircleAlert } from 'lucide-vue-next'
+import { GripVertical, X, Plus, CircleAlert, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import { useResizablePanel } from '~/composables/useResizablePanel'
 
 const { width: leftWidth, startResize: startLeftResize } = useResizablePanel(224, { side: 'right', min: 150, max: 480 })
@@ -366,6 +552,11 @@ const emit = defineEmits<{
   'update-name': [name: string]
   'export': []
 }>()
+
+const isMobile = useIsMobile()
+const showLayersSheet = ref(false)
+const showSettingsSheet = ref(false)
+const showSlotSheet = ref(false)
 
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
@@ -593,7 +784,7 @@ function onContainerSelfMouseDown() {
 }
 
 function onSlotMouseDown(e: MouseEvent, slot: FreeformSlotConfig) {
-  if (spacePressed.value) return
+  if (isMobile.value || spacePressed.value) return
   selectedSlotId.value = slot.id
   drag = {
     type: 'move',
@@ -609,7 +800,7 @@ function onSlotMouseDown(e: MouseEvent, slot: FreeformSlotConfig) {
 }
 
 function onHandleMouseDown(e: MouseEvent, slot: FreeformSlotConfig, corner: 'tl' | 'tr' | 'bl' | 'br') {
-  if (spacePressed.value) return
+  if (isMobile.value || spacePressed.value) return
   drag = {
     type: 'resize',
     slotId: slot.id,
@@ -867,6 +1058,70 @@ function onWheel(e: WheelEvent) {
     container.scrollLeft = boardX + fracX * nW - (e.clientX - cr.left)
     container.scrollTop = boardY + fracY * nH - (e.clientY - cr.top)
   })
+}
+
+// --- Touch: pinch-to-zoom ---
+let canvasTouchStartDist = 0
+let canvasTouchStartZoom = 1
+
+function onCanvasTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    canvasTouchStartDist = Math.hypot(
+      e.touches[1]!.clientX - e.touches[0]!.clientX,
+      e.touches[1]!.clientY - e.touches[0]!.clientY,
+    )
+    canvasTouchStartZoom = canvasScale.value
+  }
+}
+
+function onCanvasTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    e.preventDefault()
+    const dist = Math.hypot(
+      e.touches[1]!.clientX - e.touches[0]!.clientX,
+      e.touches[1]!.clientY - e.touches[0]!.clientY,
+    )
+    userZoom.value = Math.max(0.1, Math.min(4, canvasTouchStartZoom * (dist / canvasTouchStartDist)))
+  }
+}
+
+// --- Touch: slot drag (mobile) ---
+let touchDrag: { slotId: string; startTX: number; startTY: number; startX: number; startY: number } | null = null
+
+function onSlotTouchStart(e: TouchEvent, slot: FreeformSlotConfig) {
+  if (e.touches.length !== 1) return
+  selectedSlotId.value = slot.id
+  const t = e.touches[0]!
+  touchDrag = {
+    slotId: slot.id,
+    startTX: t.clientX,
+    startTY: t.clientY,
+    startX: slot.x,
+    startY: slot.y,
+  }
+  window.addEventListener('touchmove', onSlotTouchMove, { passive: false })
+  window.addEventListener('touchend', onSlotTouchEnd)
+  window.addEventListener('touchcancel', onSlotTouchEnd)
+}
+
+function onSlotTouchMove(e: TouchEvent) {
+  if (!touchDrag || e.touches.length !== 1) return
+  e.preventDefault()
+  const t = e.touches[0]!
+  const scale = canvasScale.value
+  const dx = (t.clientX - touchDrag.startTX) / scale
+  const dy = (t.clientY - touchDrag.startTY) / scale
+  patchSlot(touchDrag.slotId, {
+    x: Math.round(touchDrag.startX + dx),
+    y: Math.round(touchDrag.startY + dy),
+  })
+}
+
+function onSlotTouchEnd() {
+  touchDrag = null
+  window.removeEventListener('touchmove', onSlotTouchMove)
+  window.removeEventListener('touchend', onSlotTouchEnd)
+  window.removeEventListener('touchcancel', onSlotTouchEnd)
 }
 
 // --- Z-order helpers ---

@@ -17,17 +17,12 @@
 
       <div class="grid gap-3" :class="URL_CAPTURE_ENABLED ? 'grid-cols-2' : 'grid-cols-1'">
         <button
-          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5"
-          :class="type === 'blank' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
-          @click="type = 'blank'"
-        >
-          <span class="text-sm font-medium text-[var(--color-text)]">Blank</span>
-          <span class="text-xs text-[var(--color-text-muted)]">Start empty, add screenshots manually</span>
-        </button>
-        <button
           v-if="URL_CAPTURE_ENABLED"
-          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5"
-          :class="type === 'url' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
+          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5 active:bg-white/5"
+          :class="[
+            type === 'url' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20',
+            isMobile ? 'order-first' : 'order-last',
+          ]"
           @click="type = 'url'"
         >
           <div class="flex items-center gap-2">
@@ -35,6 +30,14 @@
             <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
           </div>
           <span class="text-xs text-[var(--color-text-muted)]">Paste a URL and get a polished mockup in seconds.</span>
+        </button>
+        <button
+          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5 active:bg-white/5"
+          :class="type === 'blank' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
+          @click="type = 'blank'"
+        >
+          <span class="text-sm font-medium text-[var(--color-text)]">Blank</span>
+          <span class="text-xs text-[var(--color-text-muted)]">Start empty, add screenshots manually</span>
         </button>
       </div>
 
@@ -171,6 +174,7 @@ const sourcesStore = useSourcesStore()
 const snipsStore = useSnipsStore()
 const compositionsStore = useCompositionsStore()
 const { isPro } = usePlan()
+const isMobile = useIsMobile()
 const { startCheckout, loading: checkoutLoading } = useCheckout()
 
 const {

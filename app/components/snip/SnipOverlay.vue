@@ -13,7 +13,8 @@
       class="group absolute [pointer-events:all]"
       :class="snip.isFullSource ? 'cursor-pointer' : 'cursor-move'"
       :style="overlayStyle(snip)"
-      @mousedown.stop="snip.isFullSource ? store.selectSnip(snip.id) : startMove($event, snip)"
+      @mousedown.stop="props.mobile ? undefined : (snip.isFullSource ? store.selectSnip(snip.id) : startMove($event, snip))"
+      @click="props.mobile ? onMobileTap(snip.id) : undefined"
     >
       <!-- Fill + border as single element -->
       <div
@@ -63,14 +64,14 @@
         {{ snip.snapFrame === 'laptop' ? 'Desktop' : snip.snapFrame === 'tablet' ? 'Tablet' : 'Mobile' }}
       </div>
 
-      <!-- Drag grip — center, visible on hover -->
-      <div v-if="!snip.isFullSource" class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-60">
+      <!-- Drag grip — center, visible on hover (desktop only) -->
+      <div v-if="!snip.isFullSource && !props.mobile" class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-60">
         <GripHorizontal class="size-4 drop-shadow text-white" />
       </div>
 
-      <!-- Rotate button — top-right, hover only, phone/tablet only -->
+      <!-- Rotate button — top-right, hover only, phone/tablet only (desktop only) -->
       <button
-        v-if="!snip.isFullSource && (snip.snapFrame === 'phone' || snip.snapFrame === 'tablet')"
+        v-if="!props.mobile && !snip.isFullSource && (snip.snapFrame === 'phone' || snip.snapFrame === 'tablet')"
         class="absolute right-1 top-1 flex size-[18px] items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100 bg-black/55 text-white [pointer-events:all]"
         title="Rotate orientation"
         aria-label="Rotate orientation"
@@ -80,8 +81,8 @@
         <RotateCw class="size-2.5" aria-hidden="true" />
       </button>
 
-      <!-- Resize handles (selected only) — 8×8px per spec -->
-      <template v-if="snip.id === selectedId && !snip.isFullSource">
+      <!-- Resize handles (selected only, desktop only) — 8×8px per spec -->
+      <template v-if="!props.mobile && snip.id === selectedId && !snip.isFullSource">
         <div
           v-for="handle in handles"
           :key="handle.cursor"
@@ -139,7 +140,10 @@ const props = defineProps<{
   drawSnapGuideH?: number | null
   imageWidth: number
   imageHeight: number
+  mobile?: boolean
 }>()
+
+const emit = defineEmits<{ snipTapped: [id: string] }>()
 
 const store = useSnipsStore()
 const sourcesStore = useSourcesStore()
@@ -480,6 +484,11 @@ function rotateSnip(snip: Snip) {
   const y = Math.round(Math.max(0, Math.min(cy - newH / 2, props.imageHeight - newH)))
   store.updateSnip(snip.id, { x, y, width: newW, height: newH })
   scheduleSave()
+}
+
+function onMobileTap(snipId: string) {
+  store.selectSnip(snipId)
+  emit('snipTapped', snipId)
 }
 
 function frameBadgeStyle(snapFrame: 'laptop' | 'phone' | 'tablet') {

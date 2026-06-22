@@ -24,8 +24,8 @@
 
     <!-- Sources loaded: sidebars + viewport -->
     <div v-else class="flex min-h-0 flex-1">
-      <!-- Left sidebar -->
-      <SnipList />
+      <!-- Left sidebar (desktop) -->
+      <SnipList v-if="!isMobile" />
 
       <!-- Center: source tabs + scrollable viewport -->
       <div class="flex min-w-0 flex-1 flex-col">
@@ -56,10 +56,11 @@
                 @blur="onSourceLabelBlur(source.id, $event)"
                 @keydown.stop="onSourceLabelKeydown(source.id, $event)"
               />
-              <span class="ml-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
+              <span v-if="!isMobile" class="ml-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
                 {{ source.width }}×{{ source.height }}
               </span>
               <span
+                v-if="!isMobile"
                 class="ml-1 rounded p-0.5 opacity-0 transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
                 role="button"
                 title="Remove source"
@@ -82,8 +83,8 @@
           </button>
         </div>
 
-        <!-- Viewport toolbar -->
-        <div class="flex h-9 shrink-0 items-center gap-px border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-2">
+        <!-- Viewport toolbar (desktop) -->
+        <div v-if="!isMobile" class="flex h-9 shrink-0 items-center gap-px border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-2">
           <!-- Active tool: Draw -->
           <AppTooltip text="Draw snip (click and drag)">
             <button
@@ -145,8 +146,14 @@
         <div
           ref="viewport"
           class="relative flex-1 overflow-auto"
-          :class="isPanning ? 'cursor-grabbing' : spacePressed ? 'cursor-grab' : activeImage ? 'cursor-crosshair' : ''"
+          :class="[
+            isPanning ? 'cursor-grabbing' : spacePressed ? 'cursor-grab' : (activeImage && !isMobile) ? 'cursor-crosshair' : '',
+            isMobile ? 'pb-20' : '',
+          ]"
+          :style="isMobile ? { touchAction: 'pan-x pan-y' } : undefined"
           @mousedown="onMouseDown"
+          @touchstart.passive="onViewportTouchStart"
+          @touchmove="onViewportTouchMove"
         >
           <!-- Image failed to load (e.g. storage error) -->
           <div
@@ -211,14 +218,76 @@
               :draw-snap-guide-h="drawSnapGuideH"
               :image-width="activeImage.img.naturalWidth"
               :image-height="activeImage.img.naturalHeight"
+              :mobile="isMobile"
+              @snip-tapped="showSnipPanelSheet = true"
             />
           </div>
         </div>
       </div>
 
-      <!-- Right panel -->
-      <SnipPanel />
+      <!-- Right panel (desktop) -->
+      <SnipPanel v-if="!isMobile" />
     </div>
+
+    <!-- Mobile bottom sheets + toolbar -->
+    <template v-if="isMobile && sources.length > 0">
+      <AppBottomSheet
+        :open="showSnipListSheet"
+        title="Library"
+        :snap-points="['half', 'full']"
+        @close="showSnipListSheet = false"
+      >
+        <SnipList mobile />
+      </AppBottomSheet>
+
+      <AppBottomSheet
+        :open="showMockupsSheet"
+        title="Mockups"
+        :snap-points="['half', 'full']"
+        @close="showMockupsSheet = false"
+      >
+        <div class="flex flex-col">
+          <NuxtLink
+            v-for="comp in compositionsStore.ordered"
+            :key="comp.id"
+            :to="`/project/${$route.params.id}/compose/${comp.id}`"
+            class="flex items-center gap-2.5 border-b border-[var(--color-border)]/50 px-4 py-3 transition-colors active:bg-white/5"
+          >
+            <div class="h-[32px] w-[52px] shrink-0 overflow-hidden rounded border border-[var(--color-border)]">
+              <CompositionPreview :composition="comp" class="h-full w-full" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-[var(--color-text)]">{{ comp.name }}</p>
+              <p class="mt-0.5 font-mono text-[10px] text-[var(--color-text-muted)]">
+                {{ comp.config.outputWidth }}×{{ comp.config.outputHeight }} · {{ comp.type }}
+              </p>
+            </div>
+          </NuxtLink>
+          <div v-if="compositionsStore.ordered.length === 0" class="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">
+            <p>No mockups yet.</p>
+            <p class="mt-1 text-[10px]">Create snips first, then add a mockup from the Library panel.</p>
+          </div>
+        </div>
+      </AppBottomSheet>
+
+      <AppBottomSheet
+        :open="showSnipPanelSheet"
+        title="Snip Properties"
+        :snap-points="['half', 'full']"
+        @close="showSnipPanelSheet = false"
+      >
+        <SnipPanel mobile />
+      </AppBottomSheet>
+
+      <SnipToolbarMobile
+        :snip-count="snipsStore.orderedSnips.length"
+        :mockup-count="compositionsStore.ordered.length"
+        @show-snips="showSnipListSheet = true"
+        @show-mockups="showMockupsSheet = true"
+        @add-source="showAddSource = true"
+        @export="showExportPicker = true"
+      />
+    </template>
 
     <!-- Export picker modal -->
     <ExportPickerModal :open="showExportPicker" @close="showExportPicker = false" />
@@ -284,6 +353,7 @@ import { Crop, ZoomIn, ZoomOut, Maximize2, ArrowUpFromLine, X, Plus } from 'luci
 import { useProjectStore } from '~/stores/project'
 import { useSnipsStore } from '~/stores/snips'
 import { useSourcesStore } from '~/stores/sources'
+import { useCompositionsStore } from '~/stores/compositions'
 import { useSnips } from '~/composables/useSnips'
 import { useExport } from '~/composables/useExport'
 import { useGridSettingsStore } from '~/stores/gridSettings'
@@ -291,13 +361,18 @@ import { snapToGrid } from '~/utils/grid'
 import { collectSnapLines, snapEdge } from '~/utils/snapping'
 import type { SourceImage } from '~/types'
 
+const isMobile = useIsMobile()
 const projectStore = useProjectStore()
 const snipsStore = useSnipsStore()
 const sourcesStore = useSourcesStore()
+const compositionsStore = useCompositionsStore()
 const gridSettings = useGridSettingsStore()
 const { createSnip, deleteSnip } = useSnips()
 const { exportAllSnipsRaw } = useExport()
 const showExportPicker = ref(false)
+const showSnipListSheet = ref(false)
+const showSnipPanelSheet = ref(false)
+const showMockupsSheet = ref(false)
 const { saveImage, deleteImage, deleteSourceRecord, savePreview, scheduleSave } = useProject()
 
 const viewport = ref<HTMLElement>()
@@ -743,6 +818,7 @@ function edgeVelocity(mouse: number, start: number, end: number): number {
 }
 
 function onMouseDown(e: MouseEvent) {
+  if (isMobile.value) return
   if (!activeImage.value || e.button !== 0 || spacePressed.value) return
   e.preventDefault()
   const img = activeImage.value.img
@@ -853,6 +929,54 @@ function onMouseDown(e: MouseEvent) {
 
   window.addEventListener('mousemove', onMove)
   window.addEventListener('mouseup', onUp)
+}
+
+// --- Touch: pinch-to-zoom + two-finger pan ---
+let touchStartDist = 0
+let touchStartZoom = 1
+let touchStartScroll = { left: 0, top: 0 }
+let touchStartMid = { x: 0, y: 0 }
+
+function getTouchDist(t1: Touch, t2: Touch) {
+  return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
+}
+
+function getTouchMid(t1: Touch, t2: Touch) {
+  return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 }
+}
+
+function onViewportTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    touchStartDist = getTouchDist(e.touches[0]!, e.touches[1]!)
+    touchStartZoom = zoom.value
+    touchStartMid = getTouchMid(e.touches[0]!, e.touches[1]!)
+    const vp = viewport.value
+    if (vp) touchStartScroll = { left: vp.scrollLeft, top: vp.scrollTop }
+  }
+}
+
+function onViewportTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    e.preventDefault()
+    const vp = viewport.value
+    if (!vp) return
+
+    const dist = getTouchDist(e.touches[0]!, e.touches[1]!)
+    const scale = dist / touchStartDist
+    const newZoom = Math.max(0.05, Math.min(8, touchStartZoom * scale))
+
+    const vpRect = vp.getBoundingClientRect()
+    const midX = touchStartMid.x - vpRect.left
+    const midY = touchStartMid.y - vpRect.top
+    const imgX = (touchStartScroll.left + midX) / touchStartZoom
+    const imgY = (touchStartScroll.top + midY) / touchStartZoom
+
+    zoom.value = newZoom
+    nextTick(() => {
+      vp.scrollLeft = imgX * newZoom - midX
+      vp.scrollTop = imgY * newZoom - midY
+    })
+  }
 }
 
 function fitToWidth() {

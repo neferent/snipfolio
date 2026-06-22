@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
     <!-- Header -->
-    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-6">
+    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 md:px-6">
       <svg class="size-6 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <rect width="24" height="24" rx="6" ry="6" fill="#8e9ead"/>
         <rect x="4" y="3.91" width="8.5" height="12" rx="1.25" ry="1.25" fill="#373d43"/>
@@ -10,47 +10,76 @@
       </svg>
       <span class="text-sm font-medium text-[var(--color-text)]">snipfol<span class="text-[var(--color-accent)]">.io</span></span>
       <div class="flex-1" />
-      <template v-if="authStore.isGuest">
-        <span class="text-xs text-[var(--color-text-muted)]">Guest</span>
-        <NuxtLink
-          to="/login"
-          class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
-        >
-          Sign in
-        </NuxtLink>
+
+      <!-- Desktop auth items -->
+      <template v-if="!isMobile">
+        <template v-if="authStore.isGuest">
+          <span class="text-xs text-[var(--color-text-muted)]">Guest</span>
+          <NuxtLink
+            to="/login"
+            class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
+          >
+            Sign in
+          </NuxtLink>
+        </template>
+        <template v-else>
+          <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
+          <span
+            v-if="isDayPassActive"
+            class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
+          >
+            Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
+          </span>
+          <span
+            v-else-if="authStore.isPro"
+            class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
+          >
+            Access active
+          </span>
+          <a
+            v-if="authStore.isPro"
+            :href="billingUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
+          >
+            Manage subscription
+            <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+          <button
+            class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
+            @click="signOut"
+          >
+            Sign out
+          </button>
+        </template>
       </template>
+
+      <!-- Mobile menu -->
       <template v-else>
-        <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
-        <span
-          v-if="isDayPassActive"
-          class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
-        >
-          Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
-        </span>
-        <span
-          v-else-if="authStore.isPro"
-          class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
-        >
-          Access active
-        </span>
-        <a
-          v-if="authStore.isPro"
-          :href="billingUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
-        >
-          Manage subscription
-          <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
-          @click="signOut"
-        >
-          Sign out
-        </button>
+        <AppDropdown align="right">
+          <template #trigger>
+            <button class="flex size-8 items-center justify-center rounded-[6px] text-[var(--color-text-muted)] transition hover:bg-white/5 active:bg-white/10">
+              <EllipsisVertical class="size-5" />
+            </button>
+          </template>
+          <template v-if="authStore.isGuest">
+            <AppDropdownItem @click="navigateTo('/login')">Sign in</AppDropdownItem>
+          </template>
+          <template v-else>
+            <div class="px-2.5 py-1.5 text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</div>
+            <div v-if="isDayPassActive" class="px-2.5 pb-1.5 text-[10px] text-[var(--color-accent)]">
+              Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
+            </div>
+            <div v-else-if="authStore.isPro" class="px-2.5 pb-1.5 text-[10px] text-[var(--color-accent)]">
+              Access active
+            </div>
+            <AppDropdownItem v-if="authStore.isPro" @click="openBilling">Manage subscription</AppDropdownItem>
+            <AppDropdownItem @click="signOut">Sign out</AppDropdownItem>
+          </template>
+        </AppDropdown>
       </template>
     </header>
 
@@ -121,23 +150,40 @@
                 {{ formatDate(project.updatedAt) }}
               </p>
 
-              <!-- Rename button -->
-              <button
-                class="absolute right-10 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-white/10 hover:text-[var(--color-text)]"
-                @click.stop="startRename(project)"
-              >
-                <Pencil class="size-4" />
-              </button>
+              <!-- Desktop: hover-revealed actions -->
+              <template v-if="!isMobile">
+                <button
+                  class="absolute right-10 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-white/10 hover:text-[var(--color-text)]"
+                  @click.stop="startRename(project)"
+                >
+                  <Pencil class="size-4" />
+                </button>
+                <button
+                  class="absolute right-3 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
+                  @click.stop="confirmDelete(project.id, project.name)"
+                >
+                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </template>
 
-              <!-- Delete button -->
-              <button
-                class="absolute right-3 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
-                @click.stop="confirmDelete(project.id, project.name)"
-              >
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+              <!-- Mobile: always-visible overflow menu -->
+              <div v-else class="absolute right-2 top-2" @click.stop>
+                <AppDropdown align="right">
+                  <template #trigger>
+                    <button class="flex size-7 items-center justify-center rounded-md bg-black/40 text-[var(--color-text-muted)] backdrop-blur-sm active:bg-black/60">
+                      <EllipsisVertical class="size-4" />
+                    </button>
+                  </template>
+                  <AppDropdownItem @click="startRename(project)">
+                    <Pencil class="size-3.5" /> Rename
+                  </AppDropdownItem>
+                  <AppDropdownItem danger @click="confirmDelete(project.id, project.name)">
+                    <Trash2 class="size-3.5" /> Delete
+                  </AppDropdownItem>
+                </AppDropdown>
+              </div>
             </div>
           </div>
 
@@ -149,7 +195,7 @@
             <p class="text-sm font-medium text-[var(--color-text)]">No projects yet</p>
             <button
               class="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-              @click="onNewProject = true; showNew = true"
+              @click="onNewProject()"
             >
 							Create a new project to get started.
             </button>
@@ -206,7 +252,7 @@
 
 <script setup lang="ts">
 useHead({ title: 'Dashboard — Snipfolio' })
-import { Pencil } from 'lucide-vue-next'
+import { Pencil, EllipsisVertical, Trash2 } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
 import { useAuth } from '~/composables/useAuth'
@@ -220,6 +266,7 @@ const projectStore = useProjectStore()
 const { signOut: authSignOut } = useAuth()
 const { fetchProjects, deleteProject, renameProject, loadPreview } = useProject()
 const { canCreateProject, isDayPassActive, dayPassExpiresAt } = usePlan()
+const isMobile = useIsMobile()
 
 const config = useRuntimeConfig()
 const billingUrl = config.public.lsStoreSlug
@@ -317,6 +364,10 @@ async function doDelete() {
   if (!deleteTarget.value) return
   await deleteProject(deleteTarget.value.id)
   deleteTarget.value = null
+}
+
+function openBilling() {
+  window.open(billingUrl, '_blank')
 }
 
 async function signOut() {

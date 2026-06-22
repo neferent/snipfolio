@@ -272,6 +272,9 @@ function drawBackground(
     grad.addColorStop(1, bg.gradientEnd)
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, W, H)
+  } else if (bg.type === 'image' && !bgImage) {
+    ctx.fillStyle = 'rgba(229, 231, 235, 0.1)'
+    ctx.fillRect(0, 0, W, H)
   } else if (bg.type === 'image' && bgImage) {
     const iW = bgImage.naturalWidth
     const iH = bgImage.naturalHeight
