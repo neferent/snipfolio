@@ -139,7 +139,7 @@ export function useUrlCaptureFlow() {
     capture: CapturedImage,
     sortOrder: number,
     hostname: string,
-  ): PlacedSnip {
+  ): { placed: PlacedSnip; saved: Promise<void> } {
     const sourceId = crypto.randomUUID()
     const source: SourceImage = {
       id: sourceId,
@@ -153,11 +153,11 @@ export function useUrlCaptureFlow() {
     sourcesStore.addSource(source)
     sourcesStore.setLoadedImage(sourceId, capture.img, capture.src)
     sourcesStore.setActiveSource(sourceId)
-    saveImage(projectId, sourceId, capture.src)
+    const saved = saveImage(projectId, sourceId, capture.src) ?? Promise.resolve()
     const width = capture.img.naturalWidth
     const height = Math.min(capture.img.naturalHeight, Math.round(width / VIEWPORT_SCREEN_ASPECT[viewport]))
     const snip = createSnip(0, 0, width, height, VIEWPORT_SNAP_FRAME[viewport], sourceId)
-    return { snipId: snip.id, width, height }
+    return { placed: { snipId: snip.id, width, height }, saved }
   }
 
   /** Builds the composition matching the currently-selected preset from the placed snips. */

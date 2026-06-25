@@ -312,13 +312,28 @@ export function useProject() {
     return getImageFromDb(`preview_${projectId}`).catch(() => null)
   }
 
-  function saveImage(projectId: string, sourceId: string, src: string) {
+  async function saveImage(projectId: string, sourceId: string, src: string) {
     if (!import.meta.client) return
     if (isSupabase) {
-      uploadImageToStorage(projectId, sourceId, src).catch(() => {})
+      // Convert blob URLs to data URLs before caching — blob URLs are ephemeral
+      // and won't survive page reloads, so we need a stable representation.
+      let cacheSrc = src
+      if (src.startsWith('blob:')) {
+        const blob = await fetch(src).then((r) => r.blob())
+        cacheSrc = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result as string)
+          reader.readAsDataURL(blob)
+        })
+      }
+      const key = `${projectId}_${sourceId}`
+      await Promise.all([
+        uploadImageToStorage(projectId, sourceId, cacheSrc),
+        saveImageToDb(key, cacheSrc),
+      ])
     } else {
       const key = `${projectId}_${sourceId}`
-      saveImageToDb(key, src).catch(() => {})
+      await saveImageToDb(key, src)
     }
   }
 
@@ -364,7 +379,10 @@ export function useProject() {
           if (src) saveImageToDb(key, src).catch(() => {})
         }
         sourcesStore.markSourceLoaded(source.id)
-        if (!src) continue
+        if (!src) {
+          sourcesStore.markSourceFailed(source.id)
+          continue
+        }
         const img = new Image()
         img.onload = () => {
           sourcesStore.setLoadedImage(source.id, img, src!)
@@ -395,7 +413,10 @@ export function useProject() {
         }
       }
       sourcesStore.markSourceLoaded(source.id)
-      if (!src) continue
+      if (!src) {
+        sourcesStore.markSourceFailed(source.id)
+        continue
+      }
       const img = new Image()
       img.onload = () => {
         sourcesStore.setLoadedImage(source.id, img, src!)

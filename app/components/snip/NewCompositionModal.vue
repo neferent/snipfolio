@@ -474,15 +474,19 @@ async function onStartCapture() {
 
   const projectId = projectStore.current.id
   const placed = new Map<CaptureViewport, PlacedSnip>()
+  const imageSaves: Promise<void>[] = []
   let sortOrder = sourcesStore.sources.length
   for (const viewport of activeViewports.value) {
     const capture = captured.get(viewport)
     if (!capture) continue
-    placed.set(viewport, addCapturedSource(projectId, viewport, capture, sortOrder++, displayHostname.value))
+    const { placed: p, saved } = addCapturedSource(projectId, viewport, capture, sortOrder++, displayHostname.value)
+    placed.set(viewport, p)
+    imageSaves.push(saved)
   }
 
   const comp = createCompositionFromPreset(placed, displayHostname.value, resolvedUrl.value, name.value || displayHostname.value, bg.value)
 
+  await Promise.all(imageSaves)
   scheduleSave()
   emit('close')
   router.push(`/project/${route.params.id}/compose/${comp.id}`)

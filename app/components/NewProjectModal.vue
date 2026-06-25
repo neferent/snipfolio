@@ -315,11 +315,14 @@ async function onStartCapture() {
     compositionsStore.setCompositions([])
 
     const placed = new Map<CaptureViewport, PlacedSnip>()
+    const imageSaves: Promise<void>[] = []
     let sortOrder = 0
     for (const viewport of activeViewports.value) {
       const capture = captured.get(viewport)
       if (!capture) continue
-      placed.set(viewport, addCapturedSource(project.id, viewport, capture, sortOrder++, displayHostname.value))
+      const { placed: p, saved } = addCapturedSource(project.id, viewport, capture, sortOrder++, displayHostname.value)
+      placed.set(viewport, p)
+      imageSaves.push(saved)
     }
 
     const previewCapture = captured.get('desktop') ?? captured.get('tablet') ?? captured.get('mobile')
@@ -327,7 +330,7 @@ async function onStartCapture() {
 
     const comp = createCompositionFromPreset(placed, displayHostname.value, resolvedUrl.value)
 
-    await persistAll()
+    await Promise.all([persistAll(), ...imageSaves])
     emit('composed', project.id, comp.id)
   } catch {
     captureError.value = 'Failed to create project. Please try again.'
