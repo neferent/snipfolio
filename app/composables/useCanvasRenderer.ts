@@ -246,7 +246,7 @@ function drawLogoIcon(ctx: CanvasRenderingContext2D, x: number, y: number, size:
 }
 
 // --- Background ---
-function drawBackground(
+export function drawBackground(
   ctx: CanvasRenderingContext2D,
   W: number,
   H: number,
@@ -403,9 +403,9 @@ function drawFramedContent(
 
 // --- Caption ---
 
-interface ScreenBounds { x: number; y: number; w: number; h: number; r: number }
+export interface ScreenBounds { x: number; y: number; w: number; h: number; r: number }
 
-function getFrameScreenBounds(
+export function getFrameScreenBounds(
   frame: DeviceFrame,
   slotX: number,
   slotY: number,
@@ -462,7 +462,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines.length ? lines : ['']
 }
 
-function drawCaption(
+export function drawCaption(
   ctx: CanvasRenderingContext2D,
   cap: CaptionConfig,
   x: number,

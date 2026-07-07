@@ -12,7 +12,7 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'en' },
       title: 'Snipfolio',
       meta: [
-        { name: 'theme-color', content: '#0f172a' },
+        { name: 'theme-color', content: '#ffffff' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' },
       ],
       link: [
@@ -21,6 +21,11 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/icons/logo_16.png' },
       ],
       script: [
+        {
+          // Runs before hydration/paint so the correct theme class is present
+          // immediately — avoids a light→dark (or dark→light) flash on load.
+          innerHTML: `try{if(localStorage.getItem('sf-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}`,
+        },
         { src: 'https://www.googletagmanager.com/gtag/js?id=G-C3XP5KTPSP', async: true },
         {
           innerHTML: `window.dataLayer = window.dataLayer || [];

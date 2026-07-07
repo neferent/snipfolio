@@ -109,7 +109,7 @@
 
         <div class="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-[var(--color-border)] bg-[var(--color-surface-2)]/90 px-2 py-2 pb-safe backdrop-blur-lg">
           <button
-            class="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[var(--color-text-muted)] transition active:bg-white/10"
+            class="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[var(--color-text-muted)] transition active:bg-overlay/10"
             @click="showCollageSettingsSheet = true"
           >
             <Settings class="size-5" />

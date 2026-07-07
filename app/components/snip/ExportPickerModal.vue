@@ -3,7 +3,7 @@
     <div class="flex gap-4 min-h-[340px]">
       <!-- Left: composition list with checkboxes -->
       <div class="flex w-56 shrink-0 flex-col gap-1">
-        <label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-white/5">
+        <label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-overlay/5">
           <input
             type="checkbox"
             class="size-3.5 accent-[var(--color-accent)]"
@@ -21,8 +21,8 @@
         <label
           v-for="comp in compositions"
           :key="comp.id"
-          class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-white/5"
-          :class="previewComp?.id === comp.id ? 'bg-white/5' : ''"
+          class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-overlay/5"
+          :class="previewComp?.id === comp.id ? 'bg-overlay/5' : ''"
           @mouseenter="previewComp = comp"
         >
           <input
@@ -93,7 +93,7 @@
           </div>
           <NuxtLink
             to="/login"
-            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10 border-strong"
+            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-overlay/10 border-strong"
             @click="$emit('close')"
           >
             Sign in
@@ -130,7 +130,7 @@
 
     <template #footer>
       <button
-        class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+        class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
         @click="$emit('close')"
       >
         Cancel

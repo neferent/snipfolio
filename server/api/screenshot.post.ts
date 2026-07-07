@@ -2,7 +2,7 @@ import { takeScreenshot } from '../utils/screenshot'
 
 export default defineEventHandler(async (event) => {
   const userId = await requireUser(event)
-  await requirePro(userId)
+  await requireCaptureAllowance(userId)
 
   const { url, viewport } = await readBody(event)
 

@@ -5,7 +5,7 @@
         class="flex size-7 items-center justify-center rounded transition-colors"
         :class="gridSettings.showGrid
           ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-          : 'text-[var(--color-text-muted)] hover:bg-white/10 hover:text-[var(--color-text)]'"
+          : 'text-[var(--color-text-muted)] hover:bg-overlay/10 hover:text-[var(--color-text)]'"
         aria-label="Toggle grid"
         :aria-pressed="gridSettings.showGrid"
         @click="gridSettings.showGrid = !gridSettings.showGrid"
@@ -18,7 +18,7 @@
         class="flex size-7 items-center justify-center rounded transition-colors"
         :class="gridSettings.snapEnabled
           ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-          : 'text-[var(--color-text-muted)] hover:bg-white/10 hover:text-[var(--color-text)]'"
+          : 'text-[var(--color-text-muted)] hover:bg-overlay/10 hover:text-[var(--color-text)]'"
         aria-label="Toggle snap to grid"
         :aria-pressed="gridSettings.snapEnabled"
         @click="gridSettings.snapEnabled = !gridSettings.snapEnabled"
@@ -31,7 +31,7 @@
         class="flex size-7 items-center justify-center rounded transition-colors"
         :class="gridSettings.snapToObjects
           ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-          : 'text-[var(--color-text-muted)] hover:bg-white/10 hover:text-[var(--color-text)]'"
+          : 'text-[var(--color-text-muted)] hover:bg-overlay/10 hover:text-[var(--color-text)]'"
         aria-label="Toggle snap to objects"
         :aria-pressed="gridSettings.snapToObjects"
         @click="gridSettings.snapToObjects = !gridSettings.snapToObjects"

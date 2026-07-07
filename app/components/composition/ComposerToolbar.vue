@@ -137,7 +137,7 @@ const emit = defineEmits<{
 const sel = computed(() => !!props.selectedSlot)
 const zoomLabel = computed(() => Math.round(props.zoom * 100) + '%')
 
-const BASE = 'size-7 flex items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:bg-white/10 hover:text-[var(--color-text)]'
+const BASE = 'size-7 flex items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:bg-overlay/10 hover:text-[var(--color-text)]'
 
 function btn(disabled = false, danger = false) {
   return {

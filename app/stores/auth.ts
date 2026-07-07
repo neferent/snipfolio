@@ -13,6 +13,9 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = ref(false)
   const proExpiresAt = ref<string | null>(null)
   const profileLoaded = ref(false)
+  const captureLimit = ref(0)
+  const capturesUsed = ref(0)
+  const capturesRemaining = ref(0)
 
   const isAuthenticated = computed(() => user.value !== null)
 
@@ -28,10 +31,20 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = v
   }
 
-  function setProfile(pro: boolean, admin: boolean, expiresAt: string | null = null) {
+  function setProfile(
+    pro: boolean,
+    admin: boolean,
+    expiresAt: string | null = null,
+    limit = 0,
+    used = 0,
+    remaining = 0,
+  ) {
     isPro.value = pro
     isAdmin.value = admin
     proExpiresAt.value = expiresAt
+    captureLimit.value = limit
+    capturesUsed.value = used
+    capturesRemaining.value = remaining
     profileLoaded.value = true
   }
 
@@ -67,8 +80,15 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin.value = false
     proExpiresAt.value = null
     profileLoaded.value = false
+    captureLimit.value = 0
+    capturesUsed.value = 0
+    capturesRemaining.value = 0
     if (import.meta.client) localStorage.removeItem(GUEST_FLAG_KEY)
   }
 
-  return { user, token, isLoading, isAuthenticated, isGuest, isPro, isAdmin, proExpiresAt, profileLoaded, setUser, setToken, setLoading, setProfile, setGuest, restoreGuest, clear }
+  return {
+    user, token, isLoading, isAuthenticated, isGuest, isPro, isAdmin, proExpiresAt, profileLoaded,
+    captureLimit, capturesUsed, capturesRemaining,
+    setUser, setToken, setLoading, setProfile, setGuest, restoreGuest, clear,
+  }
 })

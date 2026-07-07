@@ -3,18 +3,20 @@
     <div class="h-1 shrink-0 bg-[#a78bfa]" />
     <!-- Top toolbar -->
     <header class="flex h-12 shrink-0 items-center gap-2 border-b-subtle bg-[var(--color-surface-2)] px-4">
+      <AppLogo />
+      <div class="h-4 w-px shrink-0 bg-[var(--color-border)]" />
       <NuxtLink
-        to="/dashboard"
+        to="/projects"
         class="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
       >
         <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Dashboard
+        Projects
       </NuxtLink>
       <span class="text-xs text-[var(--color-text-faint)]"> / </span>
       <NuxtLink
-        :to="`/project/${projectId}`"
+        :to="`/advanced/${projectId}`"
         class="truncate text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
       >
         {{ projectStore.current?.name || 'Untitled project' }}
@@ -28,6 +30,7 @@
       </span>
       <div class="flex-1" />
       <SaveStatus :status="projectStore.saveStatus" />
+      <ThemeToggle />
       <UserMenu />
     </header>
 
@@ -39,7 +42,7 @@
             {{ loadError ? 'Failed to load project.' : 'Composition not found.' }}
           </p>
           <NuxtLink
-            :to="`/project/${projectId}`"
+            :to="`/advanced/${projectId}`"
             class="text-xs text-[var(--color-accent)] hover:underline"
           >
             ← Back to project

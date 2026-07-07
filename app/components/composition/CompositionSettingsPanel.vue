@@ -22,8 +22,8 @@
           :key="preset.label"
           class="flex h-[30px] items-center justify-center px-3 font-mono text-[12px] transition"
           :style="outputWidth === preset.w && outputHeight === preset.h
-            ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
-            : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
+            ? 'border-radius:6px;border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text);font-weight:500'
+            : 'border-radius:6px;border:0.5px solid var(--color-border);background:transparent;color:var(--color-text-muted)'"
           @click="$emit('update:output-size', preset.w, preset.h)"
         >
           {{ preset.label }}
@@ -68,7 +68,7 @@
         Export PNG
       </button>
       <button
-        class="flex h-9 items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
+        class="flex h-9 items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
         @click="copyToClipboard"
       >
         <Check v-if="copied" class="size-4" />

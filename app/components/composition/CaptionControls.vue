@@ -5,7 +5,7 @@
       <span class="text-xs text-[var(--color-text)]">{{ label }}</span>
       <Switch
         :model-value="enabled"
-        :class="enabled ? 'bg-[var(--color-accent)]' : 'bg-white/10'"
+        :class="enabled ? 'bg-[var(--color-accent)]' : 'bg-overlay/10'"
         class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
         @update:model-value="toggleEnabled"
       >
@@ -34,8 +34,8 @@
             class="rounded-[6px] py-1 text-xs transition"
             :style="[
               (modelValue.fontFamily ?? DEFAULT.fontFamily) === f.value
-                ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
-                : 'border:0.5px solid rgba(255,255,255,0.06);color:#6b7280',
+                ? 'border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text)'
+                : 'border:0.5px solid var(--color-border);color:var(--color-text-muted)',
               `font-family:${f.value}`,
             ].join(';')"
             @click="update('fontFamily', f.value)"
@@ -55,8 +55,8 @@
               :key="pos"
               class="flex-1 rounded-[6px] py-1 text-xs capitalize transition"
               :style="modelValue.position === pos
-                ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
-                : 'border:0.5px solid rgba(255,255,255,0.06);color:#6b7280'"
+                ? 'border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text)'
+                : 'border:0.5px solid var(--color-border);color:var(--color-text-muted)'"
               @click="update('position', pos as 'top' | 'bottom')"
             >
               {{ pos }}
@@ -89,8 +89,8 @@
               class="flex-1 rounded-[6px] py-1 text-xs transition"
               :style="[
                 (modelValue.fontWeight ?? 'normal') === w.value
-                  ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
-                  : 'border:0.5px solid rgba(255,255,255,0.06);color:#6b7280',
+                  ? 'border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text)'
+                  : 'border:0.5px solid var(--color-border);color:var(--color-text-muted)',
                 `font-weight:${w.value}`,
               ].join(';')"
               @click="update('fontWeight', w.value as 'normal' | 'bold')"
@@ -108,8 +108,8 @@
               :key="a.value"
               class="flex-1 rounded-[6px] py-1 text-xs transition"
               :style="(modelValue.align ?? 'center') === a.value
-                ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
-                : 'border:0.5px solid rgba(255,255,255,0.06);color:#6b7280'"
+                ? 'border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text)'
+                : 'border:0.5px solid var(--color-border);color:var(--color-text-muted)'"
               :title="a.label"
               @click="update('align', a.value as 'left' | 'center' | 'right')"
             >

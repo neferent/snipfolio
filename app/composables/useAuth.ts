@@ -26,10 +26,24 @@ function useSupabaseAuth() {
     const token = store.token
     if (!token) return
     try {
-      const profile = await $fetch<{ isPro: boolean; isAdmin: boolean; proExpiresAt: string | null }>('/api/me/profile', {
+      const profile = await $fetch<{
+        isPro: boolean
+        isAdmin: boolean
+        proExpiresAt: string | null
+        captureLimit: number
+        capturesUsed: number
+        capturesRemaining: number
+      }>('/api/me/profile', {
         headers: { Authorization: `Bearer ${token}` },
       })
-      store.setProfile(profile.isPro, profile.isAdmin, profile.proExpiresAt)
+      store.setProfile(
+        profile.isPro,
+        profile.isAdmin,
+        profile.proExpiresAt,
+        profile.captureLimit,
+        profile.capturesUsed,
+        profile.capturesRemaining,
+      )
     } catch (e) {
       console.warn('[loadProfile] error:', e)
       toast.error('Could not load your profile. Some features may be unavailable — try refreshing.')

@@ -2,7 +2,7 @@
   <NuxtLink
     v-if="authStore.isGuest"
     to="/login"
-    class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
+    class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)] border-strong"
   >
     Sign in
   </NuxtLink>
@@ -10,7 +10,7 @@
   <AppDropdown v-else align="right">
     <template #trigger>
       <button
-        class="flex size-8 items-center justify-center rounded-full bg-[var(--color-surface-3)] text-xs font-medium text-[var(--color-text)] transition hover:bg-white/10 border-strong"
+        class="flex size-8 items-center justify-center rounded-full bg-[var(--color-surface-3)] text-xs font-medium text-[var(--color-text)] transition hover:bg-overlay/10 border-strong"
         :title="authStore.user?.email"
       >
         {{ initials }}

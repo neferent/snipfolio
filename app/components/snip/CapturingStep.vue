@@ -3,7 +3,7 @@
     <p class="text-xs text-[var(--color-text-muted)]">
       {{ captureError ? 'Capture failed' : captureStatusLabel }}
     </p>
-    <div v-if="!captureError" class="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/5">
+    <div v-if="!captureError" class="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-overlay/5">
       <div
         class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-1000 ease-linear"
         :style="{ width: overallProgressPercent(activeViewports.map((v) => captureState[v].progress), tickNow) + '%' }"
@@ -13,7 +13,7 @@
       <div
         v-for="viewport in activeViewports"
         :key="viewport"
-        class="flex flex-col overflow-hidden rounded border border-white/10"
+        class="flex flex-col overflow-hidden rounded border border-overlay/10"
         :style="{ width: pillWidth(viewport) + 'px' }"
       >
         <div class="relative flex items-center justify-center bg-black/20" style="height: 140px;">
@@ -26,7 +26,7 @@
           />
           <XIcon v-else-if="captureState[viewport].status === 'error'" class="size-4 text-red-400" />
         </div>
-        <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
+        <div class="flex items-center gap-1 border-t border-overlay/10 px-1.5 py-1">
           <CheckIcon v-if="captureState[viewport].status === 'done'" class="size-3 shrink-0 text-emerald-400" />
           <Loader2Icon v-else-if="captureState[viewport].status === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
           <XIcon v-else-if="captureState[viewport].status === 'error'" class="size-3 shrink-0 text-red-400" />

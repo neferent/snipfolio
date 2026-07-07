@@ -43,7 +43,7 @@
               :class="
                 source.id === activeSourceId
                   ? 'bg-[var(--color-accent)]/15 text-[var(--color-text)]'
-                  : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-[var(--color-text)]'
+                  : 'text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)]'
               "
               @click="sourcesStore.setActiveSource(source.id)"
             >
@@ -75,7 +75,7 @@
 
           <div class="self-stretch w-px bg-[var(--color-border)] shrink-0" />
           <button
-            class="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
+            class="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)]"
             @click="showAddSource = true"
           >
             <Plus class="size-3.5" />
@@ -250,8 +250,8 @@
           <NuxtLink
             v-for="comp in compositionsStore.ordered"
             :key="comp.id"
-            :to="`/project/${$route.params.id}/compose/${comp.id}`"
-            class="flex items-center gap-2.5 border-b border-[var(--color-border)]/50 px-4 py-3 transition-colors active:bg-white/5"
+            :to="`/advanced/${$route.params.id}/compose/${comp.id}`"
+            class="flex items-center gap-2.5 border-b border-[var(--color-border)]/50 px-4 py-3 transition-colors active:bg-overlay/5"
           >
             <div class="h-[32px] w-[52px] shrink-0 overflow-hidden rounded border border-[var(--color-border)]">
               <CompositionPreview :composition="comp" class="h-full w-full" />
@@ -331,7 +331,7 @@
       </div>
       <template #footer>
         <button
-          class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
           @click="cancelAddSource"
         >
           Cancel
@@ -399,7 +399,7 @@ function onTabWheel(e: WheelEvent) {
 const zoom = ref(1)
 const zoomLabel = computed(() => Math.round(zoom.value * 100) + '%')
 
-const TB_BASE = 'size-7 flex items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:bg-white/10 hover:text-[var(--color-text)]'
+const TB_BASE = 'size-7 flex items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:bg-overlay/10 hover:text-[var(--color-text)]'
 function tbBtn() { return { class: TB_BASE } }
 
 function onSnipZoomCommit(e: KeyboardEvent) {

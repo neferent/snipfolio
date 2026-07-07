@@ -28,8 +28,8 @@
               class="p-3 text-left transition"
               :class="t.span ? 'col-span-2' : ''"
               :style="type === t.value
-                ? 'border-radius:8px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08)'
-                : 'border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);background:#1e2228'"
+                ? 'border-radius:8px;border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08)'
+                : 'border-radius:8px;border:0.5px solid var(--color-border);background:var(--color-surface-3)'"
               @click="type = t.value"
             >
               <component :is="t.icon" class="size-5 text-[var(--color-text-muted)]" />
@@ -51,7 +51,7 @@
               <label
                 v-for="snip in laptopSnips"
                 :key="snip.id"
-                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-overlay/5"
               >
                 <input type="radio" :value="snip.id" v-model="laptopSnipId" class="accent-[var(--color-accent)]" />
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
@@ -68,7 +68,7 @@
               <label
                 v-for="snip in laptopSnips"
                 :key="snip.id"
-                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-overlay/5"
               >
                 <input type="radio" :value="snip.id" v-model="laptopSnipId" class="accent-[var(--color-accent)]" />
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
@@ -81,7 +81,7 @@
               <label
                 v-for="snip in phoneSnips"
                 :key="snip.id"
-                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-overlay/5"
               >
                 <input type="radio" :value="snip.id" v-model="phoneSnipId" class="accent-[var(--color-accent)]" />
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
@@ -100,7 +100,7 @@
               <label
                 v-for="snip in snips"
                 :key="snip.id"
-                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-overlay/5"
               >
                 <input type="checkbox" :value="snip.id" v-model="selectedIds" class="accent-[var(--color-accent)]" />
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
@@ -153,7 +153,7 @@
               <label
                 v-for="snip in snips"
                 :key="snip.id"
-                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5"
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-overlay/5"
               >
                 <input type="checkbox" :value="snip.id" v-model="selectedIds" class="accent-[var(--color-accent)]" />
                 <SnipThumbnail :snip="snip" class="size-7 rounded" />
@@ -193,7 +193,7 @@
     <template #footer>
       <template v-if="step === 'main'">
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/10"
           @click="$emit('close')"
         >
           Cancel
@@ -219,7 +219,7 @@
       <!-- Step 2: preset selection -->
       <template v-else-if="step === 'preset'">
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
           @click="step = 'main'"
         >
           Back
@@ -235,7 +235,7 @@
       <!-- Step 3: capturing — only show buttons on error -->
       <template v-else-if="step === 'capturing' && captureError">
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
           @click="step = 'main'"
         >
           Back
@@ -489,7 +489,7 @@ async function onStartCapture() {
   await Promise.all(imageSaves)
   scheduleSave()
   emit('close')
-  router.push(`/project/${route.params.id}/compose/${comp.id}`)
+  router.push(`/advanced/${route.params.id}/compose/${comp.id}`)
 }
 
 async function create() {
@@ -506,6 +506,6 @@ async function create() {
     comp = createFreeformComposition(selectedIds.value, name.value || undefined, bgVal)
   }
   emit('close')
-  router.push(`/project/${route.params.id}/compose/${comp.id}`)
+  router.push(`/advanced/${route.params.id}/compose/${comp.id}`)
 }
 </script>

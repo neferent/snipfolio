@@ -23,18 +23,30 @@ This repo is the **app only**, deployed to `app.snipfol.io`. The marketing site 
 | View | Aliases | Route | File | Key components |
 |------|---------|-------|------|-----------------|
 | Root | — | `/` | `pages/index.vue` | Redirect-only: `/dashboard` if authenticated, else `/login` |
-| Dashboard | Project list | `/dashboard` | `pages/dashboard.vue` | `NewProjectModal.vue` |
-| Snipper | Snip tool, Snip editor | `/project/[id]` | `pages/project/[id]/index.vue` | `SnipTool.vue` (+ `SnipOverlay`, `SnipList`, `SnipPanel`) |
-| Composer | Composition tool | `/project/[id]/compose/[compositionId]` | `pages/project/[id]/compose/[compositionId].vue` | `CompositionEditor.vue` (+ `FreeformEditor`/`CollageLayout`, `ComposerToolbar`) |
+| Dashboard | Studio | `/dashboard` | `pages/dashboard.vue` | `StudioFrame.vue` (+ `BackgroundControls`, `CaptionControls`) |
+| Projects | Project list | `/projects` | `pages/projects.vue` | `NewProjectModal.vue` |
+| Snipper | Snip tool, Snip editor, Advanced editor | `/advanced/[id]` | `pages/advanced/[id]/index.vue` | `SnipTool.vue` (+ `SnipOverlay`, `SnipList`, `SnipPanel`) |
+| Composer | Composition tool, Advanced editor | `/advanced/[id]/compose/[compositionId]` | `pages/advanced/[id]/compose/[compositionId].vue` | `CompositionEditor.vue` (+ `FreeformEditor`/`CollageLayout`, `ComposerToolbar`) |
+
+`/dashboard` (Studio) is the default landing experience post-login, and is guest-accessible (no `auth` middleware — it does its own lighter authenticated-or-guest check). Its header has a "Projects" dropdown (recent projects + link to `/projects`) and an "Advanced Editor" button (→ `/projects`) for the snip/composition-based flow. `/projects`, `/advanced/[id]`, and `/advanced/[id]/compose/[compositionId]` all require full auth (`definePageMeta({ middleware: 'auth' })`) and link back to each other via "Projects" breadcrumbs, not "Dashboard".
 
 ### Page features
 
-#### Dashboard (`pages/dashboard.vue`)
-- **Project list** — grid of project cards (thumbnail preview, name, updated date, delete button), loading skeleton, and empty state. Inline in `dashboard.vue`.
+#### Dashboard / Studio (`pages/dashboard.vue`)
+Standalone, project-free flow: capture one or more device viewports from a URL directly onto a single output canvas, frame them, and export — no source/snip/composition records involved. This is the app's default landing page.
+- **Capture panel** — device toggles (Desktop/Tablet/Mobile checkboxes, `activeDevices`), URL input, capture button (captures every toggled device in sequence), per-device progress/error state (`captureState`).
+- **Canvas panel** — output size inputs + presets.
+- **Artboard** — one `<canvas>` renders background + every active device's frame (`renderCanvas`); one `StudioFrame.vue` overlay per active device handles drag/resize/scroll interaction on top of it.
+- **Default layouts** — when 2+ devices are active, `arrangeOverlapGroup` (~line 145-215) auto-positions them in the classic "biggest device centered, smaller ones in front overlapping its edges" mockup style. Tuning knobs (`UNIT_HEIGHT`, `OVERLAP_FRACTION`, `OVERLAP_SIDE`, `marginRatio`) are documented in a comment directly above that function — start there before touching the positioning math.
+- **Sidebar** — per-device frame color/caption (switch device via tabs when multiple are active), background controls, export.
+- **Header** — Projects dropdown (recent projects, "View all projects" link) and "Advanced Editor" button, both leading into the project-based flow below.
+
+#### Projects (`pages/projects.vue`)
+- **Project list** — grid of project cards (thumbnail preview, name, updated date, delete button), loading skeleton, and empty state. Inline in `projects.vue`.
 - **New Project Modal** — `components/NewProjectModal.vue`. Create a blank project, or enter a URL to auto-capture desktop/mobile screenshots (`/api/screenshot`) and auto-generate Laptop / Laptop+Phone compositions via `useCompositions`.
 - Also handles: auth header (sign in/out, manage subscription), Pro upsell modal (free plan project limit), delete-confirm modal.
 
-#### Snipper (`pages/project/[id]/index.vue` → `SnipTool.vue`)
+#### Snipper (`pages/advanced/[id]/index.vue` → `SnipTool.vue`)
 - **Snip list** — top section of the left sidebar (`SnipList.vue`). Lists all snips, grouped by source when there's more than one source; shows thumbnail, dimensions, snap-frame badge (Desktop/Tablet/Mobile), and delete.
 - **Composition list** — bottom section of the left sidebar (`SnipList.vue`, "Compositions" group). Links to each composition's Composer route; "New" button opens `NewCompositionModal.vue`.
 - **Source list** — tab bar above the viewport (inline in `SnipTool.vue`, ~line 27-77). One tab per source image — switch active source, rename label, remove source, see dimensions.
@@ -42,7 +54,7 @@ This repo is the **app only**, deployed to `app.snipfol.io`. The marketing site 
 - **Add source modal** — inline `AppModal` in `SnipTool.vue` (~line 201+). Upload a screenshot (`ScreenshotDropzone.vue`) or capture from a URL (`UrlCaptureModal.vue`) to add another source.
 - **Snip properties** — right sidebar (`SnipPanel.vue`). Selected snip's label, width/height, x/y position, and snap-frame.
 
-#### Composer (`pages/project/[id]/compose/[compositionId].vue` → `CompositionEditor.vue`)
+#### Composer (`pages/advanced/[id]/compose/[compositionId].vue` → `CompositionEditor.vue`)
 For Freeform/Laptop/Laptop+Phone types, the slot list, add-snip, and toolbar below live in `FreeformEditor.vue`. Auto-Collage uses a different layout (`CollageLayout.vue` + `CompositionCanvas.vue`) without slots/toolbar. Both layouts share the right-sidebar `CompositionSettingsPanel.vue`.
 - **Slots** — left sidebar slot list in `FreeformEditor.vue` (~line 13-80). Shows each placed snip in z-order (top = front), with reorder via drag, frame-mismatch warnings, and remove.
 - **Add Snip** — below the slot list in `FreeformEditor.vue` (~line 85-100). Picks an unplaced snip from the project and adds it as a new slot via `addSnip(snip)`.

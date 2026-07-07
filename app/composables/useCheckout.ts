@@ -19,7 +19,7 @@ export function useCheckout() {
     if (authStore.isGuest || !authStore.token) {
       authStore.clear()
       const { pathname, search } = window.location
-      setPostAuthRedirect(pathname === '/dashboard' ? '/dashboard?openUrlCapture=1' : pathname + search, type)
+      setPostAuthRedirect(pathname === '/projects' ? '/projects?openUrlCapture=1' : pathname + search, type)
       toast.info('Sign in to continue')
       await navigateTo('/login')
       return

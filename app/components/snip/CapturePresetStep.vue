@@ -6,8 +6,8 @@
         v-for="p in CAPTURE_PRESETS"
         :key="p.id"
         type="button"
-        class="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition hover:bg-white/5"
-        :class="modelValue === p.id ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
+        class="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition hover:bg-overlay/5"
+        :class="modelValue === p.id ? 'border-[#8e9ead]/60 bg-overlay/5' : 'border-overlay/10 hover:border-overlay/20'"
         @click="$emit('update:modelValue', p.id)"
       >
         <CapturePresetThumbnail :preset="p.id" />

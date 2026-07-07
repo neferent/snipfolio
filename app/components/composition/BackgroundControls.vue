@@ -9,8 +9,8 @@
           :key="t.value"
           class="py-1.5 text-xs transition"
           :style="modelValue.type === t.value
-            ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
-            : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);color:#6b7280'"
+            ? 'border-radius:6px;border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text)'
+            : 'border-radius:6px;border:0.5px solid var(--color-border);color:var(--color-text-muted)'"
           @click="update('type', t.value as BackgroundConfig['type'])"
         >
           {{ t.label }}

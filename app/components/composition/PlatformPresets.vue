@@ -22,8 +22,8 @@
           :key="platform.id"
           class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition"
           :style="selectedPlatformId === platform.id
-            ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
-            : 'border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
+            ? 'border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text);font-weight:500'
+            : 'border:0.5px solid var(--color-border);background:transparent;color:var(--color-text-muted)'"
           @click="selectedPlatformId = platform.id"
         >
           <component :is="logoFor(platform.id)" class="size-3 shrink-0" />
@@ -38,8 +38,8 @@
           :key="size.label"
           class="relative flex h-[28px] items-center gap-1.5 rounded-md px-2.5 text-xs transition"
           :style="isActive(size)
-            ? 'border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea;font-weight:500'
-            : 'border:0.5px solid rgba(255,255,255,0.06);background:transparent;color:#6b7280'"
+            ? 'border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text);font-weight:500'
+            : 'border:0.5px solid var(--color-border);background:transparent;color:var(--color-text-muted)'"
           @click="onSelect(size)"
         >
           {{ size.label }}

@@ -3,11 +3,13 @@
     <div class="h-1 shrink-0 bg-[#38bdf8]" />
     <!-- Top toolbar -->
     <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4">
+      <AppLogo />
+      <div class="h-4 w-px shrink-0 bg-[var(--color-border)]" />
       <NuxtLink
-        to="/dashboard"
+        to="/projects"
         class="shrink-0 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
       >
-        ← Dashboard
+        ← Projects
       </NuxtLink>
 
       <span class="shrink-0 text-sm text-[var(--color-text-faint)]">/</span>
@@ -26,6 +28,7 @@
       <div class="flex-1" />
 
       <SaveStatus :status="projectStore.saveStatus" />
+      <ThemeToggle />
       <UserMenu />
     </header>
 
@@ -39,10 +42,10 @@
         >
           <p class="text-sm text-[var(--color-text-muted)]">Failed to load project.</p>
           <NuxtLink
-            to="/dashboard"
+            to="/projects"
             class="text-sm text-[var(--color-accent)] hover:underline"
           >
-            ← Back to Dashboard
+            ← Back to Projects
           </NuxtLink>
         </div>
       </Transition>

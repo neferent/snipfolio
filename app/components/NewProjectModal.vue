@@ -18,9 +18,9 @@
       <div class="grid gap-3" :class="URL_CAPTURE_ENABLED ? 'grid-cols-2' : 'grid-cols-1'">
         <button
           v-if="URL_CAPTURE_ENABLED"
-          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5 active:bg-white/5"
+          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-overlay/5 active:bg-overlay/5"
           :class="[
-            type === 'url' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20',
+            type === 'url' ? 'border-[#8e9ead]/60 bg-overlay/5' : 'border-overlay/10 hover:border-overlay/20',
             isMobile ? 'order-first' : 'order-last',
           ]"
           @click="type = 'url'"
@@ -32,8 +32,8 @@
           <span class="text-xs text-[var(--color-text-muted)]">Paste a URL and get a polished mockup in seconds.</span>
         </button>
         <button
-          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-white/5 active:bg-white/5"
-          :class="type === 'blank' ? 'border-[#8e9ead]/60 bg-white/5' : 'border-white/10 hover:border-white/20'"
+          class="flex flex-col gap-2 rounded-lg border p-4 text-left transition hover:bg-overlay/5 active:bg-overlay/5"
+          :class="type === 'blank' ? 'border-[#8e9ead]/60 bg-overlay/5' : 'border-overlay/10 hover:border-overlay/20'"
           @click="type = 'blank'"
         >
           <span class="text-sm font-medium text-[var(--color-text)]">Blank</span>
@@ -91,7 +91,7 @@
             key="upgrade"
             class="flex h-8 items-center justify-center gap-1.5 rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
             :disabled="checkoutLoading"
-            @click="startCheckout('day_pass', '/dashboard?openUrlCapture=1')"
+            @click="startCheckout('day_pass', '/projects?openUrlCapture=1')"
           >
             <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
             {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
@@ -112,7 +112,7 @@
       <!-- Step 2: preset selection -->
       <template v-else-if="step === 'preset'">
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
           @click="step = 'main'"
         >
           Back
@@ -128,7 +128,7 @@
       <!-- Step 3: capturing — only show buttons on error -->
       <template v-else-if="step === 'capturing' && captureError">
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
           @click="step = 'main'"
         >
           Back

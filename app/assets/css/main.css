@@ -18,38 +18,17 @@
 }
 
 /* ─── Brand palette ──────────────────────────────────────────────────────── */
+/*
+ * Light mode is the default (:root). Dark mode overrides every token below
+ * under the `.dark` class, toggled on <html> by useTheme(). Keep every
+ * themed token declared in BOTH blocks — anything defined only in one theme
+ * silently falls back to the other via inheritance and won't actually flip.
+ */
 
 @theme {
   --color-brand-300: #8e9ead;
   --color-brand-500: #565f69;
   --color-brand-700: #373d43;
-
-  /* Surfaces */
-  --color-surface:   #111316;
-  --color-surface-2: #16191d;
-  --color-surface-3: #1e2228;
-  --color-surface-4: #2c3238;
-
-  /* Borders */
-  --color-border:        rgba(255, 255, 255, 0.06);
-  --color-border-strong: rgba(255, 255, 255, 0.12);
-
-  /* Text */
-  --color-text:       #e2e6ea;
-  --color-text-muted: #838d99;
-  --color-text-faint: #4a5e6e;
-
-  /* Accent */
-  --color-accent:       #8e9ead;
-  --color-accent-hover: #4a5e6e;
-  --color-accent-dim:   rgba(142, 158, 173, 0.12);
-  --color-on-accent:    #111316;
-
-  /* Status */
-  --color-danger:  #f09595;
-  --color-success: #5dcaa5;
-  --color-warning: #ef9f27;
-  --color-info:    #38bdf8;
 
   /* Typography */
   --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
@@ -63,10 +42,90 @@
   --radius-lg:  8px;
   --radius-xl:  12px;
   --radius-2xl: 16px;
+
+  /* Themed tokens: default (light) values live here so Tailwind generates
+     utilities like bg-surface, text-text-muted, bg-overlay/10 — .dark below
+     overrides the underlying custom properties for dark mode. */
+  --color-surface:   #ffffff;
+  --color-surface-2: #f6f7f8;
+  --color-surface-3: #eef0f2;
+  --color-surface-4: #e2e5e9;
+  --color-border:        rgba(15, 23, 32, 0.08);
+  --color-border-strong: rgba(15, 23, 32, 0.14);
+  --color-text:       #1a1d21;
+  --color-text-muted: #6b7280;
+  --color-text-faint: #9aa3ad;
+  --color-accent:       #4a5568;
+  --color-accent-hover: #333a44;
+  --color-accent-dim:   rgba(74, 85, 104, 0.08);
+  --color-on-accent:    #ffffff;
+  --color-danger:  #dc2626;
+  --color-success: #0d9668;
+  --color-warning: #c2760c;
+  --color-info:    #0284c7;
+  /* Hover/press overlay: darkens a light surface, lightens a dark one */
+  --color-overlay: #000000;
+  /* Canvas/artboard backdrop behind framed screenshots */
+  --color-canvas: #eef0f2;
 }
 
-/* ─── SF design tokens (spec names for reference) ────────────────────────── */
+/* ─── Light theme (default) — spec-name aliases ──────────────────────────── */
 :root {
+  --color-border-subtle: rgba(15, 23, 32, 0.08);
+
+  --sf-accent:         #4a5568;
+  --sf-accent-dark:    #333a44;
+  --sf-accent-tint:    rgba(74, 85, 104, 0.08);
+  --sf-accent-tint-md: rgba(74, 85, 104, 0.12);
+
+  --sf-bg:             #ffffff;
+  --sf-surface:        #f6f7f8;
+  --sf-surface-raised: #eef0f2;
+
+  --sf-border:         rgba(15, 23, 32, 0.08);
+  --sf-border-emphasis: rgba(15, 23, 32, 0.14);
+
+  --sf-text-primary:   #1a1d21;
+  --sf-text-muted:     #6b7280;
+  --sf-text-accent:    #4a5568;
+
+  --sf-success:        #0d9668;
+  --sf-danger:         #dc2626;
+  --sf-warning:        #c2760c;
+
+  --sf-success-tint:   rgba(13, 150, 104, 0.1);
+  --sf-danger-tint:    rgba(220, 38, 38, 0.1);
+  --sf-warning-tint:   rgba(194, 118, 12, 0.1);
+}
+
+/* ─── Dark theme ──────────────────────────────────────────────────────────── */
+.dark {
+  --color-surface:   #111316;
+  --color-surface-2: #16191d;
+  --color-surface-3: #1e2228;
+  --color-surface-4: #2c3238;
+
+  --color-border:        rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+
+  --color-text:       #e2e6ea;
+  --color-text-muted: #838d99;
+  --color-text-faint: #4a5e6e;
+
+  --color-accent:       #8e9ead;
+  --color-accent-hover: #4a5e6e;
+  --color-accent-dim:   rgba(142, 158, 173, 0.12);
+  --color-on-accent:    #111316;
+
+  --color-danger:  #f09595;
+  --color-success: #5dcaa5;
+  --color-warning: #ef9f27;
+  --color-info:    #38bdf8;
+
+  --color-overlay: #ffffff;
+  --color-canvas: #0d0d0d;
+
   --sf-accent:         #8e9ead;
   --sf-accent-dark:    #4a5e6e;
   --sf-accent-tint:    rgba(142, 158, 173, 0.12);
@@ -78,7 +137,6 @@
 
   --sf-border:         rgba(255, 255, 255, 0.06);
   --sf-border-emphasis: rgba(255, 255, 255, 0.12);
-  --color-border-subtle: rgba(255, 255, 255, 0.08);
 
   --sf-text-primary:   #e2e6ea;
   --sf-text-muted:     #838d99;
@@ -91,6 +149,13 @@
   --sf-success-tint:   rgba(93, 202, 165, 0.12);
   --sf-danger-tint:    rgba(240, 149, 149, 0.12);
   --sf-warning-tint:   rgba(239, 159, 39, 0.12);
+}
+
+/* Theme transition: skip on first paint (pre-hydration inline script already
+   set the right class) so toggling later animates without a flash on load */
+.theme-transition,
+.theme-transition * {
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease !important;
 }
 
 /* ─── Mobile ────────────────────────────────────────────────────────────── */
@@ -196,7 +261,7 @@ input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="
 }
 
 input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):hover:not(:focus) {
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: color-mix(in srgb, var(--color-overlay) 18%, transparent);
 }
 
 input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):focus {

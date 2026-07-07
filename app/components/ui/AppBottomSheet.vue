@@ -25,7 +25,7 @@
       @touchend="onTouchEnd"
     >
       <div class="flex shrink-0 items-center justify-center py-2">
-        <div class="h-1 w-10 rounded-full bg-white/20" />
+        <div class="h-1 w-10 rounded-full bg-overlay/20" />
       </div>
 
       <div
@@ -34,7 +34,7 @@
       >
         <span class="text-sm font-medium text-[var(--color-text)]">{{ title }}</span>
         <button
-          class="rounded-md p-1 text-[var(--color-text-muted)] transition hover:bg-white/10"
+          class="rounded-md p-1 text-[var(--color-text-muted)] transition hover:bg-overlay/10"
           aria-label="Close"
           @click="$emit('close')"
         >

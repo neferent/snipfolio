@@ -4,7 +4,7 @@
       class="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition"
       :class="hidden
         ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/20'
-        : 'bg-white/5 text-[var(--color-text-muted)] hover:bg-white/8 hover:text-[var(--color-text)]'"
+        : 'bg-overlay/5 text-[var(--color-text-muted)] hover:bg-overlay/8 hover:text-[var(--color-text)]'"
       @click="toggle"
     >
       <component :is="hidden ? Eye : EyeOff" class="size-3" />
@@ -24,7 +24,7 @@
           Subscribe
         </button>
         <button
-          class="flex h-7 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]"
+          class="flex h-7 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)]"
         >
           Pay per export
         </button>

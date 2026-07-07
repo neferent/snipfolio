@@ -4,7 +4,7 @@
     :class="isDragOver ? 'bg-[rgba(142,158,173,0.04)]' : 'bg-[var(--color-surface-2)]'"
     :style="{
       borderRadius: prominent ? '16px' : '12px',
-      border: isDragOver ? '1.5px dashed #8e9ead' : '1.5px dashed rgba(255,255,255,0.12)',
+      border: isDragOver ? '1.5px dashed var(--color-accent)' : '1.5px dashed var(--color-border-strong)',
       padding: prominent ? '56px 72px' : '48px 32px',
       minWidth: prominent ? '320px' : undefined,
     }"
@@ -23,7 +23,7 @@
     <p class="mb-1 text-sm font-medium text-[var(--color-text)]">Drop your screenshot here</p>
     <p class="mt-1 text-xs text-[var(--color-text-muted)]">PNG, JPG, or WebP</p>
     <button
-      class="mt-4 flex h-8 items-center rounded-[6px] border-strong px-4 text-sm text-[var(--color-text)] transition hover:bg-white/5"
+      class="mt-4 flex h-8 items-center rounded-[6px] border-strong px-4 text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
       @click="fileInput?.click()"
     >
       Choose file

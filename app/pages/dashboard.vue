@@ -1,382 +1,751 @@
-<template>
-  <div class="flex flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
-    <!-- Header -->
-    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 md:px-6">
-      <svg class="size-6 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <rect width="24" height="24" rx="6" ry="6" fill="#8e9ead"/>
-        <rect x="4" y="3.91" width="8.5" height="12" rx="1.25" ry="1.25" fill="#373d43"/>
-        <rect x="14.05" y="3.91" width="6" height="6.5" rx="1.25" ry="1.25" fill="#373d43"/>
-        <rect x="14.05" y="11.91" width="6" height="8" rx="1.25" ry="1.25" fill="#565f69"/>
-      </svg>
-      <span class="text-sm font-medium text-[var(--color-text)]">snipfol<span class="text-[var(--color-accent)]">.io</span></span>
-      <div class="flex-1" />
-
-      <!-- Desktop auth items -->
-      <template v-if="!isMobile">
-        <template v-if="authStore.isGuest">
-          <span class="text-xs text-[var(--color-text-muted)]">Guest</span>
-          <NuxtLink
-            to="/login"
-            class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
-          >
-            Sign in
-          </NuxtLink>
-        </template>
-        <template v-else>
-          <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
-          <span
-            v-if="isDayPassActive"
-            class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
-          >
-            Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
-          </span>
-          <span
-            v-else-if="authStore.isPro"
-            class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
-          >
-            Access active
-          </span>
-          <a
-            v-if="authStore.isPro"
-            :href="billingUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
-          >
-            Manage subscription
-            <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
-          <button
-            class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)] border-strong"
-            @click="signOut"
-          >
-            Sign out
-          </button>
-        </template>
-      </template>
-
-      <!-- Mobile menu -->
-      <template v-else>
-        <AppDropdown align="right">
-          <template #trigger>
-            <button class="flex size-8 items-center justify-center rounded-[6px] text-[var(--color-text-muted)] transition hover:bg-white/5 active:bg-white/10">
-              <EllipsisVertical class="size-5" />
-            </button>
-          </template>
-          <template v-if="authStore.isGuest">
-            <AppDropdownItem @click="navigateTo('/login')">Sign in</AppDropdownItem>
-          </template>
-          <template v-else>
-            <div class="px-2.5 py-1.5 text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</div>
-            <div v-if="isDayPassActive" class="px-2.5 pb-1.5 text-[10px] text-[var(--color-accent)]">
-              Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
-            </div>
-            <div v-else-if="authStore.isPro" class="px-2.5 pb-1.5 text-[10px] text-[var(--color-accent)]">
-              Access active
-            </div>
-            <AppDropdownItem v-if="authStore.isPro" @click="openBilling">Manage subscription</AppDropdownItem>
-            <AppDropdownItem @click="signOut">Sign out</AppDropdownItem>
-          </template>
-        </AppDropdown>
-      </template>
-    </header>
-
-    <main class="flex-1 overflow-y-auto p-6">
-      <div class="mx-auto max-w-4xl">
-        <div class="mb-6 flex items-center justify-between">
-          <h2 class="text-sm font-medium text-[var(--color-text)]">Your Projects</h2>
-          <button
-            class="flex h-8 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-            @click="onNewProject"
-          >
-            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            New project
-          </button>
-        </div>
-
-        <Transition name="fade" mode="out-in">
-          <!-- Skeleton cards while loading -->
-          <div v-if="loading" key="skeleton" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div
-              v-for="i in 3"
-              :key="i"
-              class="animate-pulse rounded-xl border-subtle bg-[var(--color-surface-3)] p-4"
-            >
-              <div class="mb-3 h-32 rounded-lg bg-white/5" />
-              <div class="h-3 w-3/4 rounded bg-white/5" />
-              <div class="mt-2 h-2.5 w-1/3 rounded bg-white/5" />
-            </div>
-          </div>
-
-          <!-- Project grid -->
-          <div v-else-if="projects.length > 0" key="projects" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div
-              v-for="project in projects"
-              :key="project.id"
-              class="group relative cursor-pointer rounded-xl border-subtle bg-[var(--color-surface-3)] p-4 transition-all hover:[border-color:rgba(255,255,255,0.12)]"
-              @click="openProject(project.id)"
-            >
-              <!-- Thumbnail preview -->
-              <div class="mb-3 h-32 overflow-hidden rounded-lg bg-[var(--color-surface)]">
-                <img
-                  v-if="previews[project.id]"
-                  :src="previews[project.id]"
-                  class="h-full w-full object-cover object-top"
-                  draggable="false"
-                />
-                <div v-else class="flex h-full items-center justify-center">
-                  <svg class="size-8 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12z" />
-                  </svg>
-                </div>
-              </div>
-
-              <input
-                v-if="editingId === project.id"
-                ref="renameInputEl"
-                v-model="editingName"
-                class="w-full truncate rounded bg-[var(--color-surface)] px-1 -mx-1 text-sm font-medium text-[var(--color-text)] outline-none ring-1 ring-[var(--color-accent)]"
-                @click.stop
-                @keydown.enter="commitRename(project.id)"
-                @keydown.escape="cancelRename"
-                @blur="commitRename(project.id)"
-              />
-              <p v-else class="truncate text-sm font-medium text-[var(--color-text)]">{{ project.name }}</p>
-              <p class="mt-0.5 text-xs text-[var(--color-text-muted)]">
-                {{ formatDate(project.updatedAt) }}
-              </p>
-
-              <!-- Desktop: hover-revealed actions -->
-              <template v-if="!isMobile">
-                <button
-                  class="absolute right-10 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-white/10 hover:text-[var(--color-text)]"
-                  @click.stop="startRename(project)"
-                >
-                  <Pencil class="size-4" />
-                </button>
-                <button
-                  class="absolute right-3 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
-                  @click.stop="confirmDelete(project.id, project.name)"
-                >
-                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </template>
-
-              <!-- Mobile: always-visible overflow menu -->
-              <div v-else class="absolute right-2 top-2" @click.stop>
-                <AppDropdown align="right">
-                  <template #trigger>
-                    <button class="flex size-7 items-center justify-center rounded-md bg-black/40 text-[var(--color-text-muted)] backdrop-blur-sm active:bg-black/60">
-                      <EllipsisVertical class="size-4" />
-                    </button>
-                  </template>
-                  <AppDropdownItem @click="startRename(project)">
-                    <Pencil class="size-3.5" /> Rename
-                  </AppDropdownItem>
-                  <AppDropdownItem danger @click="confirmDelete(project.id, project.name)">
-                    <Trash2 class="size-3.5" /> Delete
-                  </AppDropdownItem>
-                </AppDropdown>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empty state -->
-          <div v-else key="empty" class="flex flex-col items-center justify-center py-20 text-center">
-            <svg class="mb-4 size-12 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm0 9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm9.75-9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm0 9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75z" />
-            </svg>
-            <p class="text-sm font-medium text-[var(--color-text)]">No projects yet</p>
-            <button
-              class="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-              @click="onNewProject()"
-            >
-							Create a new project to get started.
-            </button>
-          </div>
-        </Transition>
-      </div>
-    </main>
-
-    <NewProjectModal
-      :open="showNew"
-      @close="showNew = false"
-      @created="onProjectCreated"
-      @composed="onProjectComposed"
-    />
-
-    <!-- Project limit modal -->
-    <AppModal :open="showProUpsell" title="Project limit reached" @close="showProUpsell = false">
-      <p class="text-sm text-[var(--color-text-muted)]">
-        You're limited to <strong class="text-[var(--color-text)]">50 projects</strong>.
-        Delete an existing project to create a new one.
-      </p>
-      <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
-          @click="showProUpsell = false"
-        >
-          Close
-        </button>
-      </template>
-    </AppModal>
-
-    <!-- Delete confirm -->
-    <AppModal :open="!!deleteTarget" title="Delete project?" @close="deleteTarget = null">
-      <p class="text-sm text-[var(--color-text-muted)]">
-        Delete <strong class="text-[var(--color-text)]">{{ deleteTarget?.name }}</strong>? This cannot be undone.
-      </p>
-      <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
-          @click="deleteTarget = null"
-        >
-          Cancel
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-red-500 px-3 text-sm font-medium text-white transition hover:bg-red-600"
-          @click="doDelete"
-        >
-          Delete
-        </button>
-      </template>
-    </AppModal>
-  </div>
-</template>
-
 <script setup lang="ts">
-useHead({ title: 'Dashboard — Snipfolio' })
-import { Pencil, EllipsisVertical, Trash2 } from 'lucide-vue-next'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
-import { useAuth } from '~/composables/useAuth'
 import { useProject } from '~/composables/useProject'
-import { usePlan, formatPassExpiry } from '~/composables/usePlan'
+import AppDropdown from '~/components/ui/AppDropdown.vue'
+import AppDropdownItem from '~/components/ui/AppDropdownItem.vue'
+import {
+  captureViewportSSE,
+  isValidCaptureUrl,
+  resolveCaptureUrl,
+  VIEWPORT_SCREEN_ASPECT,
+  idleProgress,
+  overallProgressPercent,
+  useProgressTick,
+  type CaptureViewport,
+  type ViewportProgress,
+} from '~/composables/useUrlCapture'
+import { drawPhoneFrame } from '~/components/frames/PhoneFrame'
+import { drawTabletFrame } from '~/components/frames/TabletFrame'
+import { drawLaptopFrame } from '~/components/frames/LaptopFrame'
+import BackgroundControls from '~/components/composition/BackgroundControls.vue'
+import CaptionControls from '~/components/composition/CaptionControls.vue'
+import AppColorPicker from '~/components/ui/AppColorPicker.vue'
+import UserMenu from '~/components/ui/UserMenu.vue'
+import StudioFrame from '~/components/studio/StudioFrame.vue'
+import { drawBackground, drawCaption, getFrameScreenBounds } from '~/composables/useCanvasRenderer'
+import { usePlan } from '~/composables/usePlan'
+import { useAuth } from '~/composables/useAuth'
+import type { BackgroundConfig, CaptionConfig, DeviceFrame } from '~/types'
 
-definePageMeta({ middleware: 'auth' })
+useHead({ title: 'Studio — Snipfolio' })
 
+const { isPro, captureLimit, capturesRemaining } = usePlan()
+const { refreshProfile } = useAuth()
+
+// ---- Auth ----
 const authStore = useAuthStore()
-const projectStore = useProjectStore()
-const { signOut: authSignOut } = useAuth()
-const { fetchProjects, deleteProject, renameProject, loadPreview } = useProject()
-const { canCreateProject, isDayPassActive, dayPassExpiresAt } = usePlan()
-const isMobile = useIsMobile()
-
-const config = useRuntimeConfig()
-const billingUrl = config.public.lsStoreSlug
-  ? `https://${config.public.lsStoreSlug}.lemonsqueezy.com/billing`
-  : 'https://app.lemonsqueezy.com/my-orders'
-
-const projects = computed(() => projectStore.projects)
-const showNew = ref(false)
-const openToUrl = ref(false)
-const showProUpsell = ref(false)
-const deleteTarget = ref<{ id: string; name: string } | null>(null)
-const previews = ref<Record<string, string>>({})
-const loading = ref(true)
-const editingId = ref<string | null>(null)
-const editingName = ref('')
-const renameInputEl = ref<HTMLInputElement[]>([])
-
-watch(projects, (list) => {
-  for (const p of list) {
-    if (previews.value[p.id]) continue
-    loadPreview(p.id)
-      .then((thumb) => {
-        if (thumb) previews.value = { ...previews.value, [p.id]: thumb }
-      })
-      .catch(() => {})
+const router = useRouter()
+onMounted(() => {
+  if (!authStore.isAuthenticated && !authStore.isGuest) {
+    router.replace('/login')
   }
 })
 
-onMounted(async () => {
-  if (useRoute().query.openUrlCapture === '1') {
-    openToUrl.value = true
-    showNew.value = true
-    await navigateTo({ path: '/dashboard' }, { replace: true })
+// ---- Projects dropdown ----
+const projectStore = useProjectStore()
+const { fetchProjects } = useProject()
+const recentProjects = computed(() => projectStore.projects.slice(0, 8))
+onMounted(() => {
+  if (authStore.isAuthenticated) fetchProjects().catch(() => {})
+})
+
+// ---- Frame SVG aspect ratios (width/height) ----
+const FRAME_SVG_ASPECT: Record<CaptureViewport, number> = {
+  desktop: 3809.99 / 2300,
+  tablet: 2449.87 / 1877.1,
+  mobile: 772.5 / 1600,
+}
+
+const DEFAULT_FRAME_WIDTH: Record<CaptureViewport, number> = {
+  desktop: 1300,
+  tablet: 900,
+  mobile: 300,
+}
+
+const devices: { id: CaptureViewport; label: string }[] = [
+  { id: 'desktop', label: 'Desktop' },
+  { id: 'tablet', label: 'Tablet' },
+  { id: 'mobile', label: 'Mobile' },
+]
+
+// ---- Device toggles ----
+const activeDevices = ref<CaptureViewport[]>(['desktop'])
+const selectedDevice = ref<CaptureViewport | null>('desktop')
+
+function isActive(d: CaptureViewport) {
+  return activeDevices.value.includes(d)
+}
+
+// Fixed z-/draw-order: desktop sits behind, tablet and mobile layer in front so
+// their edges can overlap the laptop like in the reference mockups.
+const RENDER_ORDER: CaptureViewport[] = ['desktop', 'tablet', 'mobile']
+const orderedActiveDevices = computed(() => RENDER_ORDER.filter((d) => activeDevices.value.includes(d)))
+
+function toggleDevice(d: CaptureViewport) {
+  if (isActive(d)) {
+    if (activeDevices.value.length === 1) return // keep at least one device active
+    activeDevices.value = activeDevices.value.filter((x) => x !== d)
+    if (selectedDevice.value === d) selectedDevice.value = activeDevices.value[0] ?? null
+  } else {
+    activeDevices.value = [...activeDevices.value, d]
+    selectedDevice.value = d
   }
+  nextTick(() => { arrangeFrames(); updateAreaSize() })
+}
+
+// ---- Per-device frame state (output pixel coordinates) ----
+interface FrameState {
+  x: number
+  y: number
+  width: number
+  frameColor: string
+  scrollOffset: number
+  capturedImage: HTMLImageElement | null
+  caption: CaptionConfig | undefined
+}
+
+function makeFrameState(d: CaptureViewport): FrameState {
+  return {
+    x: 0,
+    y: 0,
+    width: DEFAULT_FRAME_WIDTH[d],
+    frameColor: '#262c44',
+    scrollOffset: 0,
+    capturedImage: null,
+    caption: undefined,
+  }
+}
+
+const frameState = reactive<Record<CaptureViewport, FrameState>>({
+  desktop: makeFrameState('desktop'),
+  tablet: makeFrameState('tablet'),
+  mobile: makeFrameState('mobile'),
+})
+
+function frameHeight(d: CaptureViewport) {
+  return frameState[d].width / FRAME_SVG_ASPECT[d]
+}
+
+// Map CaptureViewport → DeviceFrame for caption/screen-bounds lookup
+function deviceFrameFor(d: CaptureViewport): DeviceFrame {
+  if (d === 'mobile') return 'phone'
+  if (d === 'tablet') return 'tablet'
+  return 'laptop'
+}
+
+function maxScrollOffsetFor(d: CaptureViewport) {
+  const img = frameState[d].capturedImage
+  if (!img) return 0
+  const vw = img.naturalWidth
+  const vh = Math.round(vw / VIEWPORT_SCREEN_ASPECT[d])
+  return Math.max(0, img.naturalHeight - vh)
+}
+
+/** Lays out all active frames. A single device is just centered; two or three overlap like the classic device-mockup layout. */
+function arrangeFrames() {
+  const ds = orderedActiveDevices.value
+  if (ds.length === 0) return
+
+  if (ds.length === 1) {
+    centerFrame(ds[0]!)
+    return
+  }
+
+  arrangeOverlapGroup(ds)
+}
+
+// ---- Default layout tuning knobs ----
+// Everything below controls the size/position of the desktop/tablet/mobile mockup
+// layouts (arrangeOverlapGroup, used for any 2- or 3-device combo). Change one of
+// these and every combo that includes that device updates consistently — there's
+// no per-combo layout code to hunt through.
+//
+//   UNIT_HEIGHT     — each device's height relative to the laptop (laptop is fixed
+//                      at 1). Raise a number to make that device bigger relative to
+//                      the others; e.g. mobile: 0.7 means the phone frame is 70% of
+//                      the laptop's height. Width follows automatically from
+//                      FRAME_SVG_ASPECT, so you never set width directly.
+//   OVERLAP_FRACTION — how much of a "front" device's own width tucks behind the
+//                      device it overlaps (0 = edge-to-edge, no overlap; 1 = fully
+//                      hidden). Applies to every front device; split it into a
+//                      per-device Record<CaptureViewport, number> if a device ever
+//                      needs its own overlap amount.
+//   OVERLAP_SIDE     — which side of the anchor each device sits on ('left' or
+//                      'right'). The anchor itself (desktop, or tablet if desktop
+//                      isn't active — see RENDER_ORDER) doesn't need an entry, it's
+//                      always centered.
+//   marginRatio      — set inside arrangeOverlapGroup below. Fraction of the output
+//                      canvas the whole group is allowed to fill (0.96 = up to 4%
+//                      breathing room on whichever axis is the tighter fit). Raise
+//                      it to make everything bigger; the group still scales down to
+//                      avoid clipping on canvases with an unusual aspect ratio.
+//
+// All three devices are always bottom-aligned to one shared line, so changing a
+// height ratio never needs a matching y-offset tweak.
+const UNIT_HEIGHT: Record<CaptureViewport, number> = {
+  desktop: 1,
+  tablet: 0.666,
+  mobile: 0.7,
+}
+const OVERLAP_FRACTION = 0.35
+const OVERLAP_SIDE: Partial<Record<CaptureViewport, 'left' | 'right'>> = {
+  mobile: 'left',
+  tablet: 'right',
+}
+
+/**
+ * Matches the classic "bigger device centered, smaller devices in front overlapping its
+ * edges" mockup for any 2- or 3-device combo. The device earliest in RENDER_ORDER (i.e.
+ * desktop, else tablet) is the anchor and stays centered/back; the rest sit in front,
+ * bottom-aligned, overlapping the anchor's left/right edge.
+ */
+function arrangeOverlapGroup(ds: CaptureViewport[]) {
+  const [anchor, ...fronts] = RENDER_ORDER.filter((d) => ds.includes(d))
+  if (!anchor) return
+
+  const unitOf = (d: CaptureViewport) => ({ h: UNIT_HEIGHT[d], w: UNIT_HEIGHT[d] * FRAME_SVG_ASPECT[d] })
+  const anchorU = unitOf(anchor)
+
+  let leftExtra = 0
+  let rightExtra = 0
+  const frontUnits = new Map<CaptureViewport, { h: number; w: number; overlap: number }>()
+  for (const f of fronts) {
+    const u = unitOf(f)
+    const overlap = u.w * OVERLAP_FRACTION
+    frontUnits.set(f, { ...u, overlap })
+    if (OVERLAP_SIDE[f] === 'left') leftExtra = u.w - overlap
+    else rightExtra = u.w - overlap
+  }
+
+  const totalW = leftExtra + anchorU.w + rightExtra
+  const totalH = Math.max(anchorU.h, ...fronts.map((f) => frontUnits.get(f)!.h))
+
+  const marginRatio = 0.96
+  const scale = Math.min((outputWidth.value * marginRatio) / totalW, (outputHeight.value * marginRatio) / totalH)
+
+  const AW = anchorU.w * scale, AH = anchorU.h * scale
+  const groupW = totalW * scale
+  const groupLeft = (outputWidth.value - groupW) / 2
+  const bottom = (outputHeight.value + totalH * scale) / 2
+
+  const anchorX = groupLeft + leftExtra * scale
+  frameState[anchor].width = Math.round(AW)
+  frameState[anchor].x = Math.round(anchorX)
+  frameState[anchor].y = Math.round(bottom - AH)
+
+  for (const f of fronts) {
+    const u = frontUnits.get(f)!
+    const FW = u.w * scale, FH = u.h * scale, FOverlap = u.overlap * scale
+    const x = OVERLAP_SIDE[f] === 'left' ? anchorX - FW + FOverlap : anchorX + AW - FOverlap
+    frameState[f].width = Math.round(FW)
+    frameState[f].x = Math.round(x)
+    frameState[f].y = Math.round(bottom - FH)
+  }
+}
+
+function centerFrame(d: CaptureViewport) {
+  frameState[d].x = Math.round((outputWidth.value - frameState[d].width) / 2)
+  frameState[d].y = Math.round((outputHeight.value - frameHeight(d)) / 2)
+}
+
+// ---- Capture state (per device) ----
+const url = ref('')
+const captureState = reactive<Record<CaptureViewport, { isCapturing: boolean; progress: ViewportProgress; error: string | null }>>({
+  desktop: { isCapturing: false, progress: idleProgress(), error: null },
+  tablet: { isCapturing: false, progress: idleProgress(), error: null },
+  mobile: { isCapturing: false, progress: idleProgress(), error: null },
+})
+const abortCtrl = ref<AbortController | null>(null)
+const { now: tickNow, start: startTick, stop: stopTick } = useProgressTick()
+
+const isCapturing = computed(() => activeDevices.value.some((d) => captureState[d].isCapturing))
+const captureProgressPct = computed(() =>
+  overallProgressPercent(activeDevices.value.map((d) => captureState[d].progress), tickNow.value),
+)
+const captureErrors = computed(() => activeDevices.value.map((d) => captureState[d].error).filter((e): e is string => !!e))
+const hasAnyCapture = computed(() => activeDevices.value.some((d) => frameState[d].capturedImage))
+
+const captureLimitReached = computed(() =>
+  authStore.profileLoaded && capturesRemaining.value <= 0,
+)
+
+async function captureOne(d: CaptureViewport, resolvedUrl: string) {
+  captureState[d].isCapturing = true
+  captureState[d].error = null
+  captureState[d].progress = { phase: 'connecting', phaseStartedAt: Date.now() }
+  try {
+    const token = authStore.token
+    if (!token) throw new Error('Not signed in')
+    const { img } = await captureViewportSSE(
+      resolvedUrl,
+      d,
+      token,
+      (p) => { captureState[d].progress = p },
+      abortCtrl.value?.signal,
+    )
+    frameState[d].capturedImage = img
+    frameState[d].scrollOffset = 0
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') captureState[d].error = err?.message || 'Capture failed'
+  } finally {
+    captureState[d].isCapturing = false
+  }
+}
+
+async function capture() {
+  if (!isValidCaptureUrl(url.value) || isCapturing.value || captureLimitReached.value) return
+  abortCtrl.value?.abort()
+  abortCtrl.value = new AbortController()
+  startTick()
 
   try {
-    await fetchProjects()
-  } catch (e) {
-    console.error('[dashboard] failed to load projects:', e)
+    const resolvedUrl = resolveCaptureUrl(url.value)
+    for (const d of activeDevices.value) {
+      await captureOne(d, resolvedUrl)
+    }
+    await nextTick()
+    arrangeFrames()
   } finally {
-    loading.value = false
+    stopTick()
+    refreshProfile()
   }
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter' && document.activeElement === urlInput.value) capture()
+}
+
+const urlInput = ref<HTMLInputElement | null>(null)
+
+// ---- Output / canvas ----
+const outputWidth = ref(1920)
+const outputHeight = ref(1080)
+
+const background = ref<BackgroundConfig>({
+  type: 'solid',
+  color: '#1a1a2e',
+  gradientStart: '#667eea',
+  gradientEnd: '#764ba2',
+  gradientAngle: 135,
+  noiseOpacity: 0,
 })
 
-function onNewProject() {
-  if (!canCreateProject()) {
-    showProUpsell.value = true
-  } else {
-    showNew.value = true
+const loadedBgImage = ref<HTMLImageElement | undefined>()
+watch(
+  () => background.value,
+  (bg) => {
+    if (bg.type === 'image' && bg.imageDataUrl) {
+      const img = new Image()
+      img.onload = () => { loadedBgImage.value = img }
+      img.src = bg.imageDataUrl
+    } else {
+      loadedBgImage.value = undefined
+    }
+  },
+  { immediate: true, deep: false },
+)
+
+// ---- View scale (display px per output px) ----
+const canvasArea = ref<HTMLElement | null>(null)
+const areaW = ref(900)
+const areaH = ref(600)
+
+function updateAreaSize() {
+  if (!canvasArea.value) return
+  areaW.value = canvasArea.value.clientWidth
+  areaH.value = canvasArea.value.clientHeight
+}
+
+const viewScale = computed(() => {
+  const sx = areaW.value / outputWidth.value
+  const sy = areaH.value / outputHeight.value
+  return Math.min(sx, sy) * 0.96
+})
+
+const canvasDisplayW = computed(() => Math.round(outputWidth.value * viewScale.value))
+const canvasDisplayH = computed(() => Math.round(outputHeight.value * viewScale.value))
+
+onMounted(() => {
+  updateAreaSize()
+  window.addEventListener('resize', updateAreaSize)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', updateAreaSize)
+  abortCtrl.value?.abort()
+})
+
+// ---- Full-output canvas rendering (background + frames together, like the composer) ----
+const outputCanvas = ref<HTMLCanvasElement | null>(null)
+
+// ---- Export ----
+function createScrolledViewport(img: HTMLImageElement, offset: number, aspect: number): HTMLCanvasElement {
+  const vw = img.naturalWidth
+  const vh = Math.round(vw / aspect)
+  const y = Math.min(Math.max(0, Math.round(offset)), Math.max(0, img.naturalHeight - vh))
+  const c = document.createElement('canvas')
+  c.width = vw
+  c.height = Math.max(1, vh)
+  c.getContext('2d')!.drawImage(img, 0, y, vw, vh, 0, 0, vw, vh)
+  return c
+}
+
+function drawFrameOnto(ctx: CanvasRenderingContext2D, d: CaptureViewport) {
+  const fs = frameState[d]
+  if (!fs.capturedImage) return
+  const viewport = createScrolledViewport(fs.capturedImage, fs.scrollOffset, VIEWPORT_SCREEN_ASPECT[d])
+  const fw = fs.width
+  const fh = frameHeight(d)
+  const fx = fs.x
+  const fy = fs.y
+  const fc = fs.frameColor
+
+  if (d === 'mobile') drawPhoneFrame(ctx, fx, fy, fw, fh, viewport, fc)
+  else if (d === 'tablet') drawTabletFrame(ctx, fx, fy, fw, fh, viewport, fc)
+  else drawLaptopFrame(ctx, fx, fy, fw, fh, viewport, fc)
+
+  if (fs.caption) {
+    const scr = getFrameScreenBounds(deviceFrameFor(d), fx, fy, fw, fh)
+    drawCaption(ctx, fs.caption, scr.x, scr.y, scr.w, scr.h, scr.r)
   }
 }
 
-async function onProjectCreated(projectId: string) {
-  showNew.value = false
-  await navigateTo(`/project/${projectId}`)
+async function doExport() {
+  if (!hasAnyCapture.value) return
+
+  const c = document.createElement('canvas')
+  c.width = outputWidth.value
+  c.height = outputHeight.value
+  const ctx = c.getContext('2d')!
+
+  drawBackground(ctx, c.width, c.height, background.value, undefined, loadedBgImage.value)
+  for (const d of orderedActiveDevices.value) drawFrameOnto(ctx, d)
+
+  const link = document.createElement('a')
+  link.download = 'snipfolio.png'
+  link.href = c.toDataURL('image/png')
+  link.click()
 }
 
-async function onProjectComposed(projectId: string, compositionId: string) {
-  showNew.value = false
-  await navigateTo(`/project/${projectId}/compose/${compositionId}`)
+// ---- Live preview canvas (renders background + frames into one canvas, like the composer) ----
+function renderCanvas() {
+  const c = outputCanvas.value
+  if (!c) return
+  const W = outputWidth.value
+  const H = outputHeight.value
+  c.width = W
+  c.height = H
+  const ctx = c.getContext('2d')!
+  ctx.clearRect(0, 0, W, H)
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+
+  drawBackground(ctx, W, H, background.value, undefined, loadedBgImage.value)
+  for (const d of orderedActiveDevices.value) drawFrameOnto(ctx, d)
 }
 
-function openProject(id: string) {
-  navigateTo(`/project/${id}`)
-}
+watch(
+  [activeDevices, frameState, outputWidth, outputHeight, background, loadedBgImage],
+  () => nextTick(renderCanvas),
+  { deep: true },
+)
 
-function confirmDelete(id: string, name: string) {
-  deleteTarget.value = { id, name }
-}
+onMounted(() => nextTick(renderCanvas))
 
-function startRename(project: { id: string; name: string }) {
-  editingId.value = project.id
-  editingName.value = project.name
-  nextTick(() => {
-    const input = renameInputEl.value[0]
-    input?.focus()
-    input?.select()
-  })
+// ---- Output size input ----
+function setOutputWidth(e: Event) {
+  const v = parseInt((e.target as HTMLInputElement).value)
+  if (!isNaN(v)) outputWidth.value = Math.max(400, Math.min(4000, v))
+  nextTick(updateAreaSize)
 }
-
-async function commitRename(id: string) {
-  if (editingId.value !== id) return
-  editingId.value = null
-  const project = projects.value.find((p) => p.id === id)
-  const trimmed = editingName.value.trim()
-  if (!project || trimmed === project.name) return
-  await renameProject(id, trimmed)
-}
-
-function cancelRename() {
-  editingId.value = null
-}
-
-async function doDelete() {
-  if (!deleteTarget.value) return
-  await deleteProject(deleteTarget.value.id)
-  deleteTarget.value = null
-}
-
-function openBilling() {
-  window.open(billingUrl, '_blank')
-}
-
-async function signOut() {
-  await authSignOut()
-}
-
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(
-    new Date(iso),
-  )
+function setOutputHeight(e: Event) {
+  const v = parseInt((e.target as HTMLInputElement).value)
+  if (!isNaN(v)) outputHeight.value = Math.max(300, Math.min(3000, v))
 }
 </script>
+
+<template>
+  <div class="flex h-screen flex-col overflow-hidden bg-[var(--color-surface)] text-[var(--color-text)]">
+
+    <!-- Top bar (matches advanced editor nav) -->
+    <header class="flex h-12 w-full shrink-0 items-center border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4">
+      <div class="mx-auto flex w-full max-w-[1360px] items-center gap-2">
+        <AppLogo />
+
+        <!-- Projects dropdown -->
+        <AppDropdown align="left">
+          <template #trigger>
+            <button class="flex items-center gap-1 rounded-[6px] px-2 py-1 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)]">
+              Projects
+              <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </template>
+          <div v-if="recentProjects.length === 0" class="px-2.5 py-1.5 text-xs text-[var(--color-text-muted)]">
+            No projects yet
+          </div>
+          <AppDropdownItem
+            v-for="p in recentProjects"
+            :key="p.id"
+            @click="navigateTo(`/advanced/${p.id}`)"
+          >
+            {{ p.name }}
+          </AppDropdownItem>
+          <div class="my-0.5 h-px bg-[var(--color-border)]" />
+          <AppDropdownItem @click="navigateTo('/projects')">View all projects →</AppDropdownItem>
+        </AppDropdown>
+
+        <div class="flex-1" />
+
+        <NuxtLink
+          to="/projects"
+          class="flex h-8 items-center gap-1.5 rounded-[6px] border-strong px-3 text-xs font-medium text-[var(--color-text)] transition hover:bg-overlay/5"
+        >
+          Advanced Editor
+          <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </NuxtLink>
+        <ThemeToggle />
+        <UserMenu />
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="flex flex-1 justify-center overflow-hidden p-4">
+      <div class="mx-auto flex w-full max-w-[1360px] flex-col gap-4 overflow-hidden">
+
+        <!-- Capture + Canvas panels -->
+        <div class="flex shrink-0 flex-wrap gap-4">
+
+        <!-- Capture panel -->
+        <div class="flex flex-1 min-w-[420px] flex-wrap items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-6 py-3">
+          <!-- Device toggles -->
+          <div class="flex gap-1">
+            <label
+              v-for="d in devices"
+              :key="d.id"
+              class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs transition"
+              :class="isActive(d.id)
+                ? 'bg-[var(--color-accent)] text-white'
+                : 'text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)]'"
+            >
+              <input
+                type="checkbox"
+                class="accent-[var(--color-accent)]"
+                :checked="isActive(d.id)"
+                @change="toggleDevice(d.id)"
+              />
+              {{ d.label }}
+            </label>
+          </div>
+
+          <div class="h-5 w-px bg-[var(--color-border)]" />
+
+          <!-- URL input -->
+          <div class="relative flex flex-1 min-w-[220px] max-w-xl items-center gap-2">
+            <input
+              ref="urlInput"
+              v-model="url"
+              type="text"
+              placeholder="Enter a URL to capture…"
+              class="h-8 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs text-[var(--color-text)] placeholder-[var(--color-text-muted)] outline-none focus:border-[var(--color-accent)] transition"
+              @keydown="onKeydown"
+            />
+            <button
+              class="h-8 shrink-0 rounded-md px-3 text-xs font-medium transition disabled:opacity-40"
+              :class="isCapturing
+                ? 'bg-[var(--color-accent-dim)] text-[var(--color-accent)] cursor-default'
+                : 'bg-[var(--color-accent)] text-white hover:opacity-90'"
+              :disabled="!isValidCaptureUrl(url) || isCapturing || captureLimitReached"
+              @click="capture"
+            >
+              {{ isCapturing ? 'Capturing…' : `Capture ${activeDevices.length > 1 ? 'all' : ''}` }}
+            </button>
+          </div>
+
+          <!-- Progress bar -->
+          <div v-if="isCapturing" class="h-1 w-24 shrink-0 overflow-hidden rounded-full bg-overlay/10">
+            <div
+              class="h-full rounded-full bg-[var(--color-accent)] transition-all duration-300"
+              :style="{ width: `${captureProgressPct}%` }"
+            />
+          </div>
+
+          <div v-if="!isPro && authStore.profileLoaded" class="shrink-0 text-[11px] text-[var(--color-text-muted)]">
+            {{ capturesRemaining }}/{{ captureLimit }} free captures left
+          </div>
+
+          <div v-if="captureErrors.length" class="shrink-0 text-xs text-red-400">{{ captureErrors[0] }}</div>
+        </div>
+
+        <!-- Canvas (output size) panel -->
+        <div class="flex shrink-0 flex-wrap items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-6 py-3">
+          <!-- Output size -->
+          <div class="flex items-center gap-2">
+            <label class="text-[10px] text-[var(--color-text-muted)]">Size</label>
+            <input
+              type="number"
+              :value="outputWidth"
+              min="400"
+              max="4000"
+              class="h-8 w-20 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+              @change="setOutputWidth"
+            />
+            <span class="text-xs text-[var(--color-text-muted)]">×</span>
+            <input
+              type="number"
+              :value="outputHeight"
+              min="300"
+              max="3000"
+              class="h-8 w-20 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+              @change="setOutputHeight"
+            />
+          </div>
+
+          <div class="h-5 w-px bg-[var(--color-border)]" />
+
+          <!-- Common presets -->
+          <div class="flex flex-wrap gap-1">
+            <button
+              v-for="preset in (([[1920, 1080], [1600, 900], [1280, 800], [1080, 1080]] as [number, number][]))"
+              :key="`${preset[0]}x${preset[1]}`"
+              class="rounded px-2 py-0.5 text-[10px] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-overlay/5 transition"
+              @click="() => { outputWidth = preset[0]; outputHeight = preset[1]; nextTick(updateAreaSize) }"
+            >
+              {{ preset[0] }}×{{ preset[1] }}
+            </button>
+          </div>
+        </div>
+
+        </div>
+
+        <!-- Canvas + settings row -->
+        <div class="flex flex-1 gap-4 overflow-hidden">
+
+          <!-- Canvas panel -->
+          <div
+            ref="canvasArea"
+            class="flex flex-1 items-center justify-center overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-canvas)]"
+          >
+            <!-- Artboard: single canvas renders background + frames (shadows bleed onto background) -->
+            <div
+              class="relative shadow-2xl"
+              :style="{ width: `${canvasDisplayW}px`, height: `${canvasDisplayH}px`, flexShrink: 0 }"
+            >
+              <canvas
+                ref="outputCanvas"
+                class="pointer-events-none block"
+                :style="{ width: `${canvasDisplayW}px`, height: `${canvasDisplayH}px` }"
+              />
+
+              <!-- Empty state -->
+              <div
+                v-if="!hasAnyCapture && !isCapturing"
+                class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center"
+              >
+                <div class="text-3xl opacity-20">↑</div>
+                <p class="text-sm text-[var(--color-text-muted)] opacity-60">Enter a URL above and click Capture</p>
+              </div>
+
+              <!-- Interaction overlays (drag, resize, scroll — no rendering) — one per active device -->
+              <StudioFrame
+                v-for="d in orderedActiveDevices"
+                :key="d"
+                :class="selectedDevice === d ? 'z-10' : ''"
+                :x="frameState[d].x"
+                :y="frameState[d].y"
+                :width="frameState[d].width"
+                :height="frameHeight(d)"
+                :scroll-offset="frameState[d].scrollOffset"
+                :max-scroll-offset="maxScrollOffsetFor(d)"
+                :view-scale="viewScale"
+                :svg-aspect="FRAME_SVG_ASPECT[d]"
+                @mousedown.capture="selectedDevice = d"
+                @update:x="frameState[d].x = $event"
+                @update:y="frameState[d].y = $event"
+                @update:width="frameState[d].width = $event"
+                @update:scroll-offset="frameState[d].scrollOffset = $event"
+              />
+            </div>
+          </div>
+
+          <!-- Sidebar panel -->
+          <aside class="flex w-72 shrink-0 flex-col gap-0 overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)]">
+
+            <!-- Frame -->
+            <div class="border-b border-[var(--color-border)] p-4 space-y-3">
+              <p class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Frame</p>
+
+              <!-- Device tabs (only when more than one active) -->
+              <div v-if="activeDevices.length > 1" class="flex gap-1">
+                <button
+                  v-for="d in orderedActiveDevices"
+                  :key="d"
+                  class="rounded px-2 py-1 text-xs transition"
+                  :class="selectedDevice === d
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)]'"
+                  @click="selectedDevice = d"
+                >
+                  {{ devices.find((x) => x.id === d)?.label }}
+                </button>
+              </div>
+
+              <template v-if="selectedDevice">
+                <!-- Frame color -->
+                <div class="flex items-center gap-2">
+                  <label class="text-xs text-[var(--color-text-muted)]">Color</label>
+                  <AppColorPicker v-model="frameState[selectedDevice].frameColor" />
+                  <button
+                    class="rounded-[6px] text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+                    @click="frameState[selectedDevice].frameColor = '#262c44'"
+                  >
+                    Reset
+                  </button>
+                </div>
+
+                <!-- Center frame -->
+                <button
+                  class="w-full rounded-md border border-[var(--color-border)] py-1.5 text-xs text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)] transition"
+                  @click="centerFrame(selectedDevice)"
+                >
+                  Center frame
+                </button>
+              </template>
+            </div>
+
+            <!-- Caption -->
+            <div v-if="selectedDevice" class="border-b border-[var(--color-border)] p-4">
+              <CaptionControls
+                label="Caption"
+                :model-value="frameState[selectedDevice].caption"
+                @update:model-value="frameState[selectedDevice].caption = $event"
+              />
+            </div>
+
+            <!-- Background -->
+            <div class="border-b border-[var(--color-border)] p-4">
+              <p class="mb-3 text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Background</p>
+              <BackgroundControls v-model="background" />
+            </div>
+
+            <!-- Export -->
+            <div class="p-4 mt-auto">
+              <button
+                class="w-full rounded-md bg-[var(--color-accent)] py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40"
+                :disabled="!hasAnyCapture"
+                @click="doExport"
+              >
+                Export PNG
+              </button>
+            </div>
+          </aside>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

@@ -19,13 +19,20 @@ export function usePlan() {
 
   const isPro = computed(() => authStore.isPro || isDayPassActive.value)
 
+  const captureLimit = computed(() => authStore.captureLimit)
+  const capturesUsed = computed(() => authStore.capturesUsed)
+  const capturesRemaining = computed(() => authStore.capturesRemaining)
+
   const PROJECT_LIMIT = 50
 
   function canCreateProject(): boolean {
     return projectStore.projects.length < PROJECT_LIMIT
   }
 
-  return { isGuest, isPro, isAdmin, isDayPassActive, dayPassExpiresAt, canCreateProject }
+  return {
+    isGuest, isPro, isAdmin, isDayPassActive, dayPassExpiresAt, canCreateProject,
+    captureLimit, capturesUsed, capturesRemaining,
+  }
 }
 
 /** Formats a pass expiry as e.g. "Jun 17, 3:42 PM" — used for the "active until" UI. */

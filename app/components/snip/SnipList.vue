@@ -15,7 +15,7 @@
 
       <!-- Snips section -->
       <div class="border-b border-[var(--color-border)]">
-        <div class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 transition hover:bg-white/5">
+        <div class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 transition hover:bg-overlay/5">
           <button
             class="flex flex-1 items-center gap-1.5 text-left"
             @click="snipsOpen = !snipsOpen"
@@ -25,7 +25,7 @@
               :class="snipsOpen ? '' : '-rotate-90'"
             />
             <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Snips</span>
-            <span class="inline-flex items-center justify-center rounded bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ allSnips.length }}</span>
+            <span class="inline-flex items-center justify-center rounded bg-overlay/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ allSnips.length }}</span>
           </button>
           <AppDropdown v-if="activeSourceId" align="right">
             <template #trigger>
@@ -48,7 +48,7 @@
           <template v-if="sources.length > 1">
             <div v-for="source in sources" :key="source.id">
               <button
-                class="flex w-full items-center gap-1.5 px-3 py-1.5 text-left transition hover:bg-white/5"
+                class="flex w-full items-center gap-1.5 px-3 py-1.5 text-left transition hover:bg-overlay/5"
                 @click="toggleGroup(source.id)"
               >
                 <ChevronDown
@@ -61,7 +61,7 @@
                 >
                   {{ source.label }}
                 </span>
-                <span class="ml-auto inline-flex shrink-0 items-center justify-center rounded bg-white/10 px-1 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">
+                <span class="ml-auto inline-flex shrink-0 items-center justify-center rounded bg-overlay/10 px-1 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">
                   {{ snipsBySource(source.id).length }}
                 </span>
               </button>
@@ -73,7 +73,7 @@
                   :class="
                     snip.id === selectedId
                       ? 'bg-[var(--color-accent)]/15 text-[var(--color-text)]'
-                      : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-[var(--color-text)]'
+                      : 'text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)]'
                   "
                   @click="selectSnip(snip.id, source.id)"
                 >
@@ -112,7 +112,7 @@
               :class="
                 snip.id === selectedId
                   ? 'bg-[var(--color-accent)]/15 text-[var(--color-text)]'
-                  : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-[var(--color-text)]'
+                  : 'text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)]'
               "
               @click="store.selectSnip(snip.id)"
             >
@@ -143,7 +143,7 @@
 
       <!-- Compositions section -->
       <div v-if="allSnips.length > 0">
-        <div class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 transition hover:bg-white/5">
+        <div class="flex h-10 w-full shrink-0 items-center gap-1.5 px-3 transition hover:bg-overlay/5">
           <button
             class="flex flex-1 items-center gap-1.5 text-left"
             @click="compositionsOpen = !compositionsOpen"
@@ -153,7 +153,7 @@
               :class="compositionsOpen ? '' : '-rotate-90'"
             />
             <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Mockups</span>
-            <span class="inline-flex items-center justify-center rounded bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ compositions.length }}</span>
+            <span class="inline-flex items-center justify-center rounded bg-overlay/10 px-1.5 py-0.5 text-[9px] leading-none text-[var(--color-text-muted)]">{{ compositions.length }}</span>
           </button>
           <button
             class="ml-auto flex items-center gap-0.5 rounded-[4px] bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
@@ -168,8 +168,8 @@
         <template v-if="compositionsOpen">
           <div v-for="comp in compositions" :key="comp.id" class="group relative border-b border-[var(--color-border)]/50">
             <NuxtLink
-              :to="`/project/${projectId}/compose/${comp.id}`"
-              class="flex min-w-0 items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/5"
+              :to="`/advanced/${projectId}/compose/${comp.id}`"
+              class="flex min-w-0 items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-overlay/5"
               :class="$route.params.compositionId === comp.id ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'text-[var(--color-text)]'"
             >
               <div class="h-[32px] w-[52px] shrink-0 overflow-hidden rounded border border-[var(--color-border)]">
@@ -211,7 +211,7 @@
       </p>
       <template #footer>
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/10"
           @click="deleteCompTarget = null"
         >
           Cancel

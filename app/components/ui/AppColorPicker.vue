@@ -25,7 +25,7 @@ function onNativeInput(e: Event) {
   <div class="flex items-center gap-1.5">
     <button
       type="button"
-      class="relative h-6 w-6 shrink-0 cursor-pointer overflow-hidden rounded-[5px] ring-1 ring-inset ring-white/10 transition hover:ring-white/25"
+      class="relative h-6 w-6 shrink-0 cursor-pointer overflow-hidden rounded-[5px] ring-1 ring-inset ring-overlay/10 transition hover:ring-overlay/25"
       :style="{ background: modelValue }"
       @click="openPicker"
     >

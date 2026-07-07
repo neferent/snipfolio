@@ -36,7 +36,7 @@
                   {{ title }}
                 </DialogTitle>
                 <button
-                  class="rounded-[6px] p-1 text-[var(--color-text-muted)] transition hover:bg-white/10 hover:text-[var(--color-text)]"
+                  class="rounded-[6px] p-1 text-[var(--color-text-muted)] transition hover:bg-overlay/10 hover:text-[var(--color-text)]"
                   aria-label="Close"
                   @click="$emit('close')"
                 >

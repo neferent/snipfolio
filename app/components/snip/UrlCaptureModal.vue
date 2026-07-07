@@ -28,12 +28,12 @@
           inputmode="url"
           placeholder="https://example.com"
           :disabled="isCapturing"
-          class="h-8 flex-1 rounded-[6px] border bg-white/5 px-3 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-white/20 disabled:opacity-40"
-          :class="urlError ? 'border-red-400/40' : 'border-white/10'"
+          class="h-8 flex-1 rounded-[6px] border bg-overlay/5 px-3 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-overlay/20 disabled:opacity-40"
+          :class="urlError ? 'border-red-400/40' : 'border-overlay/10'"
           @keydown.enter="onCapture"
         />
         <button
-          class="flex h-8 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text)] transition hover:bg-white/5 disabled:opacity-40"
+          class="flex h-8 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text)] transition hover:bg-overlay/5 disabled:opacity-40"
           :disabled="isCapturing || !url || !!urlError || selectedViewports.length === 0"
           @click="onCapture"
         >
@@ -69,13 +69,13 @@
         <div
           v-for="state in captureStates"
           :key="state.viewport"
-          class="flex flex-col overflow-hidden border border-white/10"
+          class="flex flex-col overflow-hidden border border-overlay/10"
           :style="{ width: pillWidth(state.viewport) + 'px' }"
         >
           <div class="relative flex items-center justify-center bg-black/20" :style="{ height: PILL_HEIGHT + 'px' }">
             <template v-if="state.status === 'loading'">
               <Loader2Icon class="size-4 animate-spin text-white/30" />
-              <div class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-white/5">
+              <div class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-overlay/5">
                 <div
                   class="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-150 ease-linear"
                   :style="{ width: viewportProgressPercent(state.progress, tickNow) + '%' }"
@@ -94,7 +94,7 @@
               <AppTooltip :text="state.error || 'Capture failed'">
                 <button
                   type="button"
-                  class="flex items-center justify-center rounded p-1 text-red-400 transition hover:bg-white/10 hover:text-red-300"
+                  class="flex items-center justify-center rounded p-1 text-red-400 transition hover:bg-overlay/10 hover:text-red-300"
                   :aria-label="`Retry ${viewportLabel(state.viewport)} capture`"
                   @click="retryViewport(state.viewport)"
                 >
@@ -103,7 +103,7 @@
               </AppTooltip>
             </template>
           </div>
-          <div class="flex items-center gap-1 border-t border-white/10 px-1.5 py-1">
+          <div class="flex items-center gap-1 border-t border-overlay/10 px-1.5 py-1">
             <CheckIcon v-if="state.status === 'done'" class="size-3 shrink-0 text-emerald-400" />
             <Loader2Icon v-else-if="state.status === 'loading'" class="size-3 shrink-0 animate-spin text-white/30" />
             <XIcon v-else-if="state.status === 'error'" class="size-3 shrink-0 text-red-400" />
@@ -117,7 +117,7 @@
 
     <template #footer>
       <button
-        class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-white/5"
+        class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
         @click="onClose"
       >
         Cancel

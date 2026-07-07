@@ -96,13 +96,13 @@
       <!-- Actions -->
       <div class="pt-2 space-y-2">
         <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
           @click="exportRaw"
         >
           Export raw PNG
         </button>
         <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-white/5"
+          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
           @click="copyToClipboard"
         >
           <Check v-if="copied" class="size-3.5" />

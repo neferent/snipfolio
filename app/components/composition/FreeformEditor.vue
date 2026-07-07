@@ -35,7 +35,7 @@
               :class="[
                 selectedSlotId === slot.id
                   ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                  : 'cursor-pointer text-[var(--color-text)] hover:bg-white/5',
+                  : 'cursor-pointer text-[var(--color-text)] hover:bg-overlay/5',
                 dragSlotId === slot.id ? 'opacity-40' : '',
               ]"
               @click="selectedSlotId = slot.id"
@@ -90,7 +90,7 @@
           <div
             v-for="snip in availableSnips"
             :key="snip.id"
-            class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-text)] transition hover:bg-white/5"
+            class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
             @click="addSnip(snip)"
           >
             <SnipThumbnail :snip="snip" class="size-7 shrink-0 rounded" />
@@ -265,8 +265,8 @@
                 :key="frame.value"
                 class="py-1.5 text-xs transition"
                 :style="selectedSlot.deviceFrame === frame.value
-                  ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
-                  : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);color:#6b7280'"
+                  ? 'border-radius:6px;border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text)'
+                  : 'border-radius:6px;border:0.5px solid var(--color-border);color:var(--color-text-muted)'"
                 @click="updateSlotFrame(selectedSlot.id, frame.value)"
               >
                 {{ frame.label }}
@@ -365,19 +365,19 @@
               v-for="(slot, idx) in displaySlots"
               :key="slot.id"
               class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition"
-              :class="selectedSlotId === slot.id ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'text-[var(--color-text)] active:bg-white/5'"
+              :class="selectedSlotId === slot.id ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]' : 'text-[var(--color-text)] active:bg-overlay/5'"
               @click="selectedSlotId = slot.id"
             >
               <div class="flex shrink-0 flex-col gap-0.5">
                 <button
-                  class="rounded p-0.5 text-[var(--color-text-muted)] transition active:bg-white/10 disabled:opacity-20"
+                  class="rounded p-0.5 text-[var(--color-text-muted)] transition active:bg-overlay/10 disabled:opacity-20"
                   :disabled="idx === 0"
                   @click.stop="moveForward(slot.id)"
                 >
                   <ChevronUp class="size-3.5" />
                 </button>
                 <button
-                  class="rounded p-0.5 text-[var(--color-text-muted)] transition active:bg-white/10 disabled:opacity-20"
+                  class="rounded p-0.5 text-[var(--color-text-muted)] transition active:bg-overlay/10 disabled:opacity-20"
                   :disabled="idx === displaySlots.length - 1"
                   @click.stop="moveBackward(slot.id)"
                 >
@@ -400,7 +400,7 @@
             <div
               v-for="snip in availableSnips"
               :key="snip.id"
-              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-text)] active:bg-white/5"
+              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-text)] active:bg-overlay/5"
               @click="addSnip(snip)"
             >
               <SnipThumbnail :snip="snip" class="size-7 shrink-0 rounded" />
@@ -445,8 +445,8 @@
                 :key="frame.value"
                 class="py-1.5 text-xs transition"
                 :style="selectedSlot.deviceFrame === frame.value
-                  ? 'border-radius:6px;border:1.5px solid #8e9ead;background:rgba(142,158,173,0.08);color:#e2e6ea'
-                  : 'border-radius:6px;border:0.5px solid rgba(255,255,255,0.06);color:#6b7280'"
+                  ? 'border-radius:6px;border:1.5px solid var(--color-accent);background:rgba(142,158,173,0.08);color:var(--color-text)'
+                  : 'border-radius:6px;border:0.5px solid var(--color-border);color:var(--color-text-muted)'"
                 @click="updateSlotFrame(selectedSlot.id, frame.value)"
               >
                 {{ frame.label }}

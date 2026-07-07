@@ -16,7 +16,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Reset profile flags but keep the account
-  await sb.from('profiles').update({ is_pro: false, pro_expires_at: null }).eq('id', userId)
+  await sb.from('profiles').update({
+    is_pro: false,
+    pro_expires_at: null,
+    capture_count: 0,
+    pro_capture_count: 0,
+    pro_capture_period_start: null,
+  }).eq('id', userId)
 
   return { ok: true }
 })

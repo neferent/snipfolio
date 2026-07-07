@@ -2,15 +2,10 @@
   <div class="flex flex-1 flex-col overflow-hidden bg-[var(--color-surface)]">
     <!-- Header -->
     <header class="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-6">
-      <svg class="size-6 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <rect width="24" height="24" rx="6" ry="6" fill="#8e9ead"/>
-        <rect x="4" y="3.91" width="8.5" height="12" rx="1.25" ry="1.25" fill="#373d43"/>
-        <rect x="14.05" y="3.91" width="6" height="6.5" rx="1.25" ry="1.25" fill="#373d43"/>
-        <rect x="14.05" y="11.91" width="6" height="8" rx="1.25" ry="1.25" fill="#565f69"/>
-      </svg>
-      <span class="text-sm font-medium text-[var(--color-text)]">snipfol<span class="text-[var(--color-accent)]">.io</span></span>
+      <AppLogo />
       <span class="rounded bg-red-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-red-400">Admin</span>
       <div class="flex-1" />
+      <ThemeToggle />
       <NuxtLink to="/dashboard" class="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]">
         Dashboard
       </NuxtLink>
@@ -27,7 +22,7 @@
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-medium text-[var(--color-text)]">Users ({{ users.length }})</h2>
             <button
-              class="flex h-7 items-center gap-1.5 rounded-[5px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-white/5 [border:0.5px_solid_rgba(255,255,255,0.1)]"
+              class="flex h-7 items-center gap-1.5 rounded-[5px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 [border:0.5px_solid_var(--color-border-strong)]"
               @click="reload"
             >
               <RefreshCw class="size-3" />
@@ -43,6 +38,7 @@
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Email</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Tier</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Projects</th>
+                  <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Captures</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Day Pass</th>
                   <th class="px-4 py-2.5 text-left font-medium text-[var(--color-text-muted)]">Actions</th>
                 </tr>
@@ -51,7 +47,7 @@
                 <tr
                   v-for="user in users"
                   :key="user.id"
-                  class="border-t border-[rgba(255,255,255,0.05)]"
+                  class="border-t border-[var(--color-border)]"
                 >
                   <!-- Email -->
                   <td class="px-4 py-3 text-[var(--color-text)]">
@@ -65,13 +61,13 @@
                       <span
                         class="rounded-full px-2 py-0.5 text-[10px] font-medium"
                         :style="user.isPro
-                          ? 'background:rgba(142,158,173,0.15);color:#8e9ead'
-                          : 'background:rgba(255,255,255,0.06);color:#6b7280'"
+                          ? 'background:rgba(142,158,173,0.15);color:var(--color-accent)'
+                          : 'background:var(--color-surface-3);color:var(--color-text-muted)'"
                       >
                         {{ user.isPro ? 'Pro' : 'Account' }}
                       </span>
                       <button
-                        class="rounded px-2 py-0.5 text-[10px] transition text-[var(--color-accent)] [border:0.5px_solid_rgba(255,255,255,0.1)]"
+                        class="rounded px-2 py-0.5 text-[10px] transition text-[var(--color-accent)] [border:0.5px_solid_var(--color-border-strong)]"
                         :disabled="busyUser === user.id"
                         @click="togglePro(user)"
                       >
@@ -83,6 +79,20 @@
                   <!-- Project count -->
                   <td class="px-4 py-3 text-[var(--color-text-muted)]">
                     {{ user.projectCount }}
+                  </td>
+
+                  <!-- Captures -->
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[var(--color-text-muted)]">{{ user.capturesUsed }}/{{ user.captureLimit }}</span>
+                      <button
+                        class="rounded px-1.5 py-0.5 text-[10px] text-[var(--color-accent)] transition hover:bg-overlay/5 disabled:opacity-40"
+                        :disabled="busyUser === user.id || user.capturesUsed === 0"
+                        @click="resetCaptures(user)"
+                      >
+                        reset
+                      </button>
+                    </div>
                   </td>
 
                   <!-- Day pass -->
@@ -136,7 +146,7 @@
       </p>
       <template #footer>
         <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-white/10"
+          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/10"
           @click="resetTarget = null"
         >
           Cancel
@@ -171,6 +181,8 @@ interface AdminUser {
   projectCount: number
   proExpiresAt: string | null
   createdAt: string
+  capturesUsed: number
+  captureLimit: number
 }
 
 const users = ref<AdminUser[]>([])
@@ -233,6 +245,19 @@ async function doReset() {
       headers: authHeaders(),
     })
     await reload()
+  } finally {
+    busyUser.value = null
+  }
+}
+
+async function resetCaptures(user: AdminUser) {
+  busyUser.value = user.id
+  try {
+    await $fetch(`/api/admin/users/${user.id}/reset-captures`, {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    user.capturesUsed = 0
   } finally {
     busyUser.value = null
   }
