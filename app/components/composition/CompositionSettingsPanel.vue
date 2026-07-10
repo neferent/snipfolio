@@ -30,17 +30,17 @@
         </button>
       </div>
       <div class="flex items-center gap-2">
-        <input
+        <AppInput
           type="number"
-          :value="outputWidth"
+          :model-value="outputWidth"
           class="w-full font-mono"
           placeholder="Width"
           @change="$emit('update:output-size', Number(($event.target as HTMLInputElement).value), outputHeight)"
         />
         <span class="shrink-0 text-xs text-[var(--color-text-muted)]">×</span>
-        <input
+        <AppInput
           type="number"
-          :value="outputHeight"
+          :model-value="outputHeight"
           class="w-full font-mono"
           placeholder="Height"
           @change="$emit('update:output-size', outputWidth, Number(($event.target as HTMLInputElement).value))"
@@ -51,30 +51,23 @@
     <!-- Composition name -->
     <div class="space-y-1.5">
       <label class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
-      <input
-        :value="name"
-        class="w-full"
+      <AppInput
+        :model-value="name"
         @input="$emit('update:name', ($event.target as HTMLInputElement).value)"
       />
     </div>
 
     <!-- Export -->
     <div class="flex flex-col gap-2">
-      <button
-        class="flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[var(--color-accent)] text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
-        @click="$emit('export')"
-      >
+      <AppButton size="lg" @click="$emit('export')">
         <Upload class="size-4" />
         Export PNG
-      </button>
-      <button
-        class="flex h-9 items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
-        @click="copyToClipboard"
-      >
+      </AppButton>
+      <AppButton variant="secondary" size="lg" @click="copyToClipboard">
         <Check v-if="copied" class="size-4" />
         <Copy v-else class="size-4" />
         {{ copied ? 'Copied!' : 'Copy to clipboard' }}
-      </button>
+      </AppButton>
     </div>
   </div>
 </template>

@@ -82,10 +82,11 @@
         <ZoomOut class="size-3.5" aria-hidden="true" />
       </button>
     </AppTooltip>
-    <input
-      class="!h-7 w-16 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center font-mono text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
+    <AppInput
+      size="sm"
+      class="w-16 text-center font-mono"
       aria-label="Zoom level"
-      :value="zoomLabel"
+      :model-value="zoomLabel"
       @focus="($event.target as HTMLInputElement).select()"
       @keydown.enter.prevent="onZoomCommit($event)"
       @keydown.escape="($event.target as HTMLInputElement).blur()"

@@ -108,14 +108,10 @@
             <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
             <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark.</span>
           </div>
-          <button
-            class="flex items-center justify-center gap-1.5 rounded-[5px] px-3 py-1 text-xs font-medium transition disabled:opacity-40 bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
-            :disabled="checkoutLoading"
-            @click="onBuyDayPass"
-          >
+          <AppButton size="sm" :disabled="checkoutLoading" @click="onBuyDayPass">
             <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
             {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
-          </button>
+          </AppButton>
         </div>
       </template>
     </div>
@@ -129,20 +125,13 @@
     </div>
 
     <template #footer>
-      <button
-        class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
-        @click="$emit('close')"
-      >
+      <AppButton variant="ghost" @click="$emit('close')">
         Cancel
-      </button>
-      <button
-        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40 disabled:cursor-not-allowed"
-        :disabled="selected.size === 0"
-        @click="exportSelected"
-      >
+      </AppButton>
+      <AppButton :disabled="selected.size === 0" @click="exportSelected">
         Export {{ selected.size > 0 ? selected.size : '' }} mockup{{ selected.size === 1 ? '' : 's' }}
         <span v-if="!isPro" class="ml-1.5 opacity-60">(watermarked)</span>
-      </button>
+      </AppButton>
     </template>
   </AppModal>
 </template>

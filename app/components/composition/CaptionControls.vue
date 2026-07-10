@@ -17,9 +17,8 @@
     </div>
 
     <template v-if="enabled && modelValue">
-      <input
-        :value="modelValue.text"
-        class="w-full"
+      <AppInput
+        :model-value="modelValue.text"
         placeholder="Caption text…"
         @input="update('text', ($event.target as HTMLInputElement).value)"
       />
@@ -67,12 +66,11 @@
         <!-- Font size -->
         <div class="space-y-1">
           <label class="text-[10px] text-[var(--color-text-muted)]">Size</label>
-          <input
+          <AppInput
             type="number"
-            :value="modelValue.size"
+            :model-value="modelValue.size"
             min="10"
             max="120"
-            class="w-full"
             @input="update('size', Number(($event.target as HTMLInputElement).value))"
           />
         </div>

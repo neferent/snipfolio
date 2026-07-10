@@ -4,10 +4,9 @@
     <div v-if="step === 'main'" class="space-y-3">
       <div class="space-y-1.5">
         <label class="text-xs font-medium text-[var(--color-text-muted)]">Project name</label>
-        <input
+        <AppInput
           ref="nameInputRef"
           v-model="name"
-          class="w-full"
           :placeholder="type === 'url' ? 'example.com' : 'My project'"
           @focus="nameFocused = true"
           @blur="nameFocused = false"
@@ -45,13 +44,11 @@
         <!-- URL entry, shown when "From URL" is selected and the user is Pro -->
         <div v-if="type === 'url' && isPro" key="url-pro" class="expand-panel space-y-1.5">
           <label class="mt-3 block text-xs font-medium text-[var(--color-text-muted)]">URL</label>
-          <input
-            ref="urlInputRef"
+          <AppInput
             v-model="url"
             type="text"
             inputmode="url"
-            class="w-full"
-            :class="urlError ? 'border-red-400/40' : ''"
+            :error="!!urlError"
             placeholder="https://example.com"
             @input="onUrlInput"
             @keydown.enter="onSubmitMain"
@@ -86,59 +83,45 @@
       <!-- Main step -->
       <template v-if="step === 'main'">
         <Transition name="fade" mode="out-in">
-          <button
+          <AppButton
             v-if="type === 'url' && !isPro"
             key="upgrade"
-            class="flex h-8 items-center justify-center gap-1.5 rounded-[6px] bg-[var(--color-accent-dim)] px-4 text-sm font-medium text-[var(--color-accent)] transition [border:0.5px_solid_rgba(142,158,173,0.3)] disabled:opacity-50"
             :disabled="checkoutLoading"
             @click="startCheckout('day_pass', '/projects?openUrlCapture=1')"
           >
             <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
             {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             v-else
             key="submit"
-            class="flex h-8 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
             :disabled="!canSubmit || creating"
             @click="onSubmitMain"
           >
             <Loader2Icon v-if="creating" class="size-3 shrink-0 animate-spin" />
             {{ type === 'url' ? 'Next' : creating ? 'Creating…' : 'Create' }}
-          </button>
+          </AppButton>
         </Transition>
       </template>
 
       <!-- Step 2: preset selection -->
       <template v-else-if="step === 'preset'">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
-          @click="step = 'main'"
-        >
+        <AppButton variant="ghost" @click="step = 'main'">
           Back
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          @click="onStartCapture"
-        >
+        </AppButton>
+        <AppButton @click="onStartCapture">
           Capture &amp; Create
-        </button>
+        </AppButton>
       </template>
 
       <!-- Step 3: capturing — only show buttons on error -->
       <template v-else-if="step === 'capturing' && captureError">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
-          @click="step = 'main'"
-        >
+        <AppButton variant="ghost" @click="step = 'main'">
           Back
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          @click="onStartCapture"
-        >
+        </AppButton>
+        <AppButton @click="onStartCapture">
           Retry
-        </button>
+        </AppButton>
       </template>
     </template>
   </AppModal>
@@ -198,8 +181,7 @@ const nameFocused = ref(false)
 const prevHostname = ref('')
 const creating = ref(false)
 
-const nameInputRef = ref<HTMLInputElement>()
-const urlInputRef = ref<HTMLInputElement>()
+const nameInputRef = ref<{ focus: () => void } | null>(null)
 
 const resolvedUrl = computed(() => resolveCaptureUrl(url.value))
 const displayHostname = computed(() => getCaptureHostname(url.value))

@@ -22,12 +22,9 @@
     <ImageIcon v-else class="mb-3 size-10 text-[var(--color-text-muted)]" :stroke-width="1.5" />
     <p class="mb-1 text-sm font-medium text-[var(--color-text)]">Drop your screenshot here</p>
     <p class="mt-1 text-xs text-[var(--color-text-muted)]">PNG, JPG, or WebP</p>
-    <button
-      class="mt-4 flex h-8 items-center rounded-[6px] border-strong px-4 text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
-      @click="fileInput?.click()"
-    >
+    <AppButton variant="secondary" class="mt-4" @click="fileInput?.click()">
       Choose file
-    </button>
+    </AppButton>
     <input
       ref="fileInput"
       type="file"

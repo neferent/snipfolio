@@ -6,14 +6,10 @@
         Watermark-free exports and URL screenshot capture, all the time — no need to renew a 3-Day Pass.
       </p>
       <div class="mt-4 text-2xl font-semibold text-[var(--color-text)]">$14.99<span class="text-sm font-normal text-[var(--color-text-muted)]">/mo</span></div>
-      <button
-        class="mt-5 flex h-9 w-full items-center justify-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
-        :disabled="checkoutLoading"
-        @click="startCheckout('pro')"
-      >
+      <AppButton size="lg" class="mt-5 w-full" :disabled="checkoutLoading" @click="startCheckout('pro')">
         <Loader2Icon v-if="checkoutLoading" class="size-3.5 shrink-0 animate-spin" />
         {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Subscribe' }}
-      </button>
+      </AppButton>
     </div>
   </div>
 </template>

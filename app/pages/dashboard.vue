@@ -27,6 +27,7 @@ import StudioFrame from '~/components/studio/StudioFrame.vue'
 import { drawBackground, drawCaption, getFrameScreenBounds } from '~/composables/useCanvasRenderer'
 import { usePlan } from '~/composables/usePlan'
 import { useAuth } from '~/composables/useAuth'
+import AppToggleButton from '~/components/ui/AppToggleButton.vue'
 import type { BackgroundConfig, CaptionConfig, DeviceFrame } from '~/types'
 
 useHead({ title: 'Studio — Snipfolio' })
@@ -314,10 +315,8 @@ async function capture() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && document.activeElement === urlInput.value) capture()
+  if (e.key === 'Enter') capture()
 }
-
-const urlInput = ref<HTMLInputElement | null>(null)
 
 // ---- Output / canvas ----
 const outputWidth = ref(1920)
@@ -325,7 +324,7 @@ const outputHeight = ref(1080)
 
 const background = ref<BackgroundConfig>({
   type: 'solid',
-  color: '#1a1a2e',
+  color: '#f0f1f5',
   gradientStart: '#667eea',
   gradientEnd: '#764ba2',
   gradientAngle: 135,
@@ -348,9 +347,13 @@ watch(
 )
 
 // ---- View scale (display px per output px) ----
+// The artboard must always fit entirely within the canvas area (contain-fit),
+// shrinking or growing on both axes as outputWidth/outputHeight or the
+// available area change — never just stretching to the container's width.
 const canvasArea = ref<HTMLElement | null>(null)
 const areaW = ref(900)
 const areaH = ref(600)
+let areaResizeObserver: ResizeObserver | undefined
 
 function updateAreaSize() {
   if (!canvasArea.value) return
@@ -358,10 +361,12 @@ function updateAreaSize() {
   areaH.value = canvasArea.value.clientHeight
 }
 
+const CANVAS_PADDING = 24
+
 const viewScale = computed(() => {
-  const sx = areaW.value / outputWidth.value
-  const sy = areaH.value / outputHeight.value
-  return Math.min(sx, sy) * 0.96
+  const availW = Math.max(1, areaW.value - CANVAS_PADDING)
+  const availH = Math.max(1, areaH.value - CANVAS_PADDING)
+  return Math.min(availW / outputWidth.value, availH / outputHeight.value)
 })
 
 const canvasDisplayW = computed(() => Math.round(outputWidth.value * viewScale.value))
@@ -370,9 +375,14 @@ const canvasDisplayH = computed(() => Math.round(outputHeight.value * viewScale.
 onMounted(() => {
   updateAreaSize()
   window.addEventListener('resize', updateAreaSize)
+  if (canvasArea.value) {
+    areaResizeObserver = new ResizeObserver(() => updateAreaSize())
+    areaResizeObserver.observe(canvasArea.value)
+  }
 })
 onUnmounted(() => {
   window.removeEventListener('resize', updateAreaSize)
+  areaResizeObserver?.disconnect()
   abortCtrl.value?.abort()
 })
 
@@ -441,8 +451,10 @@ function renderCanvas() {
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
-  drawBackground(ctx, W, H, background.value, undefined, loadedBgImage.value)
-  for (const d of orderedActiveDevices.value) drawFrameOnto(ctx, d)
+  if (hasAnyCapture.value) {
+    drawBackground(ctx, W, H, background.value, undefined, loadedBgImage.value)
+    for (const d of orderedActiveDevices.value) drawFrameOnto(ctx, d)
+  }
 }
 
 watch(
@@ -450,6 +462,7 @@ watch(
   () => nextTick(renderCanvas),
   { deep: true },
 )
+
 
 onMounted(() => nextTick(renderCanvas))
 
@@ -517,137 +530,83 @@ function setOutputHeight(e: Event) {
     <div class="flex flex-1 justify-center overflow-hidden p-4">
       <div class="mx-auto flex w-full max-w-[1360px] flex-col gap-4 overflow-hidden">
 
-        <!-- Capture + Canvas panels -->
-        <div class="flex shrink-0 flex-wrap gap-4">
-
-        <!-- Capture panel -->
-        <div class="flex flex-1 min-w-[420px] flex-wrap items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-6 py-3">
-          <!-- Device toggles -->
-          <div class="flex gap-1">
-            <label
-              v-for="d in devices"
-              :key="d.id"
-              class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-xs transition"
-              :class="isActive(d.id)
-                ? 'bg-[var(--color-accent)] text-white'
-                : 'text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)]'"
-            >
-              <input
-                type="checkbox"
-                class="accent-[var(--color-accent)]"
-                :checked="isActive(d.id)"
-                @change="toggleDevice(d.id)"
-              />
-              {{ d.label }}
-            </label>
-          </div>
-
-          <div class="h-5 w-px bg-[var(--color-border)]" />
-
-          <!-- URL input -->
-          <div class="relative flex flex-1 min-w-[220px] max-w-xl items-center gap-2">
-            <input
-              ref="urlInput"
-              v-model="url"
-              type="text"
-              placeholder="Enter a URL to capture…"
-              class="h-8 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs text-[var(--color-text)] placeholder-[var(--color-text-muted)] outline-none focus:border-[var(--color-accent)] transition"
-              @keydown="onKeydown"
-            />
-            <button
-              class="h-8 shrink-0 rounded-md px-3 text-xs font-medium transition disabled:opacity-40"
-              :class="isCapturing
-                ? 'bg-[var(--color-accent-dim)] text-[var(--color-accent)] cursor-default'
-                : 'bg-[var(--color-accent)] text-white hover:opacity-90'"
-              :disabled="!isValidCaptureUrl(url) || isCapturing || captureLimitReached"
-              @click="capture"
-            >
-              {{ isCapturing ? 'Capturing…' : `Capture ${activeDevices.length > 1 ? 'all' : ''}` }}
-            </button>
-          </div>
-
-          <!-- Progress bar -->
-          <div v-if="isCapturing" class="h-1 w-24 shrink-0 overflow-hidden rounded-full bg-overlay/10">
-            <div
-              class="h-full rounded-full bg-[var(--color-accent)] transition-all duration-300"
-              :style="{ width: `${captureProgressPct}%` }"
-            />
-          </div>
-
-          <div v-if="!isPro && authStore.profileLoaded" class="shrink-0 text-[11px] text-[var(--color-text-muted)]">
-            {{ capturesRemaining }}/{{ captureLimit }} free captures left
-          </div>
-
-          <div v-if="captureErrors.length" class="shrink-0 text-xs text-red-400">{{ captureErrors[0] }}</div>
-        </div>
-
-        <!-- Canvas (output size) panel -->
-        <div class="flex shrink-0 flex-wrap items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-6 py-3">
-          <!-- Output size -->
-          <div class="flex items-center gap-2">
-            <label class="text-[10px] text-[var(--color-text-muted)]">Size</label>
-            <input
-              type="number"
-              :value="outputWidth"
-              min="400"
-              max="4000"
-              class="h-8 w-20 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
-              @change="setOutputWidth"
-            />
-            <span class="text-xs text-[var(--color-text-muted)]">×</span>
-            <input
-              type="number"
-              :value="outputHeight"
-              min="300"
-              max="3000"
-              class="h-8 w-20 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
-              @change="setOutputHeight"
-            />
-          </div>
-
-          <div class="h-5 w-px bg-[var(--color-border)]" />
-
-          <!-- Common presets -->
-          <div class="flex flex-wrap gap-1">
-            <button
-              v-for="preset in (([[1920, 1080], [1600, 900], [1280, 800], [1080, 1080]] as [number, number][]))"
-              :key="`${preset[0]}x${preset[1]}`"
-              class="rounded px-2 py-0.5 text-[10px] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-overlay/5 transition"
-              @click="() => { outputWidth = preset[0]; outputHeight = preset[1]; nextTick(updateAreaSize) }"
-            >
-              {{ preset[0] }}×{{ preset[1] }}
-            </button>
-          </div>
-        </div>
-
-        </div>
-
         <!-- Canvas + settings row -->
         <div class="flex flex-1 gap-4 overflow-hidden">
 
-          <!-- Canvas panel -->
+          <!-- Canvas area -->
           <div
             ref="canvasArea"
-            class="flex flex-1 items-center justify-center overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-canvas)]"
+            class="flex flex-1 flex-col items-center overflow-hidden"
           >
-            <!-- Artboard: single canvas renders background + frames (shadows bleed onto background) -->
+            <!-- Artboard: single canvas renders background + frames (shadows bleed onto background).
+                 Dot grid is the artboard's own default backdrop, showing through until there's a capture.
+                 Sized to contain-fit the canvas area on both axes so the whole output is always visible. -->
             <div
-              class="relative shadow-2xl"
+              class="bg-dot-grid relative"
+              :class="hasAnyCapture ? 'shadow-2xl' : 'border border-[var(--color-border-strong)]'"
               :style="{ width: `${canvasDisplayW}px`, height: `${canvasDisplayH}px`, flexShrink: 0 }"
             >
               <canvas
                 ref="outputCanvas"
-                class="pointer-events-none block"
-                :style="{ width: `${canvasDisplayW}px`, height: `${canvasDisplayH}px` }"
+                class="pointer-events-none absolute inset-0 h-full w-full"
               />
 
-              <!-- Empty state -->
+              <!-- Empty state: capture form, shown until the first device image lands -->
               <div
-                v-if="!hasAnyCapture && !isCapturing"
-                class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center"
+                v-if="!hasAnyCapture"
+                class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6"
               >
-                <div class="text-3xl opacity-20">↑</div>
-                <p class="text-sm text-[var(--color-text-muted)] opacity-60">Enter a URL above and click Capture</p>
+                <div class="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-6 shadow-xl">
+                  <div class="flex flex-col items-center gap-1 text-center">
+                    <p class="text-sm font-medium text-[var(--color-text)]">Capture a website to get started</p>
+                    <p class="text-xs text-[var(--color-text-muted)]">Enter a URL and choose which device viewports to capture</p>
+                  </div>
+
+                  <!-- Device toggles -->
+                  <div class="flex justify-center gap-1">
+                    <AppToggleButton
+                      v-for="d in devices"
+                      :key="d.id"
+                      :model-value="isActive(d.id)"
+                      size="sm"
+                      @update:model-value="toggleDevice(d.id)"
+                    >
+                      {{ d.label }}
+                    </AppToggleButton>
+                  </div>
+
+                  <!-- URL input -->
+                  <div class="flex flex-col gap-2">
+                    <AppInput
+                      v-model="url"
+                      type="text"
+                      placeholder="Enter a URL to capture…"
+                      class="w-full"
+                      @keydown="onKeydown"
+                    />
+                    <AppButton
+                      class="w-full"
+                      :disabled="!isValidCaptureUrl(url) || isCapturing || captureLimitReached"
+                      @click="capture"
+                    >
+                      {{ isCapturing ? 'Capturing…' : `Capture ${activeDevices.length > 1 ? 'all' : ''}` }}
+                    </AppButton>
+                  </div>
+
+                  <!-- Progress bar -->
+                  <div v-if="isCapturing" class="h-1 w-full overflow-hidden rounded-full bg-overlay/10">
+                    <div
+                      class="h-full rounded-full bg-[var(--color-accent)] transition-all duration-300"
+                      :style="{ width: `${captureProgressPct}%` }"
+                    />
+                  </div>
+
+                  <div v-if="!isPro && authStore.profileLoaded" class="text-center text-[11px] text-[var(--color-text-muted)]">
+                    {{ capturesRemaining }}/{{ captureLimit }} free captures left
+                  </div>
+
+                  <div v-if="captureErrors.length" class="text-center text-xs text-red-400">{{ captureErrors[0] }}</div>
+                </div>
               </div>
 
               <!-- Interaction overlays (drag, resize, scroll — no rendering) — one per active device -->
@@ -699,22 +658,54 @@ function setOutputHeight(e: Event) {
                 <div class="flex items-center gap-2">
                   <label class="text-xs text-[var(--color-text-muted)]">Color</label>
                   <AppColorPicker v-model="frameState[selectedDevice].frameColor" />
-                  <button
-                    class="rounded-[6px] text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-                    @click="frameState[selectedDevice].frameColor = '#262c44'"
-                  >
+                  <AppButton variant="ghost" size="sm" @click="frameState[selectedDevice].frameColor = '#262c44'">
                     Reset
-                  </button>
+                  </AppButton>
                 </div>
 
                 <!-- Center frame -->
-                <button
-                  class="w-full rounded-md border border-[var(--color-border)] py-1.5 text-xs text-[var(--color-text-muted)] hover:bg-overlay/5 hover:text-[var(--color-text)] transition"
-                  @click="centerFrame(selectedDevice)"
-                >
+                <AppButton variant="secondary" size="sm" class="w-full" @click="centerFrame(selectedDevice)">
                   Center frame
-                </button>
+                </AppButton>
               </template>
+            </div>
+
+            <!-- Canvas -->
+            <div class="border-b border-[var(--color-border)] p-4 space-y-3">
+              <p class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Canvas</p>
+
+              <!-- Output size -->
+              <div class="flex items-center gap-2">
+                <AppInput
+                  type="number"
+                  :model-value="outputWidth"
+                  min="400"
+                  max="4000"
+                  class="w-full"
+                  @change="setOutputWidth"
+                />
+                <span class="text-xs text-[var(--color-text-muted)]">×</span>
+                <AppInput
+                  type="number"
+                  :model-value="outputHeight"
+                  min="300"
+                  max="3000"
+                  class="w-full"
+                  @change="setOutputHeight"
+                />
+              </div>
+
+              <!-- Common presets -->
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="preset in (([[1920, 1080], [1280, 800], [1080, 1080]] as [number, number][]))"
+                  :key="`${preset[0]}x${preset[1]}`"
+                  class="rounded px-2 py-0.5 text-[10px] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-overlay/5 transition"
+                  @click="() => { outputWidth = preset[0]; outputHeight = preset[1]; nextTick(updateAreaSize) }"
+                >
+                  {{ preset[0] }}×{{ preset[1] }}
+                </button>
+              </div>
             </div>
 
             <!-- Caption -->
@@ -734,13 +725,9 @@ function setOutputHeight(e: Event) {
 
             <!-- Export -->
             <div class="p-4 mt-auto">
-              <button
-                class="w-full rounded-md bg-[var(--color-accent)] py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40"
-                :disabled="!hasAnyCapture"
-                @click="doExport"
-              >
+              <AppButton size="lg" class="w-full" :disabled="!hasAnyCapture" @click="doExport">
                 Export PNG
-              </button>
+              </AppButton>
             </div>
           </aside>
 

@@ -53,12 +53,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
           </a>
-          <button
-            class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)] border-strong"
-            @click="signOut"
-          >
+          <AppButton variant="secondary" @click="signOut">
             Sign out
-          </button>
+          </AppButton>
         </template>
       </template>
 
@@ -92,15 +89,12 @@
       <div class="mx-auto max-w-4xl">
         <div class="mb-6 flex items-center justify-between">
           <h2 class="text-sm font-medium text-[var(--color-text)]">Your Projects</h2>
-          <button
-            class="flex h-8 items-center gap-1.5 rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-            @click="onNewProject"
-          >
+          <AppButton @click="onNewProject">
             <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             New project
-          </button>
+          </AppButton>
         </div>
 
         <Transition name="fade" mode="out-in">
@@ -157,20 +151,28 @@
 
               <!-- Desktop: hover-revealed actions -->
               <template v-if="!isMobile">
-                <button
-                  class="absolute right-10 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-overlay/10 hover:text-[var(--color-text)]"
+                <AppButton
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  aria-label="Rename project"
+                  class="absolute right-10 top-3 opacity-0 group-hover:opacity-100"
                   @click.stop="startRename(project)"
                 >
-                  <Pencil class="size-4" />
-                </button>
-                <button
-                  class="absolute right-3 top-3 rounded-[6px] p-1 opacity-0 text-[var(--color-text-muted)] transition group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
+                  <Pencil />
+                </AppButton>
+                <AppButton
+                  variant="danger-ghost"
+                  size="sm"
+                  icon-only
+                  aria-label="Delete project"
+                  class="absolute right-3 top-3 opacity-0 group-hover:opacity-100"
                   @click.stop="confirmDelete(project.id, project.name)"
                 >
-                  <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                </button>
+                </AppButton>
               </template>
 
               <!-- Mobile: always-visible overflow menu -->
@@ -198,12 +200,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm0 9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm9.75-9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zm0 9.75c0-.621.504-1.125 1.125-1.125h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75z" />
             </svg>
             <p class="text-sm font-medium text-[var(--color-text)]">No projects yet</p>
-            <button
-              class="mt-3 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-              @click="onNewProject()"
-            >
-							Create a new project to get started.
-            </button>
+            <AppButton variant="ghost" size="sm" class="mt-3" @click="onNewProject()">
+              Create a new project to get started.
+            </AppButton>
           </div>
         </Transition>
       </div>
@@ -223,12 +222,9 @@
         Delete an existing project to create a new one.
       </p>
       <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/10"
-          @click="showProUpsell = false"
-        >
+        <AppButton variant="ghost" @click="showProUpsell = false">
           Close
-        </button>
+        </AppButton>
       </template>
     </AppModal>
 
@@ -238,18 +234,12 @@
         Delete <strong class="text-[var(--color-text)]">{{ deleteTarget?.name }}</strong>? This cannot be undone.
       </p>
       <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/10"
-          @click="deleteTarget = null"
-        >
+        <AppButton variant="ghost" @click="deleteTarget = null">
           Cancel
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-red-500 px-3 text-sm font-medium text-white transition hover:bg-red-600"
-          @click="doDelete"
-        >
+        </AppButton>
+        <AppButton variant="danger" @click="doDelete">
           Delete
-        </button>
+        </AppButton>
       </template>
     </AppModal>
   </div>

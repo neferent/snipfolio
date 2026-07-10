@@ -6,14 +6,10 @@
         Capturing from a live URL requires a 3-Day Access Pass.
       </p>
       <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
-        <button
-          class="flex h-7 w-full items-center justify-center gap-1.5 rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
-          :disabled="checkoutLoading"
-          @click="startCheckout('day_pass', checkoutReturnUrl('openUrlCapture=1'))"
-        >
+        <AppButton size="sm" class="w-full" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openUrlCapture=1'))">
           <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
           {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -22,23 +18,23 @@
         Grab a screenshot of a live page to use as a snip source — pick one or more viewports below.
       </p>
       <div class="flex gap-2">
-        <input
+        <AppInput
           v-model="url"
           type="text"
           inputmode="url"
           placeholder="https://example.com"
           :disabled="isCapturing"
-          class="h-8 flex-1 rounded-[6px] border bg-overlay/5 px-3 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-overlay/20 disabled:opacity-40"
-          :class="urlError ? 'border-red-400/40' : 'border-overlay/10'"
+          :error="!!urlError"
+          class="flex-1"
           @keydown.enter="onCapture"
         />
-        <button
-          class="flex h-8 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text)] transition hover:bg-overlay/5 disabled:opacity-40"
+        <AppButton
+          variant="secondary"
           :disabled="isCapturing || !url || !!urlError || selectedViewports.length === 0"
           @click="onCapture"
         >
           Capture
-        </button>
+        </AppButton>
       </div>
       <p v-if="urlError" class="-mt-1 text-[10px] text-red-400">{{ urlError }}</p>
 
@@ -92,14 +88,15 @@
             </template>
             <template v-else-if="state.status === 'error'">
               <AppTooltip :text="state.error || 'Capture failed'">
-                <button
-                  type="button"
-                  class="flex items-center justify-center rounded p-1 text-red-400 transition hover:bg-overlay/10 hover:text-red-300"
+                <AppButton
+                  variant="danger-ghost"
+                  size="sm"
+                  icon-only
                   :aria-label="`Retry ${viewportLabel(state.viewport)} capture`"
                   @click="retryViewport(state.viewport)"
                 >
-                  <RotateCwIcon class="size-3.5" />
-                </button>
+                  <RotateCwIcon />
+                </AppButton>
               </AppTooltip>
             </template>
           </div>
@@ -116,19 +113,12 @@
     </div>
 
     <template #footer>
-      <button
-        class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
-        @click="onClose"
-      >
+      <AppButton variant="ghost" @click="onClose">
         Cancel
-      </button>
-      <button
-        v-if="successful.length > 0"
-        class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] text-[var(--color-on-accent)]"
-        @click="onConfirm"
-      >
+      </AppButton>
+      <AppButton v-if="successful.length > 0" @click="onConfirm">
         Add {{ successful.length }} {{ successful.length === 1 ? 'source' : 'sources' }}
-      </button>
+      </AppButton>
     </template>
   </AppModal>
 </template>

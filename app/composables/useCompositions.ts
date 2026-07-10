@@ -24,7 +24,7 @@ const FRAME_ASPECT: Record<DeviceFrame, number | null> = {
 
 const DEFAULT_BACKGROUND: BackgroundConfig = {
   type: 'solid',
-  color: '#1a1a2e',
+  color: '#f0f1f5',
   gradientStart: '#1a1a2e',
   gradientEnd: '#16213e',
   gradientAngle: 135,

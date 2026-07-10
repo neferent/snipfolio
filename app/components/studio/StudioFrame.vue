@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const RING = 52
-const HANDLE_SIZE = 8
+const HANDLE_SIZE = 10
 const THUMB_H = 28
 
 const scrollTrack = ref<HTMLElement | null>(null)
@@ -48,20 +48,29 @@ function cornerStyle(corner: 'tl' | 'tr' | 'bl' | 'br'): CSSProperties {
   return { position: 'absolute', top, left, width: `${HANDLE_SIZE}px`, height: `${HANDLE_SIZE}px`, cursor: cursors[corner] }
 }
 
-const dragHandleStyle = computed((): CSSProperties => ({
+const dragBodyStyle = computed((): CSSProperties => ({
   position: 'absolute',
-  left: `${RING - 20}px`,
-  top: `${RING + displayH.value / 2 - 20}px`,
-  width: '12px',
-  height: '40px',
+  left: `${RING}px`,
+  top: `${RING}px`,
+  width: `${displayW.value}px`,
+  height: `${displayH.value}px`,
   cursor: 'grab',
+}))
+
+const borderStyle = computed((): CSSProperties => ({
+  position: 'absolute',
+  left: `${RING}px`,
+  top: `${RING}px`,
+  width: `${displayW.value}px`,
+  height: `${displayH.value}px`,
+  pointerEvents: 'none',
 }))
 
 const scrollTrackStyle = computed((): CSSProperties => ({
   position: 'absolute',
-  left: `${RING + displayW.value + 10}px`,
+  left: `${RING + displayW.value + 18}px`,
   top: `${RING}px`,
-  width: '4px',
+  width: '2px',
   height: `${displayH.value}px`,
 }))
 
@@ -70,9 +79,9 @@ const scrollThumbStyle = computed((): CSSProperties => {
   const maxTop = displayH.value - THUMB_H
   return {
     position: 'absolute',
-    left: '-6px',
+    left: '-4px',
     top: `${Math.round(pct * maxTop)}px`,
-    width: '16px',
+    width: '10px',
     height: `${THUMB_H}px`,
     cursor: 'ns-resize',
   }
@@ -163,20 +172,25 @@ function startScroll(e: MouseEvent) {
   >
     <!-- Controls (hover only) -->
     <template v-if="hovered">
+      <!-- Faint frame border -->
+      <div
+        :style="borderStyle"
+        class="rounded-[2px] border border-white/20"
+      />
+
+      <!-- Drag anywhere on the frame body -->
+      <div
+        :style="dragBodyStyle"
+        @mousedown.stop.prevent="startDrag($event)"
+      />
+
       <!-- Corner scale handles -->
       <div
         v-for="corner in (['tl', 'tr', 'bl', 'br'] as const)"
         :key="corner"
         :style="cornerStyle(corner)"
-        class="rounded-[2px] bg-white/80 border border-white/30 shadow"
+        class="rounded-full border-2 border-white/60 bg-transparent shadow"
         @mousedown.stop.prevent="startScale(corner, $event)"
-      />
-
-      <!-- Drag handle (left side) -->
-      <div
-        :style="dragHandleStyle"
-        class="rounded-[4px] bg-white/60 border border-white/30 shadow"
-        @mousedown.stop.prevent="startDrag($event)"
       />
 
       <!-- Scroll track + thumb (right side) -->
@@ -184,12 +198,12 @@ function startScroll(e: MouseEvent) {
         v-if="maxScrollOffset > 0"
         ref="scrollTrack"
         :style="scrollTrackStyle"
-        class="rounded-full bg-white/20"
+        class="rounded-full bg-white/10"
         @mousedown.stop.prevent="startScroll($event)"
       >
         <div
           :style="scrollThumbStyle"
-          class="rounded-full bg-white/70 shadow"
+          class="rounded-full bg-white/40"
         />
       </div>
     </template>

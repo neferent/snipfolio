@@ -29,25 +29,23 @@
         <form v-else class="space-y-4" @submit.prevent="submit">
           <div class="space-y-1.5">
             <label class="text-xs font-medium text-[var(--color-text-muted)]">New password</label>
-            <input
+            <AppInput
               v-model="password"
               type="password"
               autocomplete="new-password"
               required
               minlength="8"
-              class="w-full"
               placeholder="••••••••"
             />
           </div>
 
           <div class="space-y-1.5">
             <label class="text-xs font-medium text-[var(--color-text-muted)]">Confirm password</label>
-            <input
+            <AppInput
               v-model="confirm"
               type="password"
               autocomplete="new-password"
               required
-              class="w-full"
               placeholder="••••••••"
             />
           </div>
@@ -56,17 +54,13 @@
             {{ error }}
           </div>
 
-          <button
-            type="submit"
-            :disabled="loading"
-            class="flex h-9 w-full items-center justify-center rounded-[6px] bg-[var(--color-accent)] text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-60"
-          >
+          <AppButton type="submit" size="lg" :disabled="loading" class="w-full">
             <svg v-if="loading" class="mr-2 size-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             {{ loading ? '…' : 'Update password' }}
-          </button>
+          </AppButton>
         </form>
       </div>
     </div>

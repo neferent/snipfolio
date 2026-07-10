@@ -18,10 +18,9 @@
       <!-- Label -->
       <div class="space-y-1.5">
         <label for="snip-label" class="text-xs text-[var(--color-text-muted)]">Label</label>
-        <input
+        <AppInput
           id="snip-label"
-          :value="snip.label"
-          class="w-full"
+          :model-value="snip.label"
           @input="updateLabel(($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -59,12 +58,12 @@
             class="flex-1"
             @input="onScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
           />
-          <input
+          <AppInput
             type="number"
             min="0"
             :max="maxScroll"
             step="1"
-            :value="snip.y"
+            :model-value="snip.y"
             class="w-20 text-right"
             @change="onScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
           />
@@ -95,20 +94,14 @@
 
       <!-- Actions -->
       <div class="pt-2 space-y-2">
-        <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
-          @click="exportRaw"
-        >
+        <AppButton variant="secondary" class="w-full" @click="exportRaw">
           Export raw PNG
-        </button>
-        <button
-          class="flex h-8 w-full items-center justify-center gap-2 rounded-[6px] border-strong text-sm text-[var(--color-text)] transition hover:bg-overlay/5"
-          @click="copyToClipboard"
-        >
+        </AppButton>
+        <AppButton variant="secondary" class="w-full" @click="copyToClipboard">
           <Check v-if="copied" class="size-3.5" />
           <Copy v-else class="size-3.5" />
           {{ copied ? 'Copied!' : 'Copy to clipboard' }}
-        </button>
+        </AppButton>
       </div>
     </div>
 

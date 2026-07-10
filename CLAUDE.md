@@ -34,11 +34,10 @@ This repo is the **app only**, deployed to `app.snipfol.io`. The marketing site 
 
 #### Dashboard / Studio (`pages/dashboard.vue`)
 Standalone, project-free flow: capture one or more device viewports from a URL directly onto a single output canvas, frame them, and export — no source/snip/composition records involved. This is the app's default landing page.
-- **Capture panel** — device toggles (Desktop/Tablet/Mobile checkboxes, `activeDevices`), URL input, capture button (captures every toggled device in sequence), per-device progress/error state (`captureState`).
-- **Canvas panel** — output size inputs + presets.
+- **Capture form** — no standalone panel; lives in the artboard's empty-state card (device toggles, URL input, capture button, per-device progress/error state via `captureState`) until the first device image lands (`hasAnyCapture`).
 - **Artboard** — one `<canvas>` renders background + every active device's frame (`renderCanvas`); one `StudioFrame.vue` overlay per active device handles drag/resize/scroll interaction on top of it.
 - **Default layouts** — when 2+ devices are active, `arrangeOverlapGroup` (~line 145-215) auto-positions them in the classic "biggest device centered, smaller ones in front overlapping its edges" mockup style. Tuning knobs (`UNIT_HEIGHT`, `OVERLAP_FRACTION`, `OVERLAP_SIDE`, `marginRatio`) are documented in a comment directly above that function — start there before touching the positioning math.
-- **Sidebar** — per-device frame color/caption (switch device via tabs when multiple are active), background controls, export.
+- **Sidebar** — Frame (device tabs, color, center), Canvas (output size inputs + presets), Caption, Background, Export.
 - **Header** — Projects dropdown (recent projects, "View all projects" link) and "Advanced Editor" button, both leading into the project-based flow below.
 
 #### Projects (`pages/projects.vue`)

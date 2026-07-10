@@ -108,10 +108,11 @@
               <ZoomOut class="size-3.5" aria-hidden="true" />
             </button>
           </AppTooltip>
-          <input
-            class="!h-7 w-16 rounded bg-[var(--color-surface-3)] px-1.5 py-0.5 text-center font-mono text-xs text-[var(--color-text)] outline-none ring-inset focus:ring-1 focus:ring-[var(--color-accent)]"
+          <AppInput
+            size="sm"
+            class="w-16 text-center font-mono"
             aria-label="Zoom level"
-            :value="zoomLabel"
+            :model-value="zoomLabel"
             @focus="($event.target as HTMLInputElement).select()"
             @keydown.enter.prevent="onSnipZoomCommit($event)"
             @keydown.escape="($event.target as HTMLInputElement).blur()"
@@ -305,10 +306,9 @@
       <div class="flex flex-col gap-4">
         <div>
           <label for="add-source-label" class="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">Label</label>
-          <input
+          <AppInput
             id="add-source-label"
             v-model="newSourceLabel"
-            class="w-full"
             placeholder="e.g. Mobile, Desktop"
             @keydown.enter="pendingFile && commitAddSource()"
           />
@@ -330,19 +330,12 @@
         </div>
       </div>
       <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-4 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
-          @click="cancelAddSource"
-        >
+        <AppButton variant="ghost" @click="cancelAddSource">
           Cancel
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-40 text-[var(--color-on-accent)]"
-          :disabled="!pendingFile || !newSourceLabel.trim()"
-          @click="commitAddSource"
-        >
+        </AppButton>
+        <AppButton :disabled="!pendingFile || !newSourceLabel.trim()" @click="commitAddSource">
           Add source
-        </button>
+        </AppButton>
       </template>
     </AppModal>
   </div>

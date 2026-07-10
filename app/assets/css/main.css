@@ -67,6 +67,9 @@
   --color-overlay: #000000;
   /* Canvas/artboard backdrop behind framed screenshots */
   --color-canvas: #eef0f2;
+  --color-canvas-dot: rgba(15, 23, 32, 0.12);
+  /* Artboard surface itself — must read as distinct from --color-canvas */
+  --color-artboard: #ffffff;
 }
 
 /* ─── Light theme (default) — spec-name aliases ──────────────────────────── */
@@ -125,6 +128,8 @@
 
   --color-overlay: #ffffff;
   --color-canvas: #0d0d0d;
+  --color-canvas-dot: rgba(255, 255, 255, 0.1);
+  --color-artboard: #24282e;
 
   --sf-accent:         #8e9ead;
   --sf-accent-dark:    #4a5e6e;
@@ -149,6 +154,13 @@
   --sf-success-tint:   rgba(93, 202, 165, 0.12);
   --sf-danger-tint:    rgba(240, 149, 149, 0.12);
   --sf-warning-tint:   rgba(239, 159, 39, 0.12);
+}
+
+/* Dot-matrix backdrop for the studio canvas area, in place of a flat fill */
+.bg-dot-grid {
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(var(--color-canvas-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
 }
 
 /* Theme transition: skip on first paint (pre-hydration inline script already
@@ -231,11 +243,26 @@ body {
   flex-direction: column;
 }
 
+/* Standalone pages (e.g. /dev/components) that want normal document scroll
+   instead of the fixed-viewport app shell used by the editor/canvas pages. */
+body.dev-page-scroll,
+body.dev-page-scroll #__nuxt,
+body.dev-page-scroll #app {
+  height: auto;
+  min-height: 100%;
+  display: block;
+}
+
 /* ─── Focus ring ─────────────────────────────────────────────────────────── */
 
-button,
-[role="button"] {
-  cursor: pointer;
+/* @layer base so Tailwind's disabled:cursor-not-allowed (in @layer utilities)
+   can win — unlayered CSS always beats @layer content regardless of
+   specificity, same reasoning as the Global inputs rule below. */
+@layer base {
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
 }
 
 :focus-visible {
@@ -244,28 +271,35 @@ button,
 }
 
 /* ─── Global inputs ──────────────────────────────────────────────────────── */
+/*
+ * Wrapped in @layer base so AppInput's Tailwind size utilities (h-7, rounded-sm, …)
+ * can override this default despite its higher selector specificity — unlayered CSS
+ * always beats @layer content regardless of specificity, and Tailwind utilities live
+ * in @layer utilities, so without this wrapper no utility class could ever win here.
+ */
+@layer base {
+  input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]) {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 400;
+    font-family: var(--font-sans);
+    border-radius: 6px;
+    border: 0.5px solid var(--sf-border-emphasis);
+    background: var(--sf-surface);
+    color: var(--sf-text-primary);
+    caret-color: var(--sf-accent);
+    outline: none;
+    transition: border-color 120ms ease;
+  }
 
-input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]) {
-  height: 32px;
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 400;
-  font-family: var(--font-sans);
-  border-radius: 6px;
-  border: 0.5px solid var(--sf-border-emphasis);
-  background: var(--sf-surface);
-  color: var(--sf-text-primary);
-  caret-color: var(--sf-accent);
-  outline: none;
-  transition: border-color 120ms ease;
-}
+  input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):hover:not(:focus) {
+    border-color: color-mix(in srgb, var(--color-overlay) 18%, transparent);
+  }
 
-input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):hover:not(:focus) {
-  border-color: color-mix(in srgb, var(--color-overlay) 18%, transparent);
-}
-
-input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):focus {
-  border-color: var(--sf-accent);
+  input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="search"]):focus {
+    border-color: var(--sf-accent);
+  }
 }
 
 input::placeholder {

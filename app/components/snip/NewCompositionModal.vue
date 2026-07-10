@@ -5,10 +5,9 @@
       <div class="w-64 shrink-0 space-y-4">
         <div class="space-y-1.5">
           <label for="new-composition-name" class="text-xs font-medium text-[var(--color-text-muted)]">Name</label>
-          <input
+          <AppInput
             id="new-composition-name"
             v-model="name"
-            class="w-full"
             placeholder="My mockup"
           />
         </div>
@@ -116,27 +115,22 @@
               Capturing from a live URL requires a 3-Day Access Pass.
             </p>
             <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
-              <button
-                class="flex h-7 w-full items-center justify-center gap-1.5 rounded-md text-xs font-medium transition bg-[var(--color-accent-dim)] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.3)]"
-                :disabled="checkoutLoading"
-                @click="startCheckout('day_pass', checkoutReturnUrl('openNewComposition=1'))"
-              >
+              <AppButton size="sm" class="w-full" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openNewComposition=1'))">
                 <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
                 {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
-              </button>
+              </AppButton>
             </div>
           </template>
 
           <!-- From URL: capture from a live page -->
           <template v-else-if="type === 'url'">
             <label for="new-composition-url" class="text-xs font-medium text-[var(--color-text-muted)]">URL</label>
-            <input
+            <AppInput
               id="new-composition-url"
               v-model="url"
               type="text"
               inputmode="url"
-              class="w-full"
-              :class="urlError ? 'border-red-400/40' : ''"
+              :error="!!urlError"
               placeholder="https://example.com"
               @keydown.enter="onUrlNext"
             />
@@ -192,60 +186,35 @@
 
     <template #footer>
       <template v-if="step === 'main'">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/10"
-          @click="$emit('close')"
-        >
+        <AppButton variant="ghost" @click="$emit('close')">
           Cancel
-        </button>
-        <button
-          v-if="type === 'url'"
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50 text-[var(--color-on-accent)]"
-          :disabled="!canGoToPreset"
-          @click="onUrlNext"
-        >
+        </AppButton>
+        <AppButton v-if="type === 'url'" :disabled="!canGoToPreset" @click="onUrlNext">
           Next
-        </button>
-        <button
-          v-else
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)] disabled:opacity-50 text-[var(--color-on-accent)]"
-          :disabled="!canCreate"
-          @click="create"
-        >
+        </AppButton>
+        <AppButton v-else :disabled="!canCreate" @click="create">
           Create
-        </button>
+        </AppButton>
       </template>
 
       <!-- Step 2: preset selection -->
       <template v-else-if="step === 'preset'">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
-          @click="step = 'main'"
-        >
+        <AppButton variant="ghost" @click="step = 'main'">
           Back
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          @click="onStartCapture"
-        >
+        </AppButton>
+        <AppButton @click="onStartCapture">
           Capture &amp; Create
-        </button>
+        </AppButton>
       </template>
 
       <!-- Step 3: capturing — only show buttons on error -->
       <template v-else-if="step === 'capturing' && captureError">
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/5"
-          @click="step = 'main'"
-        >
+        <AppButton variant="ghost" @click="step = 'main'">
           Back
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-[var(--color-accent)] px-4 text-sm font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] hover:text-[var(--color-text)]"
-          @click="onStartCapture"
-        >
+        </AppButton>
+        <AppButton @click="onStartCapture">
           Retry
-        </button>
+        </AppButton>
       </template>
     </template>
   </AppModal>

@@ -21,13 +21,10 @@
         <template v-else>
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-medium text-[var(--color-text)]">Users ({{ users.length }})</h2>
-            <button
-              class="flex h-7 items-center gap-1.5 rounded-[5px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 [border:0.5px_solid_var(--color-border-strong)]"
-              @click="reload"
-            >
+            <AppButton variant="secondary" size="sm" @click="reload">
               <RefreshCw class="size-3" />
               Refresh
-            </button>
+            </AppButton>
           </div>
 
           <!-- Users table -->
@@ -145,18 +142,12 @@
         <br /><br />Cannot be undone.
       </p>
       <template #footer>
-        <button
-          class="flex h-8 items-center rounded-[6px] px-3 text-sm text-[var(--color-text-muted)] transition hover:bg-overlay/10"
-          @click="resetTarget = null"
-        >
+        <AppButton variant="ghost" @click="resetTarget = null">
           Cancel
-        </button>
-        <button
-          class="flex h-8 items-center rounded-[6px] bg-red-500 px-4 text-sm font-medium text-white transition hover:bg-red-600"
-          @click="doReset"
-        >
+        </AppButton>
+        <AppButton variant="danger" @click="doReset">
           Reset account
-        </button>
+        </AppButton>
       </template>
     </AppModal>
 

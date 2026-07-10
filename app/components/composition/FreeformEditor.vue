@@ -301,12 +301,12 @@
                 class="flex-1"
                 @input="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
               />
-              <input
+              <AppInput
                 type="number"
                 min="0"
                 :max="selectedSnipMaxScroll"
                 step="1"
-                :value="selectedSnip.y"
+                :model-value="selectedSnip.y"
                 class="w-20 text-right"
                 @change="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
               />
@@ -479,12 +479,12 @@
                 class="flex-1"
                 @input="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
               />
-              <input
+              <AppInput
                 type="number"
                 min="0"
                 :max="selectedSnipMaxScroll"
                 step="1"
-                :value="selectedSnip.y"
+                :model-value="selectedSnip.y"
                 class="w-20 text-right"
                 @change="onSlotScrollInput(($event.target as HTMLInputElement).valueAsNumber)"
               />
