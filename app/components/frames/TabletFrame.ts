@@ -12,6 +12,13 @@ const SCR_Y = 80.08
 const SCR_W = 2377.7 - 79.14   // 2298.56
 const SCR_H = 1803.11 - 80.08  // 1723.03
 
+/** Exact pixel size the screen content is drawn at for a frame of this width/height — matches the
+ *  dw/dh passed to drawCoverFromTop below (including its +2 bleed), so a caller can pre-resize the
+ *  screenshot to this size and avoid a second resample inside drawCoverFromTop. */
+export function getScreenDrawSize(width: number, height: number): { width: number; height: number } {
+  return { width: (SCR_W + 2) * (width / SVG_W), height: (SCR_H + 2) * (height / SVG_H) }
+}
+
 function screenPath(ctx: CanvasRenderingContext2D) {
   ctx.beginPath()
   ctx.moveTo(124.6, 80.08)

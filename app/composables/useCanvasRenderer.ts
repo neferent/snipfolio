@@ -72,7 +72,6 @@ function renderFreeform(
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
   drawBackground(ctx, W, H, cfg.background, bgSource, backgroundImage)
-  if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   // Render back to front (index 0 = back)
   for (const slot of cfg.slots) {
@@ -103,7 +102,6 @@ function renderCollage(
   const { outputWidth: W, outputHeight: H } = cfg
   const bgSource = pickBackgroundSource(cfg.slots.map((s) => s.snipId), snips, sourceImages)
   drawBackground(ctx, W, H, cfg.background, bgSource, backgroundImage)
-  if (watermark) drawDiagonalWatermark(ctx, W, H)
 
   const slots = cfg.slots
   const aspects = slots.map((slot) => {
@@ -149,39 +147,8 @@ function renderCollage(
   if (watermark) drawBadge(ctx, W, H)
 }
 
-// --- Watermarks ---
-function drawDiagonalWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  ctx.save()
-  const fontSize = Math.round(Math.max(18, Math.min(W * 0.016, 40)))
-  ctx.font = `${fontSize}px system-ui, sans-serif`
-  ctx.fillStyle = '#ffffff'
-  ctx.globalAlpha = 0.055
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-
-  const text = 'snipfol.io'
-  const textW = ctx.measureText(text).width
-  const colSpacing = textW * 2.8
-  const rowSpacing = fontSize * 3.8
-
-  const diagLen = Math.ceil(Math.sqrt(W * W + H * H))
-  const cols = Math.ceil((diagLen * 2) / colSpacing) + 2
-  const rows = Math.ceil((diagLen * 2) / rowSpacing) + 2
-
-  ctx.translate(W / 2, H / 2)
-  ctx.rotate(-Math.PI / 6)
-
-  for (let r = -rows; r <= rows; r++) {
-    for (let c = -cols; c <= cols; c++) {
-      const x = c * colSpacing + (r % 2 === 0 ? 0 : colSpacing / 2)
-      const y = r * rowSpacing
-      ctx.fillText(text, x, y)
-    }
-  }
-  ctx.restore()
-}
-
-function drawBadge(ctx: CanvasRenderingContext2D, W: number, H: number) {
+// --- Watermark badge ---
+export function drawBadge(ctx: CanvasRenderingContext2D, W: number, H: number) {
   ctx.save()
 
   const fontSize = Math.round(Math.max(10, Math.min(W * 0.008, 14)))
@@ -253,6 +220,7 @@ export function drawBackground(
   bg: BackgroundConfig,
   source: HTMLImageElement | undefined,
   bgImage: HTMLImageElement | undefined,
+  blurRegionOverride?: { x: number; y: number; width: number; height: number },
 ) {
   ctx.save()
   if (bg.type === 'solid') {
@@ -283,15 +251,21 @@ export function drawBackground(
     const dh = iH * scale
     ctx.drawImage(bgImage, (W - dw) / 2, (H - dh) / 2, dw, dh)
   } else if (bg.type === 'blur' && source) {
-    const region = bg.blurRegion ?? { x: 0, y: 0, width: source.naturalWidth, height: source.naturalHeight }
+    const region = blurRegionOverride ?? bg.blurRegion ?? { x: 0, y: 0, width: source.naturalWidth, height: source.naturalHeight }
+    // Zoom 2x into the center of the region so the blur has more detail to work with
+    // and doesn't visibly show the frame's screen content through the blur.
+    const zoomedW = region.width / 2
+    const zoomedH = region.height / 2
+    const zoomedX = region.x + (region.width - zoomedW) / 2
+    const zoomedY = region.y + (region.height - zoomedH) / 2
     const tmpCanvas = document.createElement('canvas')
     tmpCanvas.width = W
     tmpCanvas.height = H
     const tmpCtx = tmpCanvas.getContext('2d')!
     tmpCtx.imageSmoothingEnabled = true
     tmpCtx.imageSmoothingQuality = 'high'
-    tmpCtx.filter = 'blur(24px)'
-    tmpCtx.drawImage(source, region.x, region.y, region.width, region.height, -20, -20, W + 40, H + 40)
+    tmpCtx.filter = 'blur(96px)'
+    tmpCtx.drawImage(source, zoomedX, zoomedY, zoomedW, zoomedH, -100, -100, W + 200, H + 200)
     tmpCtx.fillStyle = 'rgba(0,0,0,0.4)'
     tmpCtx.fillRect(0, 0, W, H)
     ctx.drawImage(tmpCanvas, 0, 0)

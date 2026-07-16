@@ -4,7 +4,10 @@
   </div>
 
   <div class="flex-1 overflow-y-auto p-4 space-y-5">
-    <BackgroundControls :model-value="background" @update:model-value="$emit('update:background', $event)" />
+    <div class="space-y-1.5">
+      <label class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Background</label>
+      <BackgroundControls :model-value="background" @update:model-value="$emit('update:background', $event)" />
+    </div>
 
     <!-- Platform presets -->
     <PlatformPresets

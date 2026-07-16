@@ -1,4 +1,4 @@
-export const FREE_CAPTURE_LIMIT = 3
+export const FREE_CAPTURE_LIMIT = 99
 export const PRO_CAPTURE_MONTHLY_LIMIT = 200
 const PRO_CAPTURE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000
 

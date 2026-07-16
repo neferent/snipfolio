@@ -10,6 +10,7 @@ const props = defineProps<{
   maxScrollOffset: number
   viewScale: number
   svgAspect: number
+  selected?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -136,6 +137,13 @@ function startScale(corner: 'tl' | 'tr' | 'bl' | 'br', e: MouseEvent) {
   window.addEventListener('mouseup', onUp)
 }
 
+function onWheel(e: WheelEvent) {
+  if (props.maxScrollOffset <= 0) return
+  e.preventDefault()
+  const next = Math.max(0, Math.min(props.maxScrollOffset, props.scrollOffset + e.deltaY))
+  emit('update:scrollOffset', next)
+}
+
 function startScroll(e: MouseEvent) {
   if (props.maxScrollOffset <= 0) return
   const trackEl = scrollTrack.value
@@ -169,13 +177,16 @@ function startScroll(e: MouseEvent) {
     }"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
+    @wheel="onWheel"
   >
     <!-- Controls (hover only) -->
     <template v-if="hovered">
-      <!-- Faint frame border -->
+      <!-- Frame border: bright cyan (selected) or dimmer cyan (unselected hover) — chosen to stay
+           legible against arbitrary screenshot backgrounds, unlike the muted grey accent color. -->
       <div
         :style="borderStyle"
-        class="rounded-[2px] border border-white/20"
+        class="rounded-[2px]"
+        :class="selected ? 'border-2 border-[#22d3ee] shadow-[0_0_0_1px_rgba(0,0,0,0.4)]' : 'border border-[#22d3ee]/50'"
       />
 
       <!-- Drag anywhere on the frame body -->
@@ -189,7 +200,7 @@ function startScroll(e: MouseEvent) {
         v-for="corner in (['tl', 'tr', 'bl', 'br'] as const)"
         :key="corner"
         :style="cornerStyle(corner)"
-        class="rounded-full border-2 border-white/60 bg-transparent shadow"
+        class="rounded-full border-2 border-[#22d3ee] bg-transparent shadow"
         @mousedown.stop.prevent="startScale(corner, $event)"
       />
 
@@ -198,12 +209,12 @@ function startScroll(e: MouseEvent) {
         v-if="maxScrollOffset > 0"
         ref="scrollTrack"
         :style="scrollTrackStyle"
-        class="rounded-full bg-white/10"
+        class="rounded-full bg-[#22d3ee]/20"
         @mousedown.stop.prevent="startScroll($event)"
       >
         <div
           :style="scrollThumbStyle"
-          class="rounded-full bg-white/40"
+          class="rounded-full bg-[#22d3ee] shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
         />
       </div>
     </template>

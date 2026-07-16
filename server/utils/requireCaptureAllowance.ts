@@ -1,7 +1,14 @@
 import { getCaptureStatus, PRO_CAPTURE_MONTHLY_LIMIT } from './captureAllowance'
 
-/** Throws a 403 once a user has exhausted their capture allowance; otherwise records the capture. */
-export async function requireCaptureAllowance(userId: string): Promise<void> {
+export interface CaptureAllowance {
+  /** Records the capture as used. Call only once the capture has actually succeeded — failed
+   *  attempts (blocked URL, timeout, upstream error) should not consume the user's allowance. */
+  commit: () => Promise<void>
+}
+
+/** Throws a 403 once a user has exhausted their capture allowance; otherwise returns a handle
+ *  to record the capture once it succeeds. */
+export async function requireCaptureAllowance(userId: string): Promise<CaptureAllowance> {
   const sb = useSupabaseAdmin()
   const { data: profile } = await sb
     .from('profiles')
@@ -19,12 +26,16 @@ export async function requireCaptureAllowance(userId: string): Promise<void> {
     throw createError({ statusCode: 403, message })
   }
 
-  if (status.isPro) {
-    await sb.from('profiles').update({
-      pro_capture_count: status.used + 1,
-      pro_capture_period_start: status.periodExpired ? new Date().toISOString() : profile.pro_capture_period_start,
-    }).eq('id', userId)
-  } else {
-    await sb.from('profiles').update({ capture_count: status.used + 1 }).eq('id', userId)
+  return {
+    commit: async () => {
+      if (status.isPro) {
+        await sb.from('profiles').update({
+          pro_capture_count: status.used + 1,
+          pro_capture_period_start: status.periodExpired ? new Date().toISOString() : profile.pro_capture_period_start,
+        }).eq('id', userId)
+      } else {
+        await sb.from('profiles').update({ capture_count: status.used + 1 }).eq('id', userId)
+      }
+    },
   }
 }

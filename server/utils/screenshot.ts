@@ -4,10 +4,16 @@ const SCREENSHOT_TIMEOUT_MS = 45_000
 
 export type ScreenshotViewport = 'desktop' | 'tablet' | 'mobile'
 
-/** Signs a capture request for the screenshotter's HMAC-based auth (see CAPTURE_SIGNING_SECRET). */
-function signCapture(url: string, viewport: ScreenshotViewport): { timestamp: string; signature: string } {
+/**
+ * Signs a capture request for the screenshotter's HMAC-based auth (see CAPTURE_SIGNING_SECRET).
+ * Message is `${timestamp}\n${url}\n${viewport}\n${deviceScaleFactor}` — when deviceScaleFactor
+ * is omitted, an empty string is signed in its place (not a fallback number), matching what the
+ * screenshotter expects when the JSON body itself omits the key.
+ */
+function signCapture(url: string, viewport: ScreenshotViewport, deviceScaleFactor?: number): { timestamp: string; signature: string } {
   const timestamp = Math.floor(Date.now() / 1000).toString()
-  const message = `${timestamp}\n${url}\n${viewport}`
+  const dsfPart = deviceScaleFactor !== undefined ? String(deviceScaleFactor) : ''
+  const message = `${timestamp}\n${url}\n${viewport}\n${dsfPart}`
   const signature = createHmac('sha256', process.env.CAPTURE_SIGNING_SECRET!).update(message).digest('hex')
   return { timestamp, signature }
 }
@@ -22,8 +28,8 @@ async function screenshotErrorFromResponse(res: Response): Promise<Error> {
   return new Error(`Screenshot failed (${res.status}). Try again later.`)
 }
 
-export async function takeScreenshot(url: string, viewport: ScreenshotViewport = 'desktop'): Promise<Buffer> {
-  const { timestamp, signature } = signCapture(url, viewport)
+export async function takeScreenshot(url: string, viewport: ScreenshotViewport = 'desktop', deviceScaleFactor: number | undefined = 1): Promise<Buffer> {
+  const { timestamp, signature } = signCapture(url, viewport, deviceScaleFactor)
 
   let res: Response
   try {
@@ -35,7 +41,7 @@ export async function takeScreenshot(url: string, viewport: ScreenshotViewport =
         'X-Capture-Timestamp': timestamp,
         'X-Capture-Signature': signature,
       },
-      body: JSON.stringify({ url, viewport }),
+      body: JSON.stringify({ url, viewport, ...(deviceScaleFactor !== undefined ? { deviceScaleFactor } : {}) }),
       signal: AbortSignal.timeout(SCREENSHOT_TIMEOUT_MS),
     })
   } catch (err) {
@@ -55,8 +61,8 @@ export async function takeScreenshot(url: string, viewport: ScreenshotViewport =
  * pipe its body to the browser. Throws if the request fails before the stream starts
  * (auth/validation errors return JSON with a non-200 status before any SSE bytes are sent).
  */
-export async function streamScreenshot(url: string, viewport: ScreenshotViewport = 'desktop'): Promise<Response> {
-  const { timestamp, signature } = signCapture(url, viewport)
+export async function streamScreenshot(url: string, viewport: ScreenshotViewport = 'desktop', deviceScaleFactor: number | undefined = 1): Promise<Response> {
+  const { timestamp, signature } = signCapture(url, viewport, deviceScaleFactor)
 
   let res: Response
   try {
@@ -68,7 +74,7 @@ export async function streamScreenshot(url: string, viewport: ScreenshotViewport
         'X-Capture-Timestamp': timestamp,
         'X-Capture-Signature': signature,
       },
-      body: JSON.stringify({ url, viewport }),
+      body: JSON.stringify({ url, viewport, ...(deviceScaleFactor !== undefined ? { deviceScaleFactor } : {}) }),
       signal: AbortSignal.timeout(SCREENSHOT_TIMEOUT_MS),
     })
   } catch (err) {

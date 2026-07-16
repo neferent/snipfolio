@@ -150,43 +150,45 @@
         @touchstart.passive="onCanvasTouchStart"
         @touchmove="onCanvasTouchMove"
       >
-        <div class="pointer-events-none absolute bottom-4 left-0 right-0 z-20 flex justify-center">
+        <div
+          class="pointer-events-none absolute right-4 z-20 flex flex-col items-end gap-2"
+          :class="isMobile ? 'bottom-20' : 'bottom-4'"
+        >
+          <!-- Frame mismatch overlay (dismissible) -->
+          <Transition name="mismatch-fade">
+            <div
+              v-if="frameMismatches.length > 0 && !mismatchDismissed"
+              class="pointer-events-auto max-w-[240px] rounded-lg px-[12px] py-[10px] backdrop-blur-sm bg-[rgba(18,20,24,0.92)] shadow-[0_4px_16px_rgba(0,0,0,0.4)] [border:1px_solid_rgba(251,191,36,0.3)]"
+            >
+              <div class="flex items-center justify-between gap-3 mb-1.5">
+                <span class="text-[12px] font-semibold tracking-[0.04em] text-amber-400">Frame mismatch</span>
+                <button
+                  class="shrink-0 leading-none [color:rgba(251,191,36,0.5)] transition hover:text-[#fbbf24]"
+                  @click="mismatchDismissed = true"
+                >
+                  <X class="size-3" />
+                </button>
+              </div>
+              <ul class="m-0 flex list-none flex-col gap-[3px] p-0">
+                <li
+                  v-for="m in frameMismatches"
+                  :key="m.slotId"
+                  class="text-[12px] leading-[1.4] [color:rgba(251,191,36,0.7)]"
+                >
+                  <span class="[color:rgba(251,191,36,0.4)]">{{ m.frameName }}</span>
+                  {{ m.snipLabel }}
+                </li>
+              </ul>
+              <p class="mt-[6px] text-[10px] leading-[1.4] [color:rgba(251,191,36,0.4)]">
+                Frame will appear distorted
+              </p>
+            </div>
+          </Transition>
+
           <div class="pointer-events-auto">
             <WatermarkToggle />
           </div>
         </div>
-
-        <!-- Frame mismatch overlay (bottom-right, dismissible) -->
-        <Transition name="mismatch-fade">
-          <div
-            v-if="frameMismatches.length > 0 && !mismatchDismissed"
-            class="pointer-events-auto absolute right-4 z-20 max-w-[240px] rounded-lg px-[12px] py-[10px] backdrop-blur-sm bg-[rgba(18,20,24,0.92)] shadow-[0_4px_16px_rgba(0,0,0,0.4)] [border:1px_solid_rgba(251,191,36,0.3)]"
-            :class="isMobile ? 'bottom-20' : 'bottom-4'"
-          >
-            <div class="flex items-center justify-between gap-3 mb-1.5">
-              <span class="text-[12px] font-semibold tracking-[0.04em] text-amber-400">Frame mismatch</span>
-              <button
-                class="shrink-0 leading-none [color:rgba(251,191,36,0.5)] transition hover:text-[#fbbf24]"
-                @click="mismatchDismissed = true"
-              >
-                <X class="size-3" />
-              </button>
-            </div>
-            <ul class="m-0 flex list-none flex-col gap-[3px] p-0">
-              <li
-                v-for="m in frameMismatches"
-                :key="m.slotId"
-                class="text-[12px] leading-[1.4] [color:rgba(251,191,36,0.7)]"
-              >
-                <span class="[color:rgba(251,191,36,0.4)]">{{ m.frameName }}</span>
-                {{ m.snipLabel }}
-              </li>
-            </ul>
-            <p class="mt-[6px] text-[10px] leading-[1.4] [color:rgba(251,191,36,0.4)]">
-              Frame will appear distorted
-            </p>
-          </div>
-        </Transition>
       <div class="flex min-h-full items-center justify-center p-8">
         <!-- Artboard -->
         <div

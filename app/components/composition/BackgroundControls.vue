@@ -2,7 +2,6 @@
   <div class="space-y-4">
     <!-- Type selector -->
     <div class="space-y-1.5">
-      <label class="text-[12px] font-medium tracking-wider uppercase text-[var(--color-text-faint)]">Background</label>
       <div class="grid grid-cols-2 gap-1">
         <button
           v-for="t in types"
@@ -136,10 +135,10 @@ const emit = defineEmits<{
 }>()
 
 const types = [
-  { value: 'solid', label: 'Solid' },
-  { value: 'gradient', label: 'Gradient' },
-  { value: 'image', label: 'Image' },
   { value: 'blur', label: 'Blur' },
+  { value: 'gradient', label: 'Gradient' },
+  { value: 'solid', label: 'Solid' },
+  { value: 'image', label: 'Image' },
 ]
 
 const gradientPresets = [

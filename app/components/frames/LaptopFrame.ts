@@ -10,6 +10,13 @@ const SVG_H = 2300
 const SCR_X = 387.63, SCR_Y = 59.07
 const SCR_W = 3034.7,  SCR_H = 1964.07
 
+/** Exact pixel size the screen content is drawn at for a frame of this width/height — matches the
+ *  dw/dh passed to drawCoverFromTop below, so a caller can pre-resize the screenshot to this size
+ *  and avoid a second resample inside drawCoverFromTop. */
+export function getScreenDrawSize(width: number, height: number): { width: number; height: number } {
+  return { width: SCR_W * (width / SVG_W), height: SCR_H * (height / SVG_H) }
+}
+
 export function drawLaptopFrame(
   ctx: CanvasRenderingContext2D,
   x: number,
