@@ -110,7 +110,7 @@
                       :disabled="busyUser === user.id"
                       @click="grantDayPass(user)"
                     >
-                      + Grant 3-Day Pass
+                      + Grant 7-Day Pass
                     </button>
                   </td>
 

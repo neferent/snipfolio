@@ -34,6 +34,7 @@
     </div>
     <div class="my-0.5 h-px bg-[var(--color-border)]" />
     <AppDropdownItem v-if="authStore.isPro" @click="openBilling">Manage subscription</AppDropdownItem>
+    <AppDropdownItem v-else @click="navigateTo('/pro')">Upgrade</AppDropdownItem>
     <AppDropdownItem @click="signOut">Sign out</AppDropdownItem>
   </AppDropdown>
 </template>

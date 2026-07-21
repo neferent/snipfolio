@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
   const userId = getRouterParam(event, 'id')!
 
   const sb = useSupabaseAdmin()
-  const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
   const { error } = await sb
     .from('profiles')

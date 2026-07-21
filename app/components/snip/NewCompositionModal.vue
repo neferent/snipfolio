@@ -34,7 +34,7 @@
               <component :is="t.icon" class="size-5 text-[var(--color-text-muted)]" />
               <div class="mt-2 flex items-center gap-1.5 text-sm font-medium text-[var(--color-text)]">
                 {{ t.label }}
-                <span v-if="t.value === 'url' && !isPro" class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
+                <span v-if="t.value === 'url' && !isPro" class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">7-Day Pass</span>
               </div>
               <div class="mt-[2px] text-[12px] leading-tight text-[var(--color-text-muted)]">{{ t.hint }}</div>
             </button>
@@ -109,15 +109,18 @@
             </div>
           </template>
 
-          <!-- From URL: 3-Day Pass upsell -->
+          <!-- From URL: 7-Day Pass upsell -->
           <template v-else-if="type === 'url' && !isPro">
             <p class="text-sm text-[var(--color-text-muted)]">
-              Capturing from a live URL requires a 3-Day Access Pass.
+              Capturing from a live URL requires a 7-Day Access Pass.
             </p>
-            <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
-              <AppButton size="sm" class="w-full" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openNewComposition=1'))">
+            <div class="flex gap-2 rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
+              <AppButton size="sm" variant="secondary" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('pro', checkoutReturnUrl('openNewComposition=1'))">
+                Subscribe — $14.99/mo
+              </AppButton>
+              <AppButton size="sm" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openNewComposition=1'))">
                 <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-                {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
+                {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
               </AppButton>
             </div>
           </template>

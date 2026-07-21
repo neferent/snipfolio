@@ -49,7 +49,7 @@ onMounted(async () => {
   }
 
   if (activated) {
-    const label = checkoutType === 'day_pass' ? '3-Day Pass activated!' : 'Subscription activated!'
+    const label = checkoutType === 'day_pass' ? '7-Day Pass activated!' : 'Subscription activated!'
     const description = checkoutType === 'day_pass'
       ? 'Enjoy 3 days of full access.'
       : 'Enjoy watermark-free exports.'

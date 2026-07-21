@@ -1,14 +1,17 @@
 <template>
   <AppModal :open="open" title="Capture from URL" @close="onClose">
-    <!-- 3-Day Pass upsell (non-pro users) -->
+    <!-- 7-Day Pass upsell (non-pro users) -->
     <div v-if="!isPro" class="flex flex-col gap-3">
       <p class="text-sm text-[var(--color-text-muted)]">
-        Capturing from a live URL requires a 3-Day Access Pass.
+        Capturing from a live URL requires a 7-Day Access Pass.
       </p>
-      <div class="rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
-        <AppButton size="sm" class="w-full" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openUrlCapture=1'))">
+      <div class="flex gap-2 rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
+        <AppButton size="sm" variant="secondary" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('pro', checkoutReturnUrl('openUrlCapture=1'))">
+          Subscribe — $14.99/mo
+        </AppButton>
+        <AppButton size="sm" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openUrlCapture=1'))">
           <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-          {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
+          {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
         </AppButton>
       </div>
     </div>

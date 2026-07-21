@@ -89,7 +89,7 @@
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
-            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark. Sign in to get a 3-Day Access Pass.</span>
+            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark. Sign in to get a 7-Day Access Pass.</span>
           </div>
           <NuxtLink
             to="/login"
@@ -108,10 +108,15 @@
             <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
             <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark.</span>
           </div>
-          <AppButton size="sm" :disabled="checkoutLoading" @click="onBuyDayPass">
-            <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-            {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
-          </AppButton>
+          <div class="flex shrink-0 gap-2">
+            <AppButton size="sm" variant="secondary" :disabled="checkoutLoading" @click="onSubscribe">
+              Subscribe — $14.99/mo
+            </AppButton>
+            <AppButton size="sm" :disabled="checkoutLoading" @click="onBuyDayPass">
+              <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
+              {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
+            </AppButton>
+          </div>
         </div>
       </template>
     </div>
@@ -120,7 +125,7 @@
     <div v-else-if="isDayPassActive" class="mt-4 rounded-lg bg-[var(--color-surface-3)] border-faint px-4 py-3">
       <span class="inline-flex items-center gap-1.5 rounded-full bg-green-400/12 px-2.5 py-0.5 text-[11px] font-medium text-green-400">
         <span class="size-1.5 rounded-full bg-green-400" />
-        3-Day Pass active — expires {{ formatPassExpiry(dayPassExpiresAt!) }}
+        7-Day Pass active — expires {{ formatPassExpiry(dayPassExpiresAt!) }}
       </span>
     </div>
 
@@ -227,5 +232,9 @@ function exportSelected() {
 
 function onBuyDayPass() {
   startCheckout('day_pass', checkoutReturnUrl('export=1'))
+}
+
+function onSubscribe() {
+  startCheckout('pro', checkoutReturnUrl('export=1'))
 }
 </script>

@@ -1,13 +1,15 @@
 import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
 
+export const PROJECT_LIMIT = 3
+
 export function usePlan() {
   const authStore = useAuthStore()
   const projectStore = useProjectStore()
   const isGuest = computed(() => authStore.isGuest)
   const isAdmin = computed(() => authStore.isAdmin)
 
-  // A 3-day access pass grants full Pro access for 72h, account-wide, without a subscription
+  // A 7-day pass grants full Pro access for 7 days, account-wide, without a subscription
   const isDayPassActive = computed(() => {
     if (authStore.isPro || !authStore.proExpiresAt) return false
     return new Date(authStore.proExpiresAt) > new Date()
@@ -23,15 +25,31 @@ export function usePlan() {
   const capturesUsed = computed(() => authStore.capturesUsed)
   const capturesRemaining = computed(() => authStore.capturesRemaining)
 
-  const PROJECT_LIMIT = 50
-
   function canCreateProject(): boolean {
-    return projectStore.projects.length < PROJECT_LIMIT
+    return isPro.value || projectStore.projects.length < PROJECT_LIMIT
+  }
+
+  // Free (and lapsed-Pro) accounts can only open their oldest PROJECT_LIMIT projects —
+  // the rest stay intact but locked until the user pays or deletes down to the limit.
+  const accessibleProjectIds = computed(() => {
+    if (isPro.value) return null // null = no restriction, every project is accessible
+    return new Set(
+      [...projectStore.projects]
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        .slice(0, PROJECT_LIMIT)
+        .map((p) => p.id),
+    )
+  })
+
+  function isProjectLocked(projectId: string): boolean {
+    const accessible = accessibleProjectIds.value
+    return accessible !== null && !accessible.has(projectId)
   }
 
   return {
     isGuest, isPro, isAdmin, isDayPassActive, dayPassExpiresAt, canCreateProject,
     captureLimit, capturesUsed, capturesRemaining,
+    accessibleProjectIds, isProjectLocked,
   }
 }
 

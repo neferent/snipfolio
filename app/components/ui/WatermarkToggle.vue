@@ -19,12 +19,16 @@
       <p class="mt-0.5 text-[var(--color-text-muted)]">Remove it permanently:</p>
       <div class="mt-3 flex justify-center gap-2">
         <button
+          :disabled="checkoutLoading"
           class="flex h-7 items-center rounded-[6px] bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
+          @click="startCheckout('pro')"
         >
           Subscribe
         </button>
         <button
+          :disabled="checkoutLoading"
           class="flex h-7 items-center rounded-[6px] border-strong px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)]"
+          @click="startCheckout('day_pass')"
         >
           Pay per export
         </button>
@@ -37,8 +41,10 @@
 import { Eye, EyeOff } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useWatermarkPreview } from '~/composables/useWatermarkPreview'
+import { useCheckout } from '~/composables/useCheckout'
 
 const authStore = useAuthStore()
 const { hidden, toggle } = useWatermarkPreview()
 const isGuest = computed(() => authStore.isGuest)
+const { startCheckout, loading: checkoutLoading } = useCheckout()
 </script>

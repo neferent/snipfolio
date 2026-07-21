@@ -59,7 +59,7 @@ For Freeform/Laptop/Laptop+Phone types, the slot list, add-snip, and toolbar bel
 - **Add Snip** — below the slot list in `FreeformEditor.vue` (~line 85-100). Picks an unplaced snip from the project and adds it as a new slot via `addSnip(snip)`.
 - **Composition toolbar** — `ComposerToolbar.vue`, rendered above the canvas in `FreeformEditor.vue` (~line 117-130). Alignment (left/center/right/top/middle/bottom) and z-order (forward/back/front/bottom) for the selected slot, plus delete.
 - **Settings > Background** — `BackgroundControls.vue`, inside `CompositionSettingsPanel.vue`. Background color/gradient/image config.
-- **Platform presets** — `PlatformPresets.vue`, inside `CompositionSettingsPanel.vue` below background controls. Pro-gated accordion of platform-specific output sizes (uses `icons/Logo*.vue`).
+- **Platform presets** — `PlatformPresets.vue`, inside `CompositionSettingsPanel.vue` below background controls. Free-for-everyone accordion of platform-specific output sizes (uses `icons/Logo*.vue`).
 - **Output** — output-size section inside `CompositionSettingsPanel.vue`. Preset size buttons + custom width/height inputs.
 - **Export modal** — `ExportPickerModal.vue`, triggered by the "Export PNG" button in `CompositionSettingsPanel.vue` (`doExport`). Handles export format/size selection and download; also gates non-Pro export limits.
 
@@ -90,7 +90,7 @@ For Freeform/Laptop/Laptop+Phone types, the slot list, add-snip, and toolbar bel
 | `CompositionSettingsPanel.vue` | Shared right-sidebar "Settings" panel (background, platform presets, output size, name, export) — used by both `FreeformEditor` and `CompositionEditor`'s Auto-Collage layout |
 | `BackgroundControls.vue` | Background color/gradient/image controls |
 | `CaptionControls.vue` | Caption text/style controls |
-| `PlatformPresets.vue` | Accordion of platform-specific size presets (Pro feature) |
+| `PlatformPresets.vue` | Accordion of platform-specific size presets (free for everyone) |
 
 ### UI (`components/ui/`)
 | File | Role |

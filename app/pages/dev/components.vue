@@ -185,7 +185,7 @@
         <div class="rounded-2xl border-faint bg-[var(--color-surface)] p-6">
           <div class="grid grid-cols-[repeat(auto-fit,minmax(0,max-content))] items-center">
             <div class="p-2"><AppBadge>Desktop</AppBadge></div>
-            <div class="p-2"><AppBadge variant="accent">3-Day Pass</AppBadge></div>
+            <div class="p-2"><AppBadge variant="accent">7-Day Pass</AppBadge></div>
             <div class="p-2"><AppBadge variant="success">Saved</AppBadge></div>
             <div class="p-2"><AppBadge variant="warning">Free plan</AppBadge></div>
             <div class="p-2"><AppBadge variant="danger">Error</AppBadge></div>

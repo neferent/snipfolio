@@ -35,7 +35,21 @@
     <!-- relative + flex-1 gives SnipTool's absolute inset-0 a defined bounding box -->
     <div class="relative min-h-0 flex-1">
       <Transition name="fade">
-        <SnipTool v-if="!loading && !loadError" />
+        <SnipTool v-if="!loading && !loadError && !locked" />
+        <div
+          v-else-if="locked"
+          class="flex h-full flex-col items-center justify-center gap-3 text-center"
+        >
+          <p class="text-sm text-[var(--color-text-muted)]">
+            This project is locked on the free plan.<br>Upgrade, or delete other projects to bring your total to {{ PROJECT_LIMIT }} or fewer.
+          </p>
+          <NuxtLink
+            to="/projects"
+            class="text-sm text-[var(--color-accent)] hover:underline"
+          >
+            ← Back to Projects
+          </NuxtLink>
+        </div>
         <div
           v-else-if="loadError"
           class="flex h-full flex-col items-center justify-center gap-3 text-center"
@@ -57,6 +71,7 @@
 import { Pencil } from 'lucide-vue-next'
 import { useProjectStore } from '~/stores/project'
 import { useProject } from '~/composables/useProject'
+import { usePlan, PROJECT_LIMIT } from '~/composables/usePlan'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -64,15 +79,21 @@ const route = useRoute()
 const projectStore = useProjectStore()
 
 useHead({ title: computed(() => projectStore.current ? `${projectStore.current.name} — Snipfolio` : 'Snipfolio') })
-const { loadProject, scheduleSave } = useProject()
+const { loadProject, scheduleSave, fetchProjects } = useProject()
+const { isProjectLocked } = usePlan()
 
 const projectId = computed(() => route.params.id as string)
 const loading = ref(true)
 const loadError = ref(false)
+const locked = ref(false)
 
 onMounted(async () => {
   try {
-    await loadProject(projectId.value)
+    await Promise.all([
+      loadProject(projectId.value),
+      projectStore.projects.length ? Promise.resolve() : fetchProjects(),
+    ])
+    locked.value = isProjectLocked(projectId.value)
   } catch (e) {
     console.error('[project] failed to load:', e)
     loadError.value = true

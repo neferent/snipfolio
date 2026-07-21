@@ -26,7 +26,7 @@
         >
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium text-[var(--color-text)]">Capture &amp; Compose</span>
-            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">3-Day Pass</span>
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">7-Day Pass</span>
           </div>
           <span class="text-xs text-[var(--color-text-muted)]">Paste a URL and get a polished mockup in seconds.</span>
         </button>
@@ -60,7 +60,7 @@
         <!-- Pro upsell, shown when "From URL" is selected and the user is not Pro -->
         <div v-else-if="type === 'url' && !isPro" key="url-locked" class="expand-panel space-y-3">
           <p class="mt-3 text-sm text-[var(--color-text-muted)]">
-            Capturing from a live URL requires a 3-Day Access Pass.
+            Capturing from a live URL requires a 7-Day Access Pass.
           </p>
         </div>
       </Transition>
@@ -83,15 +83,22 @@
       <!-- Main step -->
       <template v-if="step === 'main'">
         <Transition name="fade" mode="out-in">
-          <AppButton
-            v-if="type === 'url' && !isPro"
-            key="upgrade"
-            :disabled="checkoutLoading"
-            @click="startCheckout('day_pass', '/projects?openUrlCapture=1')"
-          >
-            <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-            {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 3-Day Pass — $4.99' }}
-          </AppButton>
+          <div v-if="type === 'url' && !isPro" key="upgrade" class="flex gap-2">
+            <AppButton
+              variant="secondary"
+              :disabled="checkoutLoading"
+              @click="startCheckout('pro', '/projects?openUrlCapture=1')"
+            >
+              Subscribe — $14.99/mo
+            </AppButton>
+            <AppButton
+              :disabled="checkoutLoading"
+              @click="startCheckout('day_pass', '/projects?openUrlCapture=1')"
+            >
+              <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
+              {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
+            </AppButton>
+          </div>
           <AppButton
             v-else
             key="submit"

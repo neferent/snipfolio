@@ -8,6 +8,9 @@ export default defineEventHandler(async (event) => {
     .eq('id', userId)
     .single()
 
+  sb.from('profiles').update({ last_active_at: new Date().toISOString() }).eq('id', userId)
+    .then(({ error }) => { if (error) console.error('[profile] failed to touch last_active_at:', error) })
+
   const captures = getCaptureStatus({
     is_pro: profile?.is_pro ?? false,
     pro_expires_at: profile?.pro_expires_at ?? null,
