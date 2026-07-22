@@ -345,6 +345,19 @@ export function useCompositions() {
     return _makeComposition(name ?? 'Auto-Collage', 'auto', config)
   }
 
+  /** Builds a freeform composition from caller-supplied slots as-is (e.g. Studio's "Save as Project", which
+   *  already has exact positions/frame colors/background from the live arrangement, not a generic layout). */
+  function createFreeformFromSlots(
+    slots: FreeformSlotConfig[],
+    background: BackgroundConfig,
+    outputWidth: number,
+    outputHeight: number,
+    name?: string,
+  ): Composition {
+    const config: FreeformCompositionConfig = { slots, background, outputWidth, outputHeight }
+    return _makeComposition(name ?? 'Freeform', 'freeform', config)
+  }
+
   function createFreeformComposition(
     snipIds: string[],
     name?: string,
@@ -391,6 +404,7 @@ export function useCompositions() {
     createBrowserComposition,
     createAutoComposition,
     createFreeformComposition,
+    createFreeformFromSlots,
     updateComposition,
     deleteComposition,
   }

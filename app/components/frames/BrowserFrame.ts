@@ -18,6 +18,12 @@ export function browserToolbarHeight(contentW: number): number {
   return Math.max(32, TOOLBAR_SVG_H * (contentW / SVG_W))
 }
 
+/** Exact pixel size the screen content is drawn at for a frame of this width/height (toolbar consumes
+ *  the top of the box, so the drawable screen area is the full width but a shorter height). */
+export function getScreenDrawSize(width: number, height: number): { width: number; height: number } {
+  return { width, height: Math.max(1, height - browserToolbarHeight(width)) }
+}
+
 export function drawBrowserFrame(
   ctx: CanvasRenderingContext2D,
   x: number,

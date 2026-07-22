@@ -9,7 +9,7 @@ function sanitizeFilename(name: string) {
   return name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '')
 }
 
-function downloadCanvas(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+export function downloadCanvas(canvas: HTMLCanvasElement, filename: string): Promise<void> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {
@@ -27,7 +27,7 @@ function downloadCanvas(canvas: HTMLCanvasElement, filename: string): Promise<vo
   })
 }
 
-async function copyCanvasToClipboard(canvas: HTMLCanvasElement): Promise<void> {
+export async function copyCanvasToClipboard(canvas: HTMLCanvasElement): Promise<void> {
   if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
     throw new Error('Copying images is not supported in this browser.')
   }

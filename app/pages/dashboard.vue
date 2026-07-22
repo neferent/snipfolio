@@ -3,14 +3,20 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick, type 
 import { Loader2Icon, XIcon, MoveUp, MoveDown, BringToFront, SendToBack } from 'lucide-vue-next'
 import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
+import { useSourcesStore } from '~/stores/sources'
+import { useSnipsStore } from '~/stores/snips'
+import { useCompositionsStore } from '~/stores/compositions'
 import { useProject } from '~/composables/useProject'
+import { useCompositions } from '~/composables/useCompositions'
 import AppDropdown from '~/components/ui/AppDropdown.vue'
 import AppDropdownItem from '~/components/ui/AppDropdownItem.vue'
 import {
   captureViewportSSE,
   isValidCaptureUrl,
   resolveCaptureUrl,
+  getCaptureHostname,
   VIEWPORT_SCREEN_ASPECT,
+  LAPTOP_SCREEN_ASPECT,
   idleProgress,
   overallProgressPercent,
   useProgressTick,
@@ -21,21 +27,26 @@ import {
 import { drawPhoneFrame, getScreenDrawSize as getPhoneScreenDrawSize } from '~/components/frames/PhoneFrame'
 import { drawTabletFrame, getScreenDrawSize as getTabletScreenDrawSize } from '~/components/frames/TabletFrame'
 import { drawLaptopFrame, getScreenDrawSize as getLaptopScreenDrawSize } from '~/components/frames/LaptopFrame'
+import { drawBrowserFrame, browserToolbarHeight, getScreenDrawSize as getBrowserScreenDrawSize } from '~/components/frames/BrowserFrame'
 import BackgroundControls from '~/components/composition/BackgroundControls.vue'
 import AppColorPicker from '~/components/ui/AppColorPicker.vue'
 import UserMenu from '~/components/ui/UserMenu.vue'
 import StudioFrame from '~/components/studio/StudioFrame.vue'
 import { drawBackground, drawBadge } from '~/composables/useCanvasRenderer'
+import { downloadCanvas, copyCanvasToClipboard } from '~/composables/useExport'
 import { usePlan } from '~/composables/usePlan'
 import { useAuth } from '~/composables/useAuth'
+import { useCheckout } from '~/composables/useCheckout'
+import { toast } from '~/composables/useToast'
 import AppToggleButton from '~/components/ui/AppToggleButton.vue'
 import ImageLightbox from '~/components/ui/ImageLightbox.vue'
-import type { BackgroundConfig } from '~/types'
+import type { BackgroundConfig, FreeformSlotConfig, Snip, SourceImage, DeviceFrame } from '~/types'
 
 useHead({ title: 'Studio — Snipfolio' })
 
 const { isPro, captureLimit, capturesRemaining } = usePlan()
 const { refreshProfile } = useAuth()
+const { startCheckout, loading: checkoutLoading } = useCheckout()
 
 // ---- Auth ----
 const authStore = useAuthStore()
@@ -48,36 +59,81 @@ onMounted(() => {
 
 // ---- Projects dropdown ----
 const projectStore = useProjectStore()
-const { fetchProjects } = useProject()
+const { fetchProjects, createProject: createProjectFn, saveImage, persistAll } = useProject()
+const { createFreeformFromSlots } = useCompositions()
+const sourcesStore = useSourcesStore()
+const snipsStore = useSnipsStore()
+const compositionsStore = useCompositionsStore()
 const recentProjects = computed(() => projectStore.projects.slice(0, 8))
 onMounted(() => {
   if (authStore.isAuthenticated) fetchProjects().catch(() => {})
 })
 
+// ---- Devices ----
+// 'browser' captures the same viewport as 'desktop' (see CAPTURE_VIEWPORT_FOR) but renders it inside
+// a browser-chrome frame with an address bar instead of a laptop bezel — an alternate framing of the
+// same capture, not a distinct viewport, so it and 'desktop' are mutually exclusive (see toggleDevice).
+export type StudioDevice = CaptureViewport | 'browser'
+
+const CAPTURE_VIEWPORT_FOR: Record<StudioDevice, CaptureViewport> = {
+  desktop: 'desktop',
+  tablet: 'tablet',
+  mobile: 'mobile',
+  browser: 'desktop',
+}
+
+// Aspect ratio used to crop a "single screen" slice out of a long capture (see createScrolledViewport) —
+// same as VIEWPORT_SCREEN_ASPECT, extended with 'browser' (which shares the desktop capture's shape).
+const CROP_ASPECT: Record<StudioDevice, number> = {
+  ...VIEWPORT_SCREEN_ASPECT,
+  browser: LAPTOP_SCREEN_ASPECT,
+}
+
+const DEVICE_FRAME_FOR: Record<StudioDevice, DeviceFrame> = {
+  desktop: 'laptop',
+  tablet: 'tablet',
+  mobile: 'phone',
+  browser: 'browser',
+}
+
+const SNAP_FRAME_FOR: Record<StudioDevice, 'laptop' | 'phone' | 'tablet' | null> = {
+  desktop: 'laptop',
+  tablet: 'tablet',
+  mobile: 'phone',
+  browser: null,
+}
+
 // ---- Frame SVG aspect ratios (width/height) ----
-const FRAME_SVG_ASPECT: Record<CaptureViewport, number> = {
+// Browser's overall aspect isn't fixed by an SVG bezel like the others (the toolbar's height is a
+// function of width, see browserToolbarHeight) — this is the aspect at a representative width, just
+// used to keep StudioFrame's aspect-locked corner resize well-behaved.
+const BROWSER_REF_WIDTH = 1300
+const FRAME_SVG_ASPECT: Record<StudioDevice, number> = {
   desktop: 3809.99 / 2300,
   tablet: 2449.87 / 1877.1,
   mobile: 772.5 / 1600,
+  browser: BROWSER_REF_WIDTH / (BROWSER_REF_WIDTH / LAPTOP_SCREEN_ASPECT + browserToolbarHeight(BROWSER_REF_WIDTH)),
 }
 
-const DEFAULT_FRAME_WIDTH: Record<CaptureViewport, number> = {
+const DEFAULT_FRAME_WIDTH: Record<StudioDevice, number> = {
   desktop: 1300,
   tablet: 900,
   mobile: 300,
+  browser: 1300,
 }
 
-const devices: { id: CaptureViewport; label: string }[] = [
+const devices: { id: StudioDevice; label: string }[] = [
   { id: 'desktop', label: 'Desktop' },
+  { id: 'browser', label: 'Browser' },
   { id: 'tablet', label: 'Tablet' },
   { id: 'mobile', label: 'Mobile' },
 ]
 
 // ---- Device toggles ----
-const activeDevices = ref<CaptureViewport[]>(['desktop'])
-const selectedDevice = ref<CaptureViewport | null>('desktop')
+const activeDevices = ref<StudioDevice[]>(['desktop'])
+const selectedDevice = ref<StudioDevice | null>('desktop')
 
-function isActive(d: CaptureViewport) {
+function isActive(d: StudioDevice) {
   return activeDevices.value.includes(d)
 }
 
@@ -85,16 +141,24 @@ function isActive(d: CaptureViewport) {
 // behind everything else). Starts as desktop/tablet/mobile so the default layout matches
 // the classic mockup (bigger device centered, smaller ones layered in front), but the user
 // can reorder via bringForward/sendBackward/bringToFront/sendToBack below.
-const deviceOrder = ref<CaptureViewport[]>(['desktop'])
+const deviceOrder = ref<StudioDevice[]>(['desktop'])
 const orderedActiveDevices = computed(() => deviceOrder.value)
 
-function toggleDevice(d: CaptureViewport) {
+// Desktop and Browser are alternate framings of the same capture — only one can be active at a time.
+const DEVICE_CONFLICT: Partial<Record<StudioDevice, StudioDevice>> = { desktop: 'browser', browser: 'desktop' }
+
+function toggleDevice(d: StudioDevice) {
   if (isActive(d)) {
     if (activeDevices.value.length === 1) return // keep at least one device active
     activeDevices.value = activeDevices.value.filter((x) => x !== d)
     deviceOrder.value = deviceOrder.value.filter((x) => x !== d)
     if (selectedDevice.value === d) selectedDevice.value = activeDevices.value[0] ?? null
   } else {
+    const conflict = DEVICE_CONFLICT[d]
+    if (conflict && isActive(conflict)) {
+      activeDevices.value = activeDevices.value.filter((x) => x !== conflict)
+      deviceOrder.value = deviceOrder.value.filter((x) => x !== conflict)
+    }
     activeDevices.value = [...activeDevices.value, d]
     deviceOrder.value = [...deviceOrder.value, d] // newly added device starts in front
     selectedDevice.value = d
@@ -107,7 +171,7 @@ function toggleDevice(d: CaptureViewport) {
 // arrangeFrames. arrangeOverlapGroup only runs from toggleDevice/Fit/output-size changes.
 
 /** Swaps `d` one step toward the front (higher z). */
-function bringForward(d: CaptureViewport) {
+function bringForward(d: StudioDevice) {
   const i = deviceOrder.value.indexOf(d)
   if (i < 0 || i >= deviceOrder.value.length - 1) return
   const arr = [...deviceOrder.value]
@@ -116,7 +180,7 @@ function bringForward(d: CaptureViewport) {
 }
 
 /** Swaps `d` one step toward the back (lower z). */
-function sendBackward(d: CaptureViewport) {
+function sendBackward(d: StudioDevice) {
   const i = deviceOrder.value.indexOf(d)
   if (i <= 0) return
   const arr = [...deviceOrder.value]
@@ -124,12 +188,12 @@ function sendBackward(d: CaptureViewport) {
   deviceOrder.value = arr
 }
 
-function bringToFront(d: CaptureViewport) {
+function bringToFront(d: StudioDevice) {
   if (deviceOrder.value.length < 2 || deviceOrder.value[deviceOrder.value.length - 1] === d) return
   deviceOrder.value = [...deviceOrder.value.filter((x) => x !== d), d]
 }
 
-function sendToBack(d: CaptureViewport) {
+function sendToBack(d: StudioDevice) {
   if (deviceOrder.value.length < 2 || deviceOrder.value[0] === d) return
   deviceOrder.value = [d, ...deviceOrder.value.filter((x) => x !== d)]
 }
@@ -142,9 +206,11 @@ interface FrameState {
   frameColor: string
   scrollOffset: number
   capturedImage: HTMLImageElement | null
+  /** The resolved URL that produced capturedImage — shown in the Browser frame's address bar. */
+  capturedUrl: string
 }
 
-function makeFrameState(d: CaptureViewport): FrameState {
+function makeFrameState(d: StudioDevice): FrameState {
   return {
     x: 0,
     y: 0,
@@ -152,24 +218,26 @@ function makeFrameState(d: CaptureViewport): FrameState {
     frameColor: '#262c44',
     scrollOffset: 0,
     capturedImage: null,
+    capturedUrl: '',
   }
 }
 
-const frameState = reactive<Record<CaptureViewport, FrameState>>({
+const frameState = reactive<Record<StudioDevice, FrameState>>({
   desktop: makeFrameState('desktop'),
   tablet: makeFrameState('tablet'),
   mobile: makeFrameState('mobile'),
+  browser: makeFrameState('browser'),
 })
 
-function frameHeight(d: CaptureViewport) {
+function frameHeight(d: StudioDevice) {
   return frameState[d].width / FRAME_SVG_ASPECT[d]
 }
 
-function maxScrollOffsetFor(d: CaptureViewport) {
+function maxScrollOffsetFor(d: StudioDevice) {
   const img = frameState[d].capturedImage
   if (!img) return 0
   const vw = img.naturalWidth
-  const vh = Math.round(vw / VIEWPORT_SCREEN_ASPECT[d])
+  const vh = Math.round(vw / CROP_ASPECT[d])
   return Math.max(0, img.naturalHeight - vh)
 }
 
@@ -187,7 +255,7 @@ function arrangeFrames() {
 }
 
 /** Scales a single frame to fill most of the canvas (respecting its aspect ratio) and centers it. */
-function fitSingleFrame(d: CaptureViewport) {
+function fitSingleFrame(d: StudioDevice) {
   const marginRatio = 0.9
   const aspect = FRAME_SVG_ASPECT[d]
   const scale = Math.min((outputWidth.value * marginRatio) / aspect, outputHeight.value * marginRatio)
@@ -225,13 +293,14 @@ function fitSingleFrame(d: CaptureViewport) {
 //
 // All three devices are always bottom-aligned to one shared line, so changing a
 // height ratio never needs a matching y-offset tweak.
-const UNIT_HEIGHT: Record<CaptureViewport, number> = {
+const UNIT_HEIGHT: Record<StudioDevice, number> = {
   desktop: 1,
   tablet: 0.666,
   mobile: 0.7,
+  browser: 1,
 }
 const OVERLAP_FRACTION = 0.35
-const OVERLAP_SIDE: Partial<Record<CaptureViewport, 'left' | 'right'>> = {
+const OVERLAP_SIDE: Partial<Record<StudioDevice, 'left' | 'right'>> = {
   mobile: 'left',
   tablet: 'right',
 }
@@ -242,16 +311,16 @@ const OVERLAP_SIDE: Partial<Record<CaptureViewport, 'left' | 'right'>> = {
  * the anchor and stays centered/back; the rest sit in front, bottom-aligned, overlapping
  * the anchor's left/right edge.
  */
-function arrangeOverlapGroup(ds: CaptureViewport[]) {
+function arrangeOverlapGroup(ds: StudioDevice[]) {
   const [anchor, ...fronts] = ds
   if (!anchor) return
 
-  const unitOf = (d: CaptureViewport) => ({ h: UNIT_HEIGHT[d], w: UNIT_HEIGHT[d] * FRAME_SVG_ASPECT[d] })
+  const unitOf = (d: StudioDevice) => ({ h: UNIT_HEIGHT[d], w: UNIT_HEIGHT[d] * FRAME_SVG_ASPECT[d] })
   const anchorU = unitOf(anchor)
 
   let leftExtra = 0
   let rightExtra = 0
-  const frontUnits = new Map<CaptureViewport, { h: number; w: number; overlap: number }>()
+  const frontUnits = new Map<StudioDevice, { h: number; w: number; overlap: number }>()
   for (const f of fronts) {
     const u = unitOf(f)
     const overlap = u.w * OVERLAP_FRACTION
@@ -286,17 +355,18 @@ function arrangeOverlapGroup(ds: CaptureViewport[]) {
   }
 }
 
-function centerFrame(d: CaptureViewport) {
+function centerFrame(d: StudioDevice) {
   frameState[d].x = Math.round((outputWidth.value - frameState[d].width) / 2)
   frameState[d].y = Math.round((outputHeight.value - frameHeight(d)) / 2)
 }
 
 // ---- Capture state (per device) ----
 const url = ref('')
-const captureState = reactive<Record<CaptureViewport, { isCapturing: boolean; progress: ViewportProgress; error: string | null }>>({
+const captureState = reactive<Record<StudioDevice, { isCapturing: boolean; progress: ViewportProgress; error: string | null }>>({
   desktop: { isCapturing: false, progress: idleProgress(), error: null },
   tablet: { isCapturing: false, progress: idleProgress(), error: null },
   mobile: { isCapturing: false, progress: idleProgress(), error: null },
+  browser: { isCapturing: false, progress: idleProgress(), error: null },
 })
 const abortCtrl = ref<AbortController | null>(null)
 const { now: tickNow, start: startTick, stop: stopTick } = useProgressTick()
@@ -312,10 +382,10 @@ const hasAnyCapture = computed(() => activeDevices.value.some((d) => frameState[
 // (while the capture form is still open), and also cover devices still waiting/in-flight/errored
 // once capture starts (captures happen one device at a time — see `capture()`) — otherwise they'd
 // just look empty once the first device lands and the capture-form overlay disappears.
-function ghostVisible(d: CaptureViewport) {
+function ghostVisible(d: StudioDevice) {
   return !frameState[d].capturedImage && (!hasAnyCapture.value || isCapturing.value || !!captureState[d].error)
 }
-function ghostStyle(d: CaptureViewport): CSSProperties {
+function ghostStyle(d: StudioDevice): CSSProperties {
   return {
     left: `${Math.round(frameState[d].x * viewScale.value)}px`,
     top: `${Math.round(frameState[d].y * viewScale.value)}px`,
@@ -328,7 +398,7 @@ const captureLimitReached = computed(() =>
   authStore.profileLoaded && capturesRemaining.value <= 0,
 )
 
-async function captureOne(d: CaptureViewport, resolvedUrl: string) {
+async function captureOne(d: StudioDevice, resolvedUrl: string) {
   captureState[d].isCapturing = true
   captureState[d].error = null
   captureState[d].progress = { phase: 'connecting', phaseStartedAt: Date.now() }
@@ -337,12 +407,13 @@ async function captureOne(d: CaptureViewport, resolvedUrl: string) {
     if (!token) throw new Error('Not signed in')
     const { img } = await captureViewportSSE(
       resolvedUrl,
-      d,
+      CAPTURE_VIEWPORT_FOR[d],
       token,
       (p) => { captureState[d].progress = p },
       abortCtrl.value?.signal,
     )
     frameState[d].capturedImage = img
+    frameState[d].capturedUrl = resolvedUrl
     frameState[d].scrollOffset = 0
   } catch (err: any) {
     if (err?.name !== 'AbortError') captureState[d].error = err?.message || 'Capture failed'
@@ -470,9 +541,9 @@ function createScrolledViewport(img: HTMLImageElement, offset: number, aspect: n
 }
 
 // ---- Blur background (tracks the largest active device's frame + scroll) ----
-const BLUR_SOURCE_PRIORITY: CaptureViewport[] = ['desktop', 'tablet', 'mobile']
+const BLUR_SOURCE_PRIORITY: StudioDevice[] = ['desktop', 'browser', 'tablet', 'mobile']
 
-function blurSourceDevice(): CaptureViewport | null {
+function blurSourceDevice(): StudioDevice | null {
   for (const d of BLUR_SOURCE_PRIORITY) {
     if (activeDevices.value.includes(d) && frameState[d].capturedImage) return d
   }
@@ -488,7 +559,7 @@ function blurBackgroundInputs(): {
   const fs = frameState[d]
   const img = fs.capturedImage!
   const vw = img.naturalWidth
-  const vh = Math.round(vw / VIEWPORT_SCREEN_ASPECT[d])
+  const vh = Math.round(vw / CROP_ASPECT[d])
   const y = Math.min(Math.max(0, Math.round(fs.scrollOffset)), Math.max(0, img.naturalHeight - vh))
   return { source: img, region: { x: 0, y, width: vw, height: Math.max(1, vh) } }
 }
@@ -510,7 +581,7 @@ async function resizeForFrame(source: CanvasImageSource, targetW: number, target
   }
 }
 
-function drawFrameSync(ctx: CanvasRenderingContext2D, d: CaptureViewport, viewport: CanvasImageSource) {
+function drawFrameSync(ctx: CanvasRenderingContext2D, d: StudioDevice, viewport: CanvasImageSource) {
   const fs = frameState[d]
   const fw = fs.width
   const fh = frameHeight(d)
@@ -520,13 +591,15 @@ function drawFrameSync(ctx: CanvasRenderingContext2D, d: CaptureViewport, viewpo
 
   if (d === 'mobile') drawPhoneFrame(ctx, fx, fy, fw, fh, viewport, fc)
   else if (d === 'tablet') drawTabletFrame(ctx, fx, fy, fw, fh, viewport, fc)
+  else if (d === 'browser') drawBrowserFrame(ctx, fx, fy, fw, fh, viewport, fc, fs.capturedUrl ? getCaptureHostname(fs.capturedUrl) : undefined)
   else drawLaptopFrame(ctx, fx, fy, fw, fh, viewport, fc)
 }
 
-const SCREEN_DRAW_SIZE: Record<CaptureViewport, (w: number, h: number) => { width: number; height: number }> = {
+const SCREEN_DRAW_SIZE: Record<StudioDevice, (w: number, h: number) => { width: number; height: number }> = {
   mobile: getPhoneScreenDrawSize,
   tablet: getTabletScreenDrawSize,
   desktop: getLaptopScreenDrawSize,
+  browser: getBrowserScreenDrawSize,
 }
 
 /** Crops+resizes every active device's screenshot in parallel (the only async part), then draws
@@ -539,7 +612,7 @@ async function drawFramesOnto(ctx: CanvasRenderingContext2D) {
     orderedActiveDevices.value.map(async (d) => {
       const fs = frameState[d]
       if (!fs.capturedImage) return null
-      const viewport = createScrolledViewport(fs.capturedImage, fs.scrollOffset, VIEWPORT_SCREEN_ASPECT[d])
+      const viewport = createScrolledViewport(fs.capturedImage, fs.scrollOffset, CROP_ASPECT[d])
       const target = SCREEN_DRAW_SIZE[d](fs.width, frameHeight(d))
       const source = await resizeForFrame(viewport, target.width, target.height)
       return { d, source }
@@ -568,14 +641,33 @@ async function renderExportCanvas(): Promise<HTMLCanvasElement> {
   return c
 }
 
+// Filenames are derived from the captured URL's hostname (falling back to "snipfolio") plus the
+// output size, so exporting several captures in a row doesn't just produce snipfolio(1).png etc.
+const exportFilename = computed(() => {
+  const capturedUrl = orderedActiveDevices.value.map((d) => frameState[d].capturedUrl).find(Boolean)
+  const hostname = capturedUrl ? getCaptureHostname(capturedUrl) : 'snipfolio'
+  return `${hostname.replace(/[^a-z0-9.-]/gi, '-')}-${outputWidth.value}x${outputHeight.value}.png`
+})
+
 async function doExport() {
   if (!hasAnyCapture.value) return
-
   const c = await renderExportCanvas()
-  const link = document.createElement('a')
-  link.download = 'snipfolio.png'
-  link.href = c.toDataURL('image/png')
-  link.click()
+  await downloadCanvas(c, exportFilename.value)
+}
+
+const copying = ref(false)
+async function doCopy() {
+  if (!hasAnyCapture.value || copying.value) return
+  copying.value = true
+  try {
+    const c = await renderExportCanvas()
+    await copyCanvasToClipboard(c)
+    toast.success('Copied to clipboard')
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : 'Copy failed')
+  } finally {
+    copying.value = false
+  }
 }
 
 // ---- PNG preview lightbox ----
@@ -587,6 +679,90 @@ async function openPreview() {
   const c = await renderExportCanvas()
   previewSrc.value = c.toDataURL('image/png')
   previewOpen.value = true
+}
+
+// ---- Save as Project (bridges Studio's ephemeral canvas into a persisted project the user can
+// keep refining in the Advanced Editor). Each captured device becomes a "full source" snip (so the
+// current scroll position carries over) placed in a single freeform composition that matches the
+// live Studio arrangement (position, frame color, background, output size). ----
+const savingProject = ref(false)
+
+async function saveAsProject() {
+  if (!hasAnyCapture.value || savingProject.value) return
+  savingProject.value = true
+  try {
+    const capturedUrl = orderedActiveDevices.value.map((d) => frameState[d].capturedUrl).find(Boolean) ?? ''
+    const hostname = capturedUrl ? getCaptureHostname(capturedUrl) : 'Studio capture'
+
+    const project = await createProjectFn(hostname)
+    projectStore.setProject(project)
+    sourcesStore.setSources([])
+    snipsStore.setSnips([])
+    compositionsStore.setCompositions([])
+
+    const slots: FreeformSlotConfig[] = []
+    const imageSaves: Promise<void>[] = []
+    let sortOrder = 0
+
+    for (const d of orderedActiveDevices.value) {
+      const fs = frameState[d]
+      const img = fs.capturedImage
+      if (!img) continue
+
+      const sourceId = crypto.randomUUID()
+      const source: SourceImage = {
+        id: sourceId,
+        projectId: project.id,
+        label: `${hostname} ${devices.find((x) => x.id === d)?.label ?? d}`,
+        filename: `${hostname}-${d}.png`,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        sortOrder: sortOrder++,
+      }
+      sourcesStore.addSource(source)
+      sourcesStore.setLoadedImage(sourceId, img, img.src)
+      imageSaves.push(saveImage(project.id, sourceId, img.src))
+
+      const viewportH = Math.min(img.naturalHeight, Math.round(img.naturalWidth / CROP_ASPECT[d]))
+      const snip: Snip = {
+        id: crypto.randomUUID(),
+        projectId: project.id,
+        sourceImageId: sourceId,
+        label: `${devices.find((x) => x.id === d)?.label ?? d} (full source)`,
+        x: 0,
+        y: Math.round(fs.scrollOffset),
+        width: img.naturalWidth,
+        height: viewportH,
+        sortOrder: slots.length,
+        snapFrame: SNAP_FRAME_FOR[d],
+        isFullSource: true,
+      }
+      snipsStore.addSnip(snip)
+
+      slots.push({
+        id: crypto.randomUUID(),
+        snipId: snip.id,
+        deviceFrame: DEVICE_FRAME_FOR[d],
+        frameColor: fs.frameColor,
+        ...(d === 'browser' && fs.capturedUrl ? { browserUrl: getCaptureHostname(fs.capturedUrl) } : {}),
+        x: fs.x,
+        y: fs.y,
+        width: fs.width,
+        height: frameHeight(d),
+      })
+    }
+
+    if (sourcesStore.sources[0]) sourcesStore.setActiveSource(sourcesStore.sources[0].id)
+
+    const comp = createFreeformFromSlots(slots, background.value, outputWidth.value, outputHeight.value, hostname)
+
+    await Promise.all([persistAll(), ...imageSaves])
+    await navigateTo(`/advanced/${project.id}/compose/${comp.id}`)
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : 'Could not save project')
+  } finally {
+    savingProject.value = false
+  }
 }
 
 // ---- Live preview canvas (renders background + frames into one canvas, like the composer) ----
@@ -773,8 +949,24 @@ function setOutputHeight(e: Event) {
                     />
                   </div>
 
-                  <div v-if="!isPro && authStore.profileLoaded" class="text-center text-[11px] text-[var(--color-text-muted)]">
-                    {{ capturesRemaining }}/{{ captureLimit }} free captures left
+                  <div v-if="!isPro && authStore.profileLoaded">
+                    <div v-if="captureLimitReached" class="flex flex-col items-center gap-2">
+                      <p class="text-center text-[11px] text-[var(--color-text-muted)]">
+                        You've used all {{ captureLimit }} free captures.
+                      </p>
+                      <div class="flex w-full gap-2">
+                        <AppButton size="sm" variant="secondary" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('pro')">
+                          Subscribe — $14.99/mo
+                        </AppButton>
+                        <AppButton size="sm" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('day_pass')">
+                          <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
+                          {{ checkoutLoading ? 'Redirecting…' : 'Get 7-Day Pass — $4.99' }}
+                        </AppButton>
+                      </div>
+                    </div>
+                    <div v-else class="text-center text-[11px] text-[var(--color-text-muted)]">
+                      {{ capturesRemaining }}/{{ captureLimit }} free captures left
+                    </div>
                   </div>
 
                   <div v-if="captureErrors.length" class="text-center text-xs text-red-400">{{ captureErrors[0] }}</div>
@@ -961,9 +1153,19 @@ function setOutputHeight(e: Event) {
 
             <!-- Export -->
             <div class="p-4 mt-auto space-y-2">
-              <AppButton variant="secondary" size="lg" class="w-full" :disabled="!hasAnyCapture" @click="openPreview">
-                Preview PNG
+              <AppButton variant="secondary" size="sm" class="w-full" :disabled="!hasAnyCapture || savingProject" @click="saveAsProject">
+                <Loader2Icon v-if="savingProject" class="size-3.5 shrink-0 animate-spin" />
+                {{ savingProject ? 'Saving…' : 'Save as Project' }}
               </AppButton>
+              <div class="flex gap-2">
+                <AppButton variant="secondary" size="lg" class="flex-1" :disabled="!hasAnyCapture" @click="openPreview">
+                  Preview
+                </AppButton>
+                <AppButton variant="secondary" size="lg" class="flex-1" :disabled="!hasAnyCapture || copying" @click="doCopy">
+                  <Loader2Icon v-if="copying" class="size-3.5 shrink-0 animate-spin" />
+                  {{ copying ? '' : 'Copy' }}
+                </AppButton>
+              </div>
               <AppButton size="lg" class="w-full" :disabled="!hasAnyCapture" @click="doExport">
                 Export PNG
               </AppButton>
