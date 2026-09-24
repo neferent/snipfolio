@@ -34,7 +34,6 @@
               <component :is="t.icon" class="size-5 text-[var(--color-text-muted)]" />
               <div class="mt-2 flex items-center gap-1.5 text-sm font-medium text-[var(--color-text)]">
                 {{ t.label }}
-                <span v-if="t.value === 'url' && !isPro" class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">7-Day Pass</span>
               </div>
               <div class="mt-[2px] text-[12px] leading-tight text-[var(--color-text-muted)]">{{ t.hint }}</div>
             </button>
@@ -106,22 +105,6 @@
                 <span class="flex-1 truncate text-[var(--color-text)]">{{ snip.label }}</span>
               </label>
               <p v-if="snips.length === 0" class="px-2 py-2 text-xs text-[var(--color-text-muted)]">No snips yet</p>
-            </div>
-          </template>
-
-          <!-- From URL: 7-Day Pass upsell -->
-          <template v-else-if="type === 'url' && !isPro">
-            <p class="text-sm text-[var(--color-text-muted)]">
-              Capturing from a live URL requires a 7-Day Access Pass.
-            </p>
-            <div class="flex gap-2 rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
-              <AppButton size="sm" variant="secondary" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('pro', checkoutReturnUrl('openNewComposition=1'))">
-                Subscribe — $14.99/mo
-              </AppButton>
-              <AppButton size="sm" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openNewComposition=1'))">
-                <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-                {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
-              </AppButton>
             </div>
           </template>
 
@@ -234,8 +217,6 @@ import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
 import { useProject } from '~/composables/useProject'
 import { useCompositions, getLaptopLayout, getLaptopPhoneLayout, getFreeformGridLayout } from '~/composables/useCompositions'
-import { usePlan } from '~/composables/usePlan'
-import { useCheckout, checkoutReturnUrl } from '~/composables/useCheckout'
 import type { Composition, FreeformCompositionConfig, CollageCompositionConfig } from '~/types'
 
 type Step = 'main' | 'preset' | 'capturing'
@@ -250,8 +231,6 @@ const { scheduleSave } = useProject()
 const { createLaptopComposition, createLaptopPhoneComposition, createAutoComposition, createFreeformComposition } = useCompositions()
 const router = useRouter()
 const route = useRoute()
-const { isPro } = usePlan()
-const { startCheckout, loading: checkoutLoading } = useCheckout()
 
 const {
   preset,
@@ -294,7 +273,7 @@ const urlError = computed(() => {
   return 'Enter a valid URL'
 })
 
-const canGoToPreset = computed(() => isPro.value && !!resolvedUrl.value && !urlError.value)
+const canGoToPreset = computed(() => !!resolvedUrl.value && !urlError.value)
 
 const modalTitle = computed(() => {
   if (step.value === 'capturing') return captureError.value ? 'Capture failed' : `Capturing ${displayHostname.value}…`

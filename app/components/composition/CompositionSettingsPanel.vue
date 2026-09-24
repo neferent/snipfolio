@@ -78,7 +78,6 @@
 <script setup lang="ts">
 import { Upload, Copy, Check } from 'lucide-vue-next'
 import { useExport } from '~/composables/useExport'
-import { usePlan } from '~/composables/usePlan'
 import type { BackgroundConfig, Composition } from '~/types'
 
 const props = defineProps<{
@@ -97,11 +96,10 @@ defineEmits<{
 }>()
 
 const { copyCompositionToClipboard } = useExport()
-const { isPro } = usePlan()
 const copied = ref(false)
 
 async function copyToClipboard() {
-  const ok = await copyCompositionToClipboard(props.composition, !isPro.value)
+  const ok = await copyCompositionToClipboard(props.composition, false)
   if (ok) {
     copied.value = true
     setTimeout(() => { copied.value = false }, 2000)

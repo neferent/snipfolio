@@ -42,51 +42,16 @@ describe('authStore', () => {
   it('starts unauthenticated', () => {
     const store = useAuthStore()
     expect(store.isAuthenticated).toBe(false)
-    expect(store.isPro).toBe(false)
-    expect(store.isAdmin).toBe(false)
-  })
-
-  it('setUser makes isAuthenticated true', () => {
-    const store = useAuthStore()
-    store.setUser({ id: 'u1', email: 'a@b.com' })
-    expect(store.isAuthenticated).toBe(true)
-    expect(store.user?.email).toBe('a@b.com')
-  })
-
-  it('setToken stores the token', () => {
-    const store = useAuthStore()
-    store.setToken('tok-abc')
-    expect(store.token).toBe('tok-abc')
-  })
-
-  it('setProfile sets isPro and isAdmin and marks profileLoaded', () => {
-    const store = useAuthStore()
-    store.setProfile(true, true)
-    expect(store.isPro).toBe(true)
-    expect(store.isAdmin).toBe(true)
-    expect(store.profileLoaded).toBe(true)
-  })
-
-  it('clear resets all auth state', () => {
-    const store = useAuthStore()
-    store.setUser({ id: 'u1', email: 'a@b.com' })
-    store.setToken('tok')
-    store.setProfile(true, true)
-    store.clear()
     expect(store.user).toBeNull()
-    expect(store.token).toBeNull()
-    expect(store.isPro).toBe(false)
-    expect(store.isAdmin).toBe(false)
-    expect(store.profileLoaded).toBe(false)
-    expect(store.isGuest).toBe(false)
   })
 
-  it('setLoading toggles isLoading', () => {
+  // ensureLocalUser() is gated on import.meta.client (it reads/writes
+  // localStorage), which is false under this Node test environment — so it's
+  // a no-op here. Exercised for real by the auth.client plugin in the browser.
+  it('user can be set directly, making isAuthenticated true', () => {
     const store = useAuthStore()
-    store.setLoading(true)
-    expect(store.isLoading).toBe(true)
-    store.setLoading(false)
-    expect(store.isLoading).toBe(false)
+    store.user = { id: 'u1', email: '' }
+    expect(store.isAuthenticated).toBe(true)
   })
 })
 

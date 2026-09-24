@@ -263,13 +263,6 @@ const compositionsOpen = ref(true)
 const showNewComp = ref(false)
 const collapsedGroups = ref<Set<string>>(new Set())
 
-// Returning from checkout (e.g. day-pass purchase) reopens the new composition modal
-if (route.query.openNewComposition === '1') {
-  showNewComp.value = true
-  const { openNewComposition: _openNewComposition, ...query } = route.query
-  navigateTo({ path: route.path, query }, { replace: true })
-}
-
 function snipsBySource(sourceId: string) {
   return allSnips.value.filter((s) => s.sourceImageId === sourceId)
 }

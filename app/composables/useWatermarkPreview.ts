@@ -1,10 +1,8 @@
-import { usePlan } from '~/composables/usePlan'
-
-const _hidden = ref(false)
-
+// Snipfolio-local is free — there is no watermark. Kept as a composable
+// (rather than deleting it) since it's the plumbed-in `watermark` input to
+// the canvas renderer (CompositionCanvas.vue, CompositionPreview.vue,
+// FreeformEditor.vue) — always inactive.
 export function useWatermarkPreview() {
-  const { isPro } = usePlan()
-  const active = computed(() => !isPro.value && !_hidden.value)
-  function toggle() { _hidden.value = !_hidden.value }
-  return { active, hidden: _hidden, toggle }
+  const active = computed(() => false)
+  return { active }
 }

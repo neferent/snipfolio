@@ -185,9 +185,9 @@
         <div class="rounded-2xl border-faint bg-[var(--color-surface)] p-6">
           <div class="grid grid-cols-[repeat(auto-fit,minmax(0,max-content))] items-center">
             <div class="p-2"><AppBadge>Desktop</AppBadge></div>
-            <div class="p-2"><AppBadge variant="accent">7-Day Pass</AppBadge></div>
+            <div class="p-2"><AppBadge variant="accent">New</AppBadge></div>
             <div class="p-2"><AppBadge variant="success">Saved</AppBadge></div>
-            <div class="p-2"><AppBadge variant="warning">Free plan</AppBadge></div>
+            <div class="p-2"><AppBadge variant="warning">Unsaved changes</AppBadge></div>
             <div class="p-2"><AppBadge variant="danger">Error</AppBadge></div>
           </div>
         </div>
@@ -234,7 +234,7 @@
                 <td class="py-2.5 font-mono text-[var(--color-text-muted)]">18px</td>
                 <td class="py-2.5 font-mono text-[var(--color-text-muted)]">14px / 500</td>
                 <td class="py-2.5 font-mono text-[var(--color-text-muted)]">radius-lg (8px)</td>
-                <td class="py-2.5">primary page actions (login, checkout)</td>
+                <td class="py-2.5">primary page actions (new project, export)</td>
               </tr>
             </tbody>
           </table>

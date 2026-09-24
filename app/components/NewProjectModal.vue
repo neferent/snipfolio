@@ -26,7 +26,6 @@
         >
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium text-[var(--color-text)]">Capture &amp; Compose</span>
-            <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-[var(--color-accent)]/20 text-[var(--color-accent)]">7-Day Pass</span>
           </div>
           <span class="text-xs text-[var(--color-text-muted)]">Paste a URL and get a polished mockup in seconds.</span>
         </button>
@@ -41,8 +40,7 @@
       </div>
 
       <Transition name="expand" @enter="onExpandEnter" @after-enter="onExpandAfterEnter" @leave="onExpandLeave">
-        <!-- URL entry, shown when "From URL" is selected and the user is Pro -->
-        <div v-if="type === 'url' && isPro" key="url-pro" class="expand-panel space-y-1.5">
+        <div v-if="type === 'url'" key="url-pro" class="expand-panel space-y-1.5">
           <label class="mt-3 block text-xs font-medium text-[var(--color-text-muted)]">URL</label>
           <AppInput
             v-model="url"
@@ -55,13 +53,6 @@
           />
           <p v-if="urlError" class="text-[10px] text-red-400">{{ urlError }}</p>
           <p class="text-xs text-[var(--color-text-muted)]">Choose what to capture on the next step</p>
-        </div>
-
-        <!-- Pro upsell, shown when "From URL" is selected and the user is not Pro -->
-        <div v-else-if="type === 'url' && !isPro" key="url-locked" class="expand-panel space-y-3">
-          <p class="mt-3 text-sm text-[var(--color-text-muted)]">
-            Capturing from a live URL requires a 7-Day Access Pass.
-          </p>
         </div>
       </Transition>
     </div>
@@ -82,33 +73,13 @@
     <template #footer>
       <!-- Main step -->
       <template v-if="step === 'main'">
-        <Transition name="fade" mode="out-in">
-          <div v-if="type === 'url' && !isPro" key="upgrade" class="flex gap-2">
-            <AppButton
-              variant="secondary"
-              :disabled="checkoutLoading"
-              @click="startCheckout('pro', '/projects?openUrlCapture=1')"
-            >
-              Subscribe — $14.99/mo
-            </AppButton>
-            <AppButton
-              :disabled="checkoutLoading"
-              @click="startCheckout('day_pass', '/projects?openUrlCapture=1')"
-            >
-              <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-              {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
-            </AppButton>
-          </div>
-          <AppButton
-            v-else
-            key="submit"
-            :disabled="!canSubmit || creating"
-            @click="onSubmitMain"
-          >
-            <Loader2Icon v-if="creating" class="size-3 shrink-0 animate-spin" />
-            {{ type === 'url' ? 'Next' : creating ? 'Creating…' : 'Create' }}
-          </AppButton>
-        </Transition>
+        <AppButton
+          :disabled="!canSubmit || creating"
+          @click="onSubmitMain"
+        >
+          <Loader2Icon v-if="creating" class="size-3 shrink-0 animate-spin" />
+          {{ type === 'url' ? 'Next' : creating ? 'Creating…' : 'Create' }}
+        </AppButton>
       </template>
 
       <!-- Step 2: preset selection -->
@@ -144,8 +115,6 @@ import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
 import { useSnipsStore } from '~/stores/snips'
 import { useCompositionsStore } from '~/stores/compositions'
-import { usePlan } from '~/composables/usePlan'
-import { useCheckout } from '~/composables/useCheckout'
 import { Loader2Icon } from 'lucide-vue-next'
 
 type Step = 'main' | 'preset' | 'capturing'
@@ -163,9 +132,7 @@ const projectStore = useProjectStore()
 const sourcesStore = useSourcesStore()
 const snipsStore = useSnipsStore()
 const compositionsStore = useCompositionsStore()
-const { isPro } = usePlan()
 const isMobile = useIsMobile()
-const { startCheckout, loading: checkoutLoading } = useCheckout()
 
 const {
   preset,
@@ -205,7 +172,7 @@ const modalTitle = computed(() => {
 
 const canSubmit = computed(() => {
   if (!name.value.trim()) return false
-  if (type.value === 'url') return isPro.value && !!resolvedUrl.value && !urlError.value
+  if (type.value === 'url') return !!resolvedUrl.value && !urlError.value
   return true
 })
 

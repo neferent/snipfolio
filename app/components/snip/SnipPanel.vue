@@ -41,6 +41,21 @@
         </div>
       </div>
 
+      <!-- Snap frame — device-frame classification. Set automatically when a
+           drawn/resized snip lands within the aspect-ratio snap tolerance;
+           editable here for snips that didn't (or that you want to reclassify),
+           since only snips with a snapFrame show up in the mockup modal's
+           "Desktop snip"/"Mobile snip" pickers. -->
+      <div class="space-y-1.5">
+        <label class="text-xs text-[var(--color-text-muted)]">Snap frame</label>
+        <AppSelect
+          :model-value="snip.snapFrame ?? 'none'"
+          :options="snapFrameOptions"
+          size="md"
+          @update:model-value="(v) => setSnapFrame(v as string)"
+        />
+      </div>
+
       <!-- Full-source viewport: scroll position control -->
       <div v-if="snip.isFullSource" class="space-y-1.5">
         <p class="text-xs text-[var(--color-text-muted)]">
@@ -136,6 +151,18 @@ const store = useSnipsStore()
 const sourcesStore = useSourcesStore()
 const snipsActions = useSnips()
 const { exportSnipRaw, copySnipToClipboard } = useExport()
+
+const snapFrameOptions = [
+  { value: 'none', label: 'None' },
+  { value: 'laptop', label: 'Desktop' },
+  { value: 'tablet', label: 'Tablet' },
+  { value: 'phone', label: 'Mobile' },
+]
+
+function setSnapFrame(value: string) {
+  if (!snip.value) return
+  snipsActions.updateSnapFrame(snip.value.id, value === 'none' ? null : (value as 'laptop' | 'tablet' | 'phone'))
+}
 
 const snip = computed(() => store.selectedSnip)
 const copied = ref(false)

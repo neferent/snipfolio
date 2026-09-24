@@ -51,7 +51,7 @@
             {{ previewComp.name }}
           </p>
           <div class="flex flex-1 items-center justify-center overflow-hidden">
-            <CompositionPreview :composition="previewComp" :watermark="!isPro" class="max-h-full max-w-full rounded object-contain" />
+            <CompositionPreview :composition="previewComp" class="max-h-full max-w-full rounded object-contain" />
           </div>
           <p class="mt-2 text-center text-[10px] text-[var(--color-text-muted)]">
             {{ previewComp.config.outputWidth }}×{{ previewComp.config.outputHeight }}px
@@ -82,72 +82,20 @@
       <p class="mt-[5px] text-[10px] [color:rgba(251,191,36,0.4)]">Frame will appear distorted</p>
     </div>
 
-    <!-- Tier upsell banner -->
-    <div v-if="!isPro" class="mt-4 rounded-lg bg-[var(--color-surface-3)] border-faint px-4 py-3">
-      <!-- Guest -->
-      <template v-if="isGuest">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
-            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark. Sign in to get a 7-Day Access Pass.</span>
-          </div>
-          <NuxtLink
-            to="/login"
-            class="shrink-0 rounded-[5px] px-3 py-1 text-xs font-medium text-[var(--color-text)] transition hover:bg-overlay/10 border-strong"
-            @click="$emit('close')"
-          >
-            Sign in
-          </NuxtLink>
-        </div>
-      </template>
-
-      <!-- Account without access -->
-      <template v-else>
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <Droplets class="size-3.5 shrink-0 text-[var(--color-accent)]" />
-            <span class="text-xs text-[var(--color-text-muted)]">Exports include a watermark.</span>
-          </div>
-          <div class="flex shrink-0 gap-2">
-            <AppButton size="sm" variant="secondary" :disabled="checkoutLoading" @click="onSubscribe">
-              Subscribe — $14.99/mo
-            </AppButton>
-            <AppButton size="sm" :disabled="checkoutLoading" @click="onBuyDayPass">
-              <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-              {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
-            </AppButton>
-          </div>
-        </div>
-      </template>
-    </div>
-
-    <!-- Active pass -->
-    <div v-else-if="isDayPassActive" class="mt-4 rounded-lg bg-[var(--color-surface-3)] border-faint px-4 py-3">
-      <span class="inline-flex items-center gap-1.5 rounded-full bg-green-400/12 px-2.5 py-0.5 text-[11px] font-medium text-green-400">
-        <span class="size-1.5 rounded-full bg-green-400" />
-        7-Day Pass active — expires {{ formatPassExpiry(dayPassExpiresAt!) }}
-      </span>
-    </div>
-
     <template #footer>
       <AppButton variant="ghost" @click="$emit('close')">
         Cancel
       </AppButton>
       <AppButton :disabled="selected.size === 0" @click="exportSelected">
         Export {{ selected.size > 0 ? selected.size : '' }} mockup{{ selected.size === 1 ? '' : 's' }}
-        <span v-if="!isPro" class="ml-1.5 opacity-60">(watermarked)</span>
       </AppButton>
     </template>
   </AppModal>
 </template>
 
 <script setup lang="ts">
-import { Droplets, Loader2Icon } from 'lucide-vue-next'
 import { useCompositionsStore } from '~/stores/compositions'
-import { usePlan, formatPassExpiry } from '~/composables/usePlan'
 import { useExport } from '~/composables/useExport'
-import { useCheckout, checkoutReturnUrl } from '~/composables/useCheckout'
-import { useAuth } from '~/composables/useAuth'
 import { useSnipsStore } from '~/stores/snips'
 import { getFrameMismatches } from '~/composables/useFrameMismatches'
 import type { Composition } from '~/types'
@@ -160,10 +108,7 @@ const emit = defineEmits<{ close: [] }>()
 
 const compositionsStore = useCompositionsStore()
 const snipsStore = useSnipsStore()
-const { isGuest, isPro, isDayPassActive, dayPassExpiresAt } = usePlan()
 const { exportComposition } = useExport()
-const { startCheckout, loading: checkoutLoading } = useCheckout()
-const { refreshProfile } = useAuth()
 
 const compositions = computed(() => compositionsStore.ordered)
 
@@ -178,12 +123,6 @@ const exportMismatches = computed(() =>
     .flatMap((c) => getFrameMismatches(c, snipsStore.snips).map((m) => ({ ...m, compName: c.name }))),
 )
 const someSelected = computed(() => selected.value.size > 0)
-
-// Refresh plan state whenever the modal opens
-watch(() => props.open, async (v) => {
-  if (!v) return
-  await refreshProfile()
-}, { immediate: true })
 
 watch(() => compositions.value, (list) => {
   if (!previewComp.value && list.length > 0) previewComp.value = list[0]!
@@ -222,19 +161,10 @@ function toggleAll() {
 }
 
 function exportSelected() {
-  const watermark = !isPro.value
   const toExport = compositions.value.filter((c) => selected.value.has(c.id))
   toExport.forEach((comp, i) => {
-    setTimeout(() => exportComposition(comp, watermark), i * 200)
+    setTimeout(() => exportComposition(comp, false), i * 200)
   })
   emit('close')
-}
-
-function onBuyDayPass() {
-  startCheckout('day_pass', checkoutReturnUrl('export=1'))
-}
-
-function onSubscribe() {
-  startCheckout('pro', checkoutReturnUrl('export=1'))
 }
 </script>

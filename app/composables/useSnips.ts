@@ -41,6 +41,15 @@ export function useSnips() {
     scheduleSave()
   }
 
+  // Manually (re)assigns a snip's device-frame classification — the escape
+  // hatch for when draw-time aspect-ratio auto-snap didn't catch it (outside
+  // the ±20% tolerance), since without a snapFrame a snip won't show up in
+  // the "Desktop snip"/"Mobile snip" pickers in NewCompositionModal.
+  function updateSnapFrame(id: string, snapFrame: 'laptop' | 'phone' | 'tablet' | null) {
+    store.updateSnip(id, { snapFrame })
+    scheduleSave()
+  }
+
   // Creates a "full source" snip: spans the full width of the source, with a
   // height matching the chosen frame's screen aspect ratio. The snip's `y`
   // then acts as a scroll offset, adjustable via the "Scroll position" control.
@@ -98,5 +107,5 @@ export function useSnips() {
     return canvas
   }
 
-  return { createSnip, updateLabel, deleteSnip, extractSnipCanvas, createFullSourceSnip, updateScrollOffset }
+  return { createSnip, updateLabel, updateSnapFrame, deleteSnip, extractSnipCanvas, createFullSourceSnip, updateScrollOffset }
 }

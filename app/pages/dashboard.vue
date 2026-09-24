@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick, type CSSProperties } from 'vue'
 import { Loader2Icon, XIcon, MoveUp, MoveDown, BringToFront, SendToBack } from 'lucide-vue-next'
-import { useAuthStore } from '~/stores/auth'
 import { useProjectStore } from '~/stores/project'
 import { useSourcesStore } from '~/stores/sources'
 import { useSnipsStore } from '~/stores/snips'
@@ -30,32 +29,15 @@ import { drawLaptopFrame, getScreenDrawSize as getLaptopScreenDrawSize } from '~
 import { drawBrowserFrame, browserToolbarHeight, getScreenDrawSize as getBrowserScreenDrawSize } from '~/components/frames/BrowserFrame'
 import BackgroundControls from '~/components/composition/BackgroundControls.vue'
 import AppColorPicker from '~/components/ui/AppColorPicker.vue'
-import UserMenu from '~/components/ui/UserMenu.vue'
 import StudioFrame from '~/components/studio/StudioFrame.vue'
-import { drawBackground, drawBadge } from '~/composables/useCanvasRenderer'
+import { drawBackground } from '~/composables/useCanvasRenderer'
 import { downloadCanvas, copyCanvasToClipboard } from '~/composables/useExport'
-import { usePlan } from '~/composables/usePlan'
-import { useAuth } from '~/composables/useAuth'
-import { useCheckout } from '~/composables/useCheckout'
 import { toast } from '~/composables/useToast'
 import AppToggleButton from '~/components/ui/AppToggleButton.vue'
 import ImageLightbox from '~/components/ui/ImageLightbox.vue'
 import type { BackgroundConfig, FreeformSlotConfig, Snip, SourceImage, DeviceFrame } from '~/types'
 
 useHead({ title: 'Studio — Snipfolio' })
-
-const { isPro, captureLimit, capturesRemaining } = usePlan()
-const { refreshProfile } = useAuth()
-const { startCheckout, loading: checkoutLoading } = useCheckout()
-
-// ---- Auth ----
-const authStore = useAuthStore()
-const router = useRouter()
-onMounted(() => {
-  if (!authStore.isAuthenticated && !authStore.isGuest) {
-    router.replace('/login')
-  }
-})
 
 // ---- Projects dropdown ----
 const projectStore = useProjectStore()
@@ -66,7 +48,7 @@ const snipsStore = useSnipsStore()
 const compositionsStore = useCompositionsStore()
 const recentProjects = computed(() => projectStore.projects.slice(0, 8))
 onMounted(() => {
-  if (authStore.isAuthenticated) fetchProjects().catch(() => {})
+  fetchProjects().catch(() => {})
 })
 
 // ---- Devices ----
@@ -394,21 +376,14 @@ function ghostStyle(d: StudioDevice): CSSProperties {
   }
 }
 
-const captureLimitReached = computed(() =>
-  authStore.profileLoaded && capturesRemaining.value <= 0,
-)
-
 async function captureOne(d: StudioDevice, resolvedUrl: string) {
   captureState[d].isCapturing = true
   captureState[d].error = null
   captureState[d].progress = { phase: 'connecting', phaseStartedAt: Date.now() }
   try {
-    const token = authStore.token
-    if (!token) throw new Error('Not signed in')
     const { img } = await captureViewportSSE(
       resolvedUrl,
       CAPTURE_VIEWPORT_FOR[d],
-      token,
       (p) => { captureState[d].progress = p },
       abortCtrl.value?.signal,
     )
@@ -423,7 +398,7 @@ async function captureOne(d: StudioDevice, resolvedUrl: string) {
 }
 
 async function capture() {
-  if (!isValidCaptureUrl(url.value) || isCapturing.value || captureLimitReached.value) return
+  if (!isValidCaptureUrl(url.value) || isCapturing.value) return
   abortCtrl.value?.abort()
   abortCtrl.value = new AbortController()
   startTick()
@@ -438,7 +413,6 @@ async function capture() {
     arrangeFrames()
   } finally {
     stopTick()
-    refreshProfile()
   }
 }
 
@@ -636,7 +610,6 @@ async function renderExportCanvas(): Promise<HTMLCanvasElement> {
   const blurInputs = blurBackgroundInputs()
   drawBackground(ctx, c.width, c.height, background.value, blurInputs.source, loadedBgImage.value, blurInputs.region)
   await drawFramesOnto(ctx)
-  if (!isPro.value) drawBadge(ctx, c.width, c.height)
 
   return c
 }
@@ -782,7 +755,6 @@ async function renderCanvasOnce() {
     const blurInputs = blurBackgroundInputs()
     drawBackground(ctx, W, H, background.value, blurInputs.source, loadedBgImage.value, blurInputs.region)
     await drawFramesOnto(ctx)
-    if (!isPro.value) drawBadge(ctx, W, H)
   }
 }
 
@@ -806,7 +778,7 @@ async function renderCanvas() {
 }
 
 watch(
-  [activeDevices, deviceOrder, frameState, outputWidth, outputHeight, background, loadedBgImage, isPro],
+  [activeDevices, deviceOrder, frameState, outputWidth, outputHeight, background, loadedBgImage],
   () => nextTick(renderCanvas),
   { deep: true },
 )
@@ -830,7 +802,7 @@ function setOutputHeight(e: Event) {
 
     <!-- Top bar (matches advanced editor nav) -->
     <header class="flex h-12 w-full shrink-0 items-center border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-4">
-      <div class="mx-auto flex w-full max-w-[1360px] items-center gap-2">
+      <div class="flex w-full items-center gap-2">
         <AppLogo />
 
         <!-- Projects dropdown -->
@@ -869,13 +841,12 @@ function setOutputHeight(e: Event) {
           </svg>
         </NuxtLink>
         <ThemeToggle />
-        <UserMenu />
       </div>
     </header>
 
     <!-- Main content -->
     <div class="flex flex-1 justify-center overflow-hidden p-4">
-      <div class="mx-auto flex w-full max-w-[1360px] flex-col gap-4 overflow-hidden">
+      <div class="flex w-full flex-col gap-4 overflow-hidden">
 
         <!-- Canvas + settings row -->
         <div class="flex flex-1 gap-4 overflow-hidden">
@@ -934,7 +905,7 @@ function setOutputHeight(e: Event) {
                     />
                     <AppButton
                       class="w-full"
-                      :disabled="!isValidCaptureUrl(url) || isCapturing || captureLimitReached"
+                      :disabled="!isValidCaptureUrl(url) || isCapturing"
                       @click="capture"
                     >
                       {{ isCapturing ? 'Capturing…' : `Capture ${activeDevices.length > 1 ? 'all' : ''}` }}
@@ -947,26 +918,6 @@ function setOutputHeight(e: Event) {
                       class="h-full rounded-full bg-[var(--color-accent)] transition-all duration-300"
                       :style="{ width: `${captureProgressPct}%` }"
                     />
-                  </div>
-
-                  <div v-if="!isPro && authStore.profileLoaded">
-                    <div v-if="captureLimitReached" class="flex flex-col items-center gap-2">
-                      <p class="text-center text-[11px] text-[var(--color-text-muted)]">
-                        You've used all {{ captureLimit }} free captures.
-                      </p>
-                      <div class="flex w-full gap-2">
-                        <AppButton size="sm" variant="secondary" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('pro')">
-                          Subscribe — $14.99/mo
-                        </AppButton>
-                        <AppButton size="sm" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('day_pass')">
-                          <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-                          {{ checkoutLoading ? 'Redirecting…' : 'Get 7-Day Pass — $4.99' }}
-                        </AppButton>
-                      </div>
-                    </div>
-                    <div v-else class="text-center text-[11px] text-[var(--color-text-muted)]">
-                      {{ capturesRemaining }}/{{ captureLimit }} free captures left
-                    </div>
                   </div>
 
                   <div v-if="captureErrors.length" class="text-center text-xs text-red-400">{{ captureErrors[0] }}</div>

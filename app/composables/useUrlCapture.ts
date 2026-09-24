@@ -187,71 +187,43 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Captures a single viewport via the streaming `/api/screenshot/stream` endpoint, reporting
- * real progress events ('started', 'measured') as they arrive, and resolving with the final
- * image once the 'done' event is received. Throws on the 'error' event, on an unexpected
- * stream end, or (with `err.name === 'AbortError'`) if `signal` is aborted.
+ * Captures a single viewport locally, via the Electron main process
+ * (electron/capture.cjs, exposed through the preload bridge as
+ * `window.snipfolioCapture`) — a Playwright browser running in-process,
+ * ported from ~/snipfolio-screenshotter. Reports real progress events
+ * ('started', 'measured') as they arrive, and resolves with the final image.
+ * Throws on capture failure, or (with `err.name === 'AbortError'`) if
+ * `signal` is aborted.
  */
 export async function captureViewportSSE(
   url: string,
   viewport: CaptureViewport,
-  token: string,
   onProgress: (progress: ViewportProgress) => void,
   signal?: AbortSignal,
 ): Promise<{ img: HTMLImageElement; src: string }> {
-  const res = await fetch('/api/screenshot/stream', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ url, viewport }),
-    signal,
-  })
+  if (signal?.aborted) throw new DOMException('The operation was aborted.', 'AbortError')
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { message?: string }
-    throw new Error(err.message || `${res.status}`)
-  }
-  if (!res.body) throw new Error('Capture failed')
+  const { promise, cancel } = window.snipfolioCapture.captureUrl(
+    url,
+    viewport,
+    1,
+    (progress) => onProgress(progress as ViewportProgress),
+  )
 
-  const reader = res.body.getReader()
-  const decoder = new TextDecoder()
-  let buf = ''
-  let resultImage: string | null = null
+  const onAbort = () => cancel()
+  signal?.addEventListener('abort', onAbort)
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buf += decoder.decode(value, { stream: true })
-
-    let sep
-    while ((sep = buf.indexOf('\n\n')) !== -1) {
-      const frame = buf.slice(0, sep)
-      buf = buf.slice(sep + 2)
-
-      let eventType = 'message'
-      let data = ''
-      for (const line of frame.split('\n')) {
-        if (line.startsWith('event:')) eventType = line.slice(6).trim()
-        else if (line.startsWith('data:')) data = line.slice(5).trim()
-      }
-      if (!data) continue
-
-      const payload = JSON.parse(data) as { scrollHeight?: number; image?: string; error?: string }
-
-      if (eventType === 'started') {
-        onProgress({ phase: 'started', phaseStartedAt: Date.now() })
-      } else if (eventType === 'measured') {
-        onProgress({ phase: 'measured', scrollHeight: payload.scrollHeight, phaseStartedAt: Date.now() })
-      } else if (eventType === 'done') {
-        resultImage = payload.image ?? null
-      } else if (eventType === 'error') {
-        throw new Error(payload.error || 'Capture failed')
-      }
-    }
+  let result: { image: string }
+  try {
+    result = await promise
+  } catch (err) {
+    if (signal?.aborted) throw new DOMException('The operation was aborted.', 'AbortError')
+    throw err instanceof Error ? err : new Error('Capture failed')
+  } finally {
+    signal?.removeEventListener('abort', onAbort)
   }
 
-  if (!resultImage) throw new Error('Capture failed')
-
-  const blob = base64ToBlob(resultImage, 'image/png')
+  const blob = base64ToBlob(result.image, 'image/png')
   const src = URL.createObjectURL(blob)
   const img = await loadImage(src)
   onProgress({ phase: 'done', phaseStartedAt: Date.now() })

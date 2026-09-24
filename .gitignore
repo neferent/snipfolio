@@ -6,6 +6,9 @@ node_modules/
 .output/
 dist/
 
+# Electron build output
+release/
+
 # Environment variables
 .env
 .env.*

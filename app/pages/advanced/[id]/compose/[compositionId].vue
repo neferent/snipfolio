@@ -31,7 +31,6 @@
       <div class="flex-1" />
       <SaveStatus :status="projectStore.saveStatus" />
       <ThemeToggle />
-      <UserMenu />
     </header>
 
     <div class="relative min-h-0 flex-1">
@@ -58,7 +57,6 @@ import { useCompositionsStore } from '~/stores/compositions'
 import { useProjectStore } from '~/stores/project'
 import { useProject } from '~/composables/useProject'
 
-definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
 const compositionsStore = useCompositionsStore()

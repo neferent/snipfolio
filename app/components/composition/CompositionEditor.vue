@@ -156,14 +156,6 @@ const { updateComposition } = useCompositions()
 
 const showExportModal = ref(false)
 
-// Returning from checkout (e.g. day-pass purchase) reopens the export modal
-const route = useRoute()
-if (route.query.export === '1') {
-  showExportModal.value = true
-  const { export: _export, ...query } = route.query
-  navigateTo({ path: route.path, query }, { replace: true })
-}
-
 const comp = computed(() => compositionsStore.compositions.find((c) => c.id === props.compositionId))
 const isFreeform = computed(() => comp.value ? isFreeformType(comp.value.type) : false)
 

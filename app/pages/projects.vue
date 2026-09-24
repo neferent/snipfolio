@@ -15,82 +15,6 @@
       <div class="flex-1" />
 
       <ThemeToggle />
-
-      <!-- Desktop auth items -->
-      <template v-if="!isMobile">
-        <template v-if="authStore.isGuest">
-          <span class="text-xs text-[var(--color-text-muted)]">Guest</span>
-          <NuxtLink
-            to="/login"
-            class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)] border-strong"
-          >
-            Sign in
-          </NuxtLink>
-        </template>
-        <template v-else>
-          <span class="text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</span>
-          <span
-            v-if="isDayPassActive"
-            class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
-          >
-            Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
-          </span>
-          <span
-            v-else-if="authStore.isPro"
-            class="rounded-[4px] bg-[var(--color-accent-dim)] px-[5px] py-[1px] text-[9px] tracking-[0.06em] text-[var(--color-accent)] [border:0.5px_solid_rgba(142,158,173,0.25)]"
-          >
-            Access active
-          </span>
-          <a
-            v-if="authStore.isPro"
-            :href="billingUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex h-8 items-center gap-1 rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)] border-strong"
-          >
-            Manage subscription
-            <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
-          <NuxtLink
-            v-else
-            to="/pro"
-            class="flex h-8 items-center rounded-[6px] px-3 text-xs text-[var(--color-text-muted)] transition hover:bg-overlay/5 hover:text-[var(--color-text)] border-strong"
-          >
-            Upgrade
-          </NuxtLink>
-          <AppButton variant="secondary" @click="signOut">
-            Sign out
-          </AppButton>
-        </template>
-      </template>
-
-      <!-- Mobile menu -->
-      <template v-else>
-        <AppDropdown align="right">
-          <template #trigger>
-            <button class="flex size-8 items-center justify-center rounded-[6px] text-[var(--color-text-muted)] transition hover:bg-overlay/5 active:bg-overlay/10">
-              <EllipsisVertical class="size-5" />
-            </button>
-          </template>
-          <template v-if="authStore.isGuest">
-            <AppDropdownItem @click="navigateTo('/login')">Sign in</AppDropdownItem>
-          </template>
-          <template v-else>
-            <div class="px-2.5 py-1.5 text-xs text-[var(--color-text-muted)]">{{ authStore.user?.email }}</div>
-            <div v-if="isDayPassActive" class="px-2.5 pb-1.5 text-[10px] text-[var(--color-accent)]">
-              Pass active until {{ formatPassExpiry(dayPassExpiresAt!) }}
-            </div>
-            <div v-else-if="authStore.isPro" class="px-2.5 pb-1.5 text-[10px] text-[var(--color-accent)]">
-              Access active
-            </div>
-            <AppDropdownItem v-if="authStore.isPro" @click="openBilling">Manage subscription</AppDropdownItem>
-            <AppDropdownItem v-else @click="navigateTo('/pro')">Upgrade</AppDropdownItem>
-            <AppDropdownItem @click="signOut">Sign out</AppDropdownItem>
-          </template>
-        </AppDropdown>
-      </template>
     </header>
 
     <main class="flex-1 overflow-y-auto p-6">
@@ -125,7 +49,6 @@
               v-for="project in projects"
               :key="project.id"
               class="group relative cursor-pointer rounded-xl border-subtle bg-[var(--color-surface-3)] p-4 transition-all hover:[border-color:rgba(255,255,255,0.12)]"
-              :class="{ 'opacity-60': isProjectLocked(project.id) }"
               @click="openProject(project.id)"
             >
               <!-- Thumbnail preview -->
@@ -140,12 +63,6 @@
                   <svg class="size-8 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12z" />
                   </svg>
-                </div>
-                <div
-                  v-if="isProjectLocked(project.id)"
-                  class="absolute inset-0 flex items-center justify-center bg-black/40"
-                >
-                  <Lock class="size-6 text-white" />
                 </div>
               </div>
 
@@ -230,32 +147,6 @@
       @composed="onProjectComposed"
     />
 
-    <!-- Project limit modal -->
-    <AppModal :open="showProUpsell" title="Project limit reached" @close="showProUpsell = false">
-      <p class="text-sm text-[var(--color-text-muted)]">
-        Free accounts are limited to <strong class="text-[var(--color-text)]">{{ PROJECT_LIMIT }} projects</strong>.
-        Delete an existing project, or upgrade, to create a new one.
-      </p>
-      <template #footer>
-        <AppButton variant="ghost" @click="showProUpsell = false">
-          Close
-        </AppButton>
-      </template>
-    </AppModal>
-
-    <!-- Locked project modal -->
-    <AppModal :open="showLockedUpsell" title="Project locked" @close="showLockedUpsell = false">
-      <p class="text-sm text-[var(--color-text-muted)]">
-        Free accounts can only open their oldest <strong class="text-[var(--color-text)]">{{ PROJECT_LIMIT }} projects</strong>.
-        Upgrade to access every project, or delete other projects to bring your total to {{ PROJECT_LIMIT }} or fewer.
-      </p>
-      <template #footer>
-        <AppButton variant="ghost" @click="showLockedUpsell = false">
-          Close
-        </AppButton>
-      </template>
-    </AppModal>
-
     <!-- Delete confirm -->
     <AppModal :open="!!deleteTarget" title="Delete project?" @close="deleteTarget = null">
       <p class="text-sm text-[var(--color-text-muted)]">
@@ -275,32 +166,16 @@
 
 <script setup lang="ts">
 useHead({ title: 'Projects — Snipfolio' })
-import { Pencil, EllipsisVertical, Trash2, Lock } from 'lucide-vue-next'
-import { useAuthStore } from '~/stores/auth'
+import { Pencil, EllipsisVertical, Trash2 } from 'lucide-vue-next'
 import { useProjectStore } from '~/stores/project'
-import { useAuth } from '~/composables/useAuth'
 import { useProject } from '~/composables/useProject'
-import { usePlan, formatPassExpiry, PROJECT_LIMIT } from '~/composables/usePlan'
 
-definePageMeta({ middleware: 'auth' })
-
-const authStore = useAuthStore()
 const projectStore = useProjectStore()
-const { signOut: authSignOut } = useAuth()
 const { fetchProjects, deleteProject, renameProject, loadPreview } = useProject()
-const { canCreateProject, isDayPassActive, dayPassExpiresAt, isProjectLocked } = usePlan()
 const isMobile = useIsMobile()
-
-const config = useRuntimeConfig()
-const billingUrl = config.public.lsStoreSlug
-  ? `https://${config.public.lsStoreSlug}.lemonsqueezy.com/billing`
-  : 'https://app.lemonsqueezy.com/my-orders'
 
 const projects = computed(() => projectStore.projects)
 const showNew = ref(false)
-const openToUrl = ref(false)
-const showProUpsell = ref(false)
-const showLockedUpsell = ref(false)
 const deleteTarget = ref<{ id: string; name: string } | null>(null)
 const previews = ref<Record<string, string>>({})
 const loading = ref(true)
@@ -320,12 +195,6 @@ watch(projects, (list) => {
 })
 
 onMounted(async () => {
-  if (useRoute().query.openUrlCapture === '1') {
-    openToUrl.value = true
-    showNew.value = true
-    await navigateTo({ path: '/projects' }, { replace: true })
-  }
-
   try {
     await fetchProjects()
   } catch (e) {
@@ -336,11 +205,7 @@ onMounted(async () => {
 })
 
 function onNewProject() {
-  if (!canCreateProject()) {
-    showProUpsell.value = true
-  } else {
-    showNew.value = true
-  }
+  showNew.value = true
 }
 
 async function onProjectCreated(projectId: string) {
@@ -354,10 +219,6 @@ async function onProjectComposed(projectId: string, compositionId: string) {
 }
 
 function openProject(id: string) {
-  if (isProjectLocked(id)) {
-    showLockedUpsell.value = true
-    return
-  }
   navigateTo(`/advanced/${id}`)
 }
 
@@ -392,14 +253,6 @@ async function doDelete() {
   if (!deleteTarget.value) return
   await deleteProject(deleteTarget.value.id)
   deleteTarget.value = null
-}
-
-function openBilling() {
-  window.open(billingUrl, '_blank')
-}
-
-async function signOut() {
-  await authSignOut()
 }
 
 function formatDate(iso: string) {

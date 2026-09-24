@@ -1,22 +1,6 @@
 <template>
   <AppModal :open="open" title="Capture from URL" @close="onClose">
-    <!-- 7-Day Pass upsell (non-pro users) -->
-    <div v-if="!isPro" class="flex flex-col gap-3">
-      <p class="text-sm text-[var(--color-text-muted)]">
-        Capturing from a live URL requires a 7-Day Access Pass.
-      </p>
-      <div class="flex gap-2 rounded-lg px-3 py-2.5 bg-[var(--color-surface-3)] [border:0.5px_solid_rgba(142,158,173,0.2)]">
-        <AppButton size="sm" variant="secondary" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('pro', checkoutReturnUrl('openUrlCapture=1'))">
-          Subscribe — $14.99/mo
-        </AppButton>
-        <AppButton size="sm" class="flex-1" :disabled="checkoutLoading" @click="startCheckout('day_pass', checkoutReturnUrl('openUrlCapture=1'))">
-          <Loader2Icon v-if="checkoutLoading" class="size-3 shrink-0 animate-spin" />
-          {{ checkoutLoading ? 'Redirecting to Lemon Squeezy…' : 'Get 7-Day Pass — $4.99' }}
-        </AppButton>
-      </div>
-    </div>
-
-    <div v-else class="flex flex-col gap-3">
+    <div class="flex flex-col gap-3">
       <p class="text-xs text-[var(--color-text-muted)]">
         Grab a screenshot of a live page to use as a snip source — pick one or more viewports below.
       </p>
@@ -130,9 +114,6 @@
 import { Loader2Icon, CheckIcon, XIcon, RotateCwIcon } from 'lucide-vue-next'
 import { resolveCaptureUrl, getCaptureHostname, isValidCaptureUrl, captureViewportSSE, idleProgress, viewportProgressPercent, viewportPhaseLabel, useProgressTick } from '~/composables/useUrlCapture'
 import type { ViewportProgress } from '~/composables/useUrlCapture'
-import { useAuthStore } from '~/stores/auth'
-import { usePlan } from '~/composables/usePlan'
-import { useCheckout, checkoutReturnUrl } from '~/composables/useCheckout'
 
 type Viewport = 'desktop' | 'tablet' | 'mobile'
 type CaptureStatus = 'loading' | 'done' | 'error'
@@ -154,10 +135,6 @@ const emit = defineEmits<{
   loaded: [img: HTMLImageElement, src: string, filename: string]
   batchLoaded: [items: Array<{ img: HTMLImageElement; src: string; filename: string }>]
 }>()
-
-const authStore = useAuthStore()
-const { isPro } = usePlan()
-const { startCheckout, loading: checkoutLoading } = useCheckout()
 
 const url = ref('')
 const selectedViewports = ref<Viewport[]>(['desktop', 'tablet', 'mobile'])
@@ -200,7 +177,6 @@ async function captureOne(viewport: Viewport, hostname: string): Promise<void> {
     const { img, src } = await captureViewportSSE(
       resolvedUrl.value,
       viewport,
-      authStore.token ?? '',
       (progress) => { state.progress = progress },
     )
     state.status = 'done'

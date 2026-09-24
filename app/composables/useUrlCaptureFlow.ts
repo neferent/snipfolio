@@ -11,7 +11,6 @@ import { useSourcesStore } from '~/stores/sources'
 import { useSnips } from '~/composables/useSnips'
 import { useProject } from '~/composables/useProject'
 import { useCompositions } from '~/composables/useCompositions'
-import { useAuthStore } from '~/stores/auth'
 import type { Composition, SourceImage, BackgroundConfig } from '~/types'
 
 export type CaptureStatus = 'idle' | 'loading' | 'done' | 'error'
@@ -33,7 +32,6 @@ export function useUrlCaptureFlow() {
   const { createSnip } = useSnips()
   const { saveImage } = useProject()
   const { createLaptopComposition, createLaptopPhoneComposition, createLaptopTabletPhoneComposition, createBrowserComposition } = useCompositions()
-  const authStore = useAuthStore()
 
   const preset = ref<CapturePreset>('laptop+phone')
   const captureState = reactive<Record<CaptureViewport, { status: CaptureStatus; src: string; progress: ViewportProgress }>>({
@@ -85,7 +83,6 @@ export function useUrlCaptureFlow() {
       const result = await captureViewportSSE(
         url,
         viewport,
-        authStore.token ?? '',
         (progress) => { captureState[viewport].progress = progress },
         captureAbortController?.signal,
       )
