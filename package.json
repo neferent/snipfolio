@@ -1,6 +1,9 @@
 {
   "name": "snipfolio-local",
   "version": "0.1.0",
+  "description": "Crop, compose, and export screenshots into device-framed mockups.",
+  "author": "Edward Terry (neferent)",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",

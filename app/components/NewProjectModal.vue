@@ -7,11 +7,13 @@
         <AppInput
           ref="nameInputRef"
           v-model="name"
+          :error="!!nameError"
           :placeholder="type === 'url' ? 'example.com' : 'My project'"
           @focus="nameFocused = true"
           @blur="nameFocused = false"
           @keydown.enter="onSubmitMain"
         />
+        <p v-if="nameError" class="text-[10px] text-red-400">{{ nameError }}</p>
       </div>
 
       <div class="grid gap-3" :class="URL_CAPTURE_ENABLED ? 'grid-cols-2' : 'grid-cols-1'">
@@ -74,7 +76,7 @@
       <!-- Main step -->
       <template v-if="step === 'main'">
         <AppButton
-          :disabled="!canSubmit || creating"
+          :disabled="creating"
           @click="onSubmitMain"
         >
           <Loader2Icon v-if="creating" class="size-3 shrink-0 animate-spin" />
@@ -154,26 +156,26 @@ const url = ref('')
 const nameFocused = ref(false)
 const prevHostname = ref('')
 const creating = ref(false)
+const attemptedSubmit = ref(false)
 
 const nameInputRef = ref<{ focus: () => void } | null>(null)
 
 const resolvedUrl = computed(() => resolveCaptureUrl(url.value))
 const displayHostname = computed(() => getCaptureHostname(url.value))
 const urlError = computed(() => {
-  if (!url.value || isValidCaptureUrl(url.value)) return ''
+  if (!url.value.trim()) return attemptedSubmit.value && type.value === 'url' ? 'Enter a URL to capture' : ''
+  if (isValidCaptureUrl(url.value)) return ''
   return 'Enter a valid URL'
+})
+const nameError = computed(() => {
+  if (!attemptedSubmit.value) return ''
+  return name.value.trim() ? '' : 'Enter a project name'
 })
 
 const modalTitle = computed(() => {
   if (step.value === 'capturing') return captureError.value ? 'Capture failed' : `Capturing ${displayHostname.value}…`
   if (step.value === 'preset') return 'Choose a layout'
   return 'New Project'
-})
-
-const canSubmit = computed(() => {
-  if (!name.value.trim()) return false
-  if (type.value === 'url') return !!resolvedUrl.value && !urlError.value
-  return true
 })
 
 watch(() => props.open, (v) => {
@@ -193,6 +195,7 @@ function reset() {
   prevHostname.value = ''
   nameFocused.value = false
   creating.value = false
+  attemptedSubmit.value = false
   resetCaptureFlow()
 }
 
@@ -227,9 +230,17 @@ function onExpandLeave(el: Element) {
 }
 
 function onSubmitMain() {
-  if (!canSubmit.value) return
-  if (type.value === 'url') step.value = 'preset'
-  else onCreateBlank()
+  attemptedSubmit.value = true
+  if (nameError.value) {
+    nameInputRef.value?.focus()
+    return
+  }
+  if (type.value === 'url') {
+    if (urlError.value) return
+    step.value = 'preset'
+  } else {
+    onCreateBlank()
+  }
 }
 
 function onUrlInput() {

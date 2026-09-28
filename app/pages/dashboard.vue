@@ -41,7 +41,7 @@ useHead({ title: 'Studio — Snipfolio' })
 
 // ---- Projects dropdown ----
 const projectStore = useProjectStore()
-const { fetchProjects, createProject: createProjectFn, saveImage, persistAll } = useProject()
+const { fetchProjects, createProject: createProjectFn, saveImage, savePreview, persistAll } = useProject()
 const { createFreeformFromSlots } = useCompositions()
 const sourcesStore = useSourcesStore()
 const snipsStore = useSnipsStore()
@@ -727,6 +727,9 @@ async function saveAsProject() {
 
     if (sourcesStore.sources[0]) sourcesStore.setActiveSource(sourcesStore.sources[0].id)
 
+    const previewImg = orderedActiveDevices.value.map((d) => frameState[d].capturedImage).find((img): img is HTMLImageElement => !!img)
+    if (previewImg) savePreview(project.id, previewImg)
+
     const comp = createFreeformFromSlots(slots, background.value, outputWidth.value, outputHeight.value, hostname)
 
     await Promise.all([persistAll(), ...imageSaves])
@@ -928,7 +931,7 @@ function setOutputHeight(e: Event) {
               <StudioFrame
                 v-for="d in orderedActiveDevices"
                 :key="d"
-                :class="selectedDevice === d ? 'z-10' : ''"
+                :style="{ zIndex: orderedActiveDevices.indexOf(d) + (selectedDevice === d ? 10 : 0) }"
                 :x="frameState[d].x"
                 :y="frameState[d].y"
                 :width="frameState[d].width"

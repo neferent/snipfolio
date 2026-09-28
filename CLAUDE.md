@@ -2,14 +2,14 @@
 
 A Nuxt 4 app for clipping regions ("snips") from a screenshot, then composing them into export-ready images with device frames, captions, and backgrounds.
 
-This repo is the **app only**, deployed to `app.snipfol.io`. The marketing site (landing page, pricing page, SEO) lives in a separate repo, `~/snipfolio-marketing` (Astro), deployed to `snipfol.io`. Marketing CTAs link to `https://app.snipfol.io/login` and are auth-unaware.
+Purely local, single-user app — no accounts, no backend, no Supabase. All state lives on-device (IndexedDB via `imageDb.ts`, `localStorage` for the stable local user id). Ships both as a statically-generated web build and as an Electron desktop app (`electron/`). The only outbound network call is URL-capture, which hits an external fly.io screenshotter service (see `featureFlags.ts`) — everything else is fully client-side.
 
 ## Stack
 
 - **Nuxt 4** + **Vue 3** (Composition API, `<script setup>`)
 - **Pinia** for state (`stores/`)
 - **Tailwind CSS v4**
-- **Supabase** for auth + storage
+- **Electron** for the desktop build (`electron/`)
 - **pnpm** — use `pnpm dev` to run
 
 ## Key concepts
@@ -22,13 +22,13 @@ This repo is the **app only**, deployed to `app.snipfol.io`. The marketing site 
 
 | View | Aliases | Route | File | Key components |
 |------|---------|-------|------|-----------------|
-| Root | — | `/` | `pages/index.vue` | Redirect-only: `/dashboard` if authenticated, else `/login` |
+| Root | — | `/` | `pages/index.vue` | Redirect-only, unconditional: always `/dashboard` (no auth to branch on) |
 | Dashboard | Studio | `/dashboard` | `pages/dashboard.vue` | `StudioFrame.vue` (+ `BackgroundControls`, `CaptionControls`) |
 | Projects | Project list | `/projects` | `pages/projects.vue` | `NewProjectModal.vue` |
 | Snipper | Snip tool, Snip editor, Advanced editor | `/advanced/[id]` | `pages/advanced/[id]/index.vue` | `SnipTool.vue` (+ `SnipOverlay`, `SnipList`, `SnipPanel`) |
 | Composer | Composition tool, Advanced editor | `/advanced/[id]/compose/[compositionId]` | `pages/advanced/[id]/compose/[compositionId].vue` | `CompositionEditor.vue` (+ `FreeformEditor`/`CollageLayout`, `ComposerToolbar`) |
 
-`/dashboard` (Studio) is the default landing experience post-login, and is guest-accessible (no `auth` middleware — it does its own lighter authenticated-or-guest check). Its header has a "Projects" dropdown (recent projects + link to `/projects`) and an "Advanced Editor" button (→ `/projects`) for the snip/composition-based flow. `/projects`, `/advanced/[id]`, and `/advanced/[id]/compose/[compositionId]` all require full auth (`definePageMeta({ middleware: 'auth' })`) and link back to each other via "Projects" breadcrumbs, not "Dashboard".
+`/dashboard` (Studio) is the default landing page. There's no auth anywhere in the app (no `app/middleware/`) — every route is open. `/dashboard`'s header has a "Projects" dropdown (recent projects + link to `/projects`) and an "Advanced Editor" button (→ `/projects`) for the snip/composition-based flow. `/projects`, `/advanced/[id]`, and `/advanced/[id]/compose/[compositionId]` link back to each other via "Projects" breadcrumbs, not "Dashboard".
 
 ### Page features
 
@@ -42,8 +42,8 @@ Standalone, project-free flow: capture one or more device viewports from a URL d
 
 #### Projects (`pages/projects.vue`)
 - **Project list** — grid of project cards (thumbnail preview, name, updated date, delete button), loading skeleton, and empty state. Inline in `projects.vue`.
-- **New Project Modal** — `components/NewProjectModal.vue`. Create a blank project, or enter a URL to auto-capture desktop/mobile screenshots (`/api/screenshot`) and auto-generate Laptop / Laptop+Phone compositions via `useCompositions`.
-- Also handles: auth header (sign in/out, manage subscription), Pro upsell modal (free plan project limit), delete-confirm modal.
+- **New Project Modal** — `components/NewProjectModal.vue`. Create a blank project, or enter a URL to auto-capture desktop/mobile screenshots (via the fly.io screenshotter, `useUrlCapture`) and auto-generate Laptop / Laptop+Phone compositions via `useCompositions`.
+- Also handles: delete-confirm modal.
 
 #### Snipper (`pages/advanced/[id]/index.vue` → `SnipTool.vue`)
 - **Snip list** — top section of the left sidebar (`SnipList.vue`). Lists all snips, grouped by source when there's more than one source; shows thumbnail, dimensions, snap-frame badge (Desktop/Tablet/Mobile), and delete.
@@ -61,7 +61,7 @@ For Freeform/Laptop/Laptop+Phone types, the slot list, add-snip, and toolbar bel
 - **Settings > Background** — `BackgroundControls.vue`, inside `CompositionSettingsPanel.vue`. Background color/gradient/image config.
 - **Platform presets** — `PlatformPresets.vue`, inside `CompositionSettingsPanel.vue` below background controls. Free-for-everyone accordion of platform-specific output sizes (uses `icons/Logo*.vue`).
 - **Output** — output-size section inside `CompositionSettingsPanel.vue`. Preset size buttons + custom width/height inputs.
-- **Export modal** — `ExportPickerModal.vue`, triggered by the "Export PNG" button in `CompositionSettingsPanel.vue` (`doExport`). Handles export format/size selection and download; also gates non-Pro export limits.
+- **Export modal** — `ExportPickerModal.vue`, triggered by the "Export PNG" button in `CompositionSettingsPanel.vue` (`doExport`). Handles export format/size selection and download.
 
 ## Component map
 
@@ -101,7 +101,7 @@ For Freeform/Laptop/Laptop+Phone types, the slot list, add-snip, and toolbar bel
 | `AppTooltip.vue` | Hover tooltip primitive |
 | `ZoomControls.vue` | Zoom in/out/reset controls for the snip viewport |
 | `SaveStatus.vue` | Shows save/sync status indicator |
-| `WatermarkToggle.vue` | Toggle for preview watermark (free plan) |
+| `WatermarkToggle.vue` | Toggle for preview watermark |
 
 ### Other
 | File | Role |
@@ -113,11 +113,11 @@ For Freeform/Laptop/Laptop+Phone types, the slot list, add-snip, and toolbar bel
 ## Tests
 
 Unit tests live in `tests/` and run with Vitest:
-- `stores.test.ts` — Pinia store unit tests (auth, project, snips, compositions, sources)
+- `stores.test.ts` — Pinia store unit tests (auth store just holds a stable local anonymous id; project, snips, compositions, sources)
 - `useCompositions.test.ts` — composition creation logic
 - `useSnips.test.ts` — snip CRUD
-- `usePlan.test.ts` — plan/access checks
-- `justifiedLayout.test.ts`, `packSnips.test.ts` — algorithm tests
+- `useExport.test.ts` — export logic
+- `justifiedLayout.test.ts` — algorithm tests
 
 Run with `pnpm test`.
 

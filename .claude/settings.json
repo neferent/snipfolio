@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); [[ -z \"$f\" ]] || [[ \"$f\" == /Users/edward/snipfolio/* ]] || [[ \"$f\" == /Users/edward/.claude/projects/-Users-edward-snipfolio/memory/* ]] || echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Write blocked: path is outside ~/snipfolio or its memory directory\"}}'",
+            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); [[ -z \"$f\" ]] || [[ \"$f\" == /Users/edward/snipfolio/* ]] || [[ \"$f\" == /Users/edward/snipfolio-local/* ]] || [[ \"$f\" == /Users/edward/.claude/projects/-Users-edward-snipfolio/memory/* ]] || [[ \"$f\" == /Users/edward/.claude/projects/-Users-edward-snipfolio-local/memory/* ]] || echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Write blocked: path is outside ~/snipfolio, ~/snipfolio-local, or their memory directories\"}}'",
             "statusMessage": "Checking write path..."
           }
         ]

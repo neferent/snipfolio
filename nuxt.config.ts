@@ -40,7 +40,9 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: './icons/logo_36.svg' },
         { rel: 'icon', type: 'image/png', sizes: '48x48', href: './icons/logo_48.png' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: './icons/logo_32.png' },
         { rel: 'icon', type: 'image/png', sizes: '16x16', href: './icons/logo_16.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: './icons/logo_180.png' },
       ],
       script: [
         {
