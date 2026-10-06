@@ -1,21 +1,21 @@
 # Snipfolio
 
-A desktop app for turning screenshots into polished, export-ready mockups — clip regions ("snips") from a screenshot, then compose them with device frames, captions, and backgrounds. Also has a one-shot Studio mode: paste a URL, capture it in one or more device viewports, and export a mockup without any project setup.
+A desktop app for turning screenshots into polished, export-ready mockups. Clip regions ("snips") from a screenshot, then compose them with device frames, captions, and backgrounds. Also has a one-shot Studio mode: paste a URL, capture it in one or more device viewports, and export a mockup without any project setup.
 
-Free to use. If you find it useful, tips are appreciated (see below) — but there's no paywall or account required.
+Free to use.
 
 ## Features
 
-- **Studio** — paste a URL, capture Desktop/Tablet/Mobile/Browser viewports directly, arrange them with drag/resize, and export — no project or account needed.
-- **Snipper** — crop precise regions out of a screenshot, with aspect-ratio snapping to common device shapes (laptop, phone).
-- **Compositions** — arrange one or more snips with device frames (laptop, tablet, phone, browser), backgrounds (solid/gradient/image), and captions.
-- **Auto-Collage** — automatically lay out multiple snips in a justified grid.
-- **Platform presets** — common output sizes for the App Store, Google Play, Product Hunt, Steam, etc.
-- Runs as a native desktop app (macOS/Windows/Linux via Electron) — no data leaves your machine except when you explicitly capture a URL.
+- **Studio** paste a URL, capture Desktop/Tablet/Mobile/Browser viewports directly, arrange them with drag/resize, and export.
+- **Snipper** crop precise regions out of a screenshot, with aspect-ratio snapping to common device shapes (laptop, phone).
+- **Compositions** arrange one or more snips with device frames (laptop, tablet, phone, browser), backgrounds (solid/gradient/image), and captions.
+- **Auto-Collage** automatically lay out multiple snips in a justified grid.
+- **Platform presets** common output sizes for the App Store, Google Play, Product Hunt, Steam, etc.
+Runs as a native desktop app (macOS/Windows/Linux via Electron) — no data leaves your machine except when you explicitly capture a URL.
 
 ## Privacy
 
-Snipfolio is a purely local, single-user app — no accounts, no backend server, no analytics. All your projects, screenshots, and compositions are stored on your own device. The only network request the app makes is capturing a screenshot from a URL you provide, which runs through a local headless-browser instance.
+Snipfolio is a purely local, single-user app, no backend server, no analytics. All your projects, screenshots, and compositions are stored on your own device. The only network request the app makes is capturing a screenshot from a URL you provide, which runs through a local headless-browser instance.
 
 ## Getting started
 
