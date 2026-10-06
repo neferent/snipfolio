@@ -50,7 +50,7 @@ This project was built with the help of AI coding tools (Claude Code). It wasn't
 
 ## Support
 
-Snipfolio is free and has no plans to charge for it. If you'd like to support development, [tips are welcome](#) <!-- TODO: add tip link -->.
+Snipfolio is free and has no plans to charge for it. If you'd like to support development, [tips are welcome](https://github.com/sponsors/neferent) 
 
 ## License
 
