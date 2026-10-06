@@ -6,12 +6,12 @@ Free to use.
 
 ## Features
 
-- **Studio** paste a URL, capture Desktop/Tablet/Mobile/Browser viewports directly, arrange them with drag/resize, and export.
-- **Snipper** crop precise regions out of a screenshot, with aspect-ratio snapping to common device shapes (laptop, phone).
-- **Compositions** arrange one or more snips with device frames (laptop, tablet, phone, browser), backgrounds (solid/gradient/image), and captions.
-- **Auto-Collage** automatically lay out multiple snips in a justified grid.
-- **Platform presets** common output sizes for the App Store, Google Play, Product Hunt, Steam, etc.
-Runs as a native desktop app (macOS/Windows/Linux via Electron) — no data leaves your machine except when you explicitly capture a URL.
+- **Studio** - paste a URL, capture Desktop/Tablet/Mobile/Browser viewports directly, arrange them with drag/resize, and export.
+- **Snipper** - crop precise regions out of a screenshot, with aspect-ratio snapping to common device shapes (laptop, phone).
+- **Compositions** - arrange one or more snips with device frames (laptop, tablet, phone, browser), backgrounds (solid/gradient/image), and captions.
+- **Auto-Collage** - automatically lay out multiple snips in a justified grid.
+- **Platform presets** - common output sizes for the App Store, Google Play, Product Hunt, Steam, etc.
+- Runs as a native desktop app (macOS/Windows/Linux via Electron).
 
 ## Privacy
 
