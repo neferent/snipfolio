@@ -46,7 +46,7 @@ Nuxt 4, Vue 3, Pinia, Tailwind CSS v4, Electron.
 
 ## A note on how this was built
 
-This project was built with the help of AI coding tools (Claude Code). It wasn't generated wholesale from a prompt — every feature was designed, directed, and reviewed by a human engineer, iterating piece by piece, with the AI writing code under close supervision rather than working independently.
+This project was built with the help of AI coding tools (Claude Code). It wasn't generated wholesale from a prompt, every feature was designed, directed, and reviewed by a human engineer, iterating piece by piece, with the AI writing code under close supervision rather than working independently.
 
 ## Support
 
